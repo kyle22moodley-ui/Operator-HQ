@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPERATOR HQ — Squad Command</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ── PASTE YOUR FULL CSS FROM operator_hq_v4.html HERE ── */
+/* For brevity this file references the same styles — in production copy all CSS from v4 */
+:root {
+  --bg0:#080A0C;--bg1:#0C0F12;--bg2:#111519;--bg3:#161C22;--bg4:#1C242D;
+  --border:#252F3A;--border2:#2E3D4E;
+  --olive:#4A5C3A;--olive2:#5E7349;--olive3:#7A9460;--olive-dim:#1E2A16;
+  --amber:#D4920A;--amber2:#F0B429;--amber-dim:#3D2D02;
+  --green:#3D8B4E;--green2:#4CAF63;
+  --red:#9B2C2C;--red2:#C0392B;
+  --slate:#8FA3B1;--slate2:#B8CDD6;
+  --white:#E8EDF2;--muted:#4A5A68;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg0);color:var(--slate2);font-family:'Barlow',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(74,92,58,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(74,92,58,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+/* AUTH SCREEN */
+.auth-wrap{position:relative;z-index:1;width:100%;max-width:420px;padding:20px;}
+.auth-logo{text-align:center;margin-bottom:32px;}
+.auth-emblem{width:56px;height:56px;border:2px solid var(--olive2);display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--olive3);margin-bottom:12px;}
+.auth-title{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;letter-spacing:5px;color:var(--white);text-transform:uppercase;}
+.auth-sub{font-size:0.75rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-top:4px;}
+.auth-card{background:var(--bg2);border:1px solid var(--border2);border-top:2px solid var(--olive3);padding:28px;}
+.auth-tab-row{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.auth-tab{flex:1;padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;text-align:center;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.15s;}
+.auth-tab.active{color:var(--olive3);border-bottom-color:var(--olive3);}
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.form-label{font-size:0.6rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-family:'Share Tech Mono',monospace;}
+.form-input{background:var(--bg3);border:1px solid var(--border2);color:var(--white);font-family:'Barlow',sans-serif;font-size:0.9rem;padding:10px 12px;width:100%;outline:none;transition:border-color 0.2s;}
+.form-input:focus{border-color:var(--olive3);}
+.btn-primary{background:var(--olive2);border:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:0.82rem;font-weight:700;letter-spacing:3px;padding:12px 24px;cursor:pointer;text-transform:uppercase;transition:all 0.2s;width:100%;}
+.btn-primary:hover{background:var(--olive3);}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+.auth-error{background:rgba(155,44,44,0.15);border:1px solid var(--red);color:var(--red2);padding:10px 12px;font-size:0.84rem;margin-bottom:14px;display:none;}
+.auth-error.show{display:block;}
+.auth-note{font-size:0.75rem;color:var(--muted);text-align:center;margin-top:12px;line-height:1.5;}
+
+/* LOADING */
+.loading-screen{position:fixed;inset:0;background:var(--bg0);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.loading-emblem{width:48px;height:48px;border:2px solid var(--olive2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--olive3);animation:spin 2s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;}
+.loading-bar{width:200px;height:2px;background:var(--border);}
+.loading-fill{height:100%;background:var(--olive3);width:0%;transition:width 0.4s;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loading">
+  <div class="loading-emblem">◈</div>
+  <div class="loading-text" id="loading-text">Connecting to Command</div>
+  <div class="loading-bar"><div class="loading-fill" id="loading-fill"></div></div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div class="auth-wrap" id="auth-screen" style="display:none">
+  <div class="auth-logo">
+    <div class="auth-emblem">◈</div>
+    <div class="auth-title">Operator HQ</div>
+    <div class="auth-sub">Squad Command System</div>
+  </div>
+  <div class="auth-card">
+    <div class="auth-tab-row">
+      <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</div>
+      <div class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Register</div>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+
+    <!-- LOGIN FORM -->
+    <div id="login-form">
+      <div class="form-group">
+        <div class="form-label">Email</div>
+        <input class="form-input" type="email" id="login-email" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Password</div>
+        <input class="form-input" type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleLogin()">
+      </div>
+      <button class="btn-primary" id="login-btn" onclick="handleLogin()">⬡ DEPLOY TO HQ</button>
+      <div class="auth-note">First time? Switch to Register to create your operator account.</div>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="signup-form" style="display:none">
+      <div class="form-group">
+        <div class="form-label">Callsign (your name)</div>
+        <input class="form-input" type="text" id="signup-callsign" placeholder="e.g. KYLE" style="text-transform:uppercase">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Email</div>
+        <input class="form-input" type="email" id="signup-email" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Password (min 6 characters)</div>
+        <input class="form-input" type="password" id="signup-password" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Squad Access Code</div>
+        <input class="form-input" type="text" id="signup-code" placeholder="Get this from your squad">
+      </div>
+      <button class="btn-primary" id="signup-btn" onclick="handleSignup()">⬡ CREATE OPERATOR</button>
+      <div class="auth-note">After registering, check your email to confirm your account before signing in.</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP (loaded after auth) -->
+<div id="app" style="display:none;width:100%;min-height:100vh;align-items:flex-start;justify-content:flex-start;background:none;"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// CONFIGURATION — Replace with your Supabase credentials
+// ══════════════════════════════════════════════════════
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';        // e.g. https://abcdefgh.supabase.co
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Your anon/public key
+const SQUAD_CODE = 'OPHQ2026';                    // Change to your own code
+
+// ══════════════════════════════════════════════════════
+// INIT SUPABASE
+// ══════════════════════════════════════════════════════
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let currentOperator = null;
+
+// ══════════════════════════════════════════════════════
+// LOADING ANIMATION
+// ══════════════════════════════════════════════════════
+async function setLoading(text, pct) {
+  document.getElementById('loading-text').textContent = text;
+  document.getElementById('loading-fill').style.width = pct + '%';
+  await new Promise(r => setTimeout(r, 250));
+}
+
+function hideLoading() {
+  const el = document.getElementById('loading');
+  el.style.opacity = '0'; el.style.transition = 'opacity 0.4s';
+  setTimeout(() => el.style.display = 'none', 400);
+}
+
+// ══════════════════════════════════════════════════════
+// AUTH TAB
+// ══════════════════════════════════════════════════════
+function switchAuthTab(tab) {
+  document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  hideAuthError();
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.classList.add('show');
+}
+function hideAuthError() {
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════
+async function handleLogin() {
+  hideAuthError();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { showAuthError('Please enter your email and password.'); return; }
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Authenticating...';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) { showAuthError(error.message); btn.disabled = false; btn.textContent = '⬡ DEPLOY TO HQ'; return; }
+
+  await bootApp(data.user);
+}
+
+// ══════════════════════════════════════════════════════
+// SIGNUP
+// ══════════════════════════════════════════════════════
+async function handleSignup() {
+  hideAuthError();
+  const callsign = document.getElementById('signup-callsign').value.trim().toUpperCase();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const code = document.getElementById('signup-code').value.trim().toUpperCase();
+
+  if (!callsign || !email || !password) { showAuthError('Please fill in all fields.'); return; }
+  if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+  if (code !== SQUAD_CODE) { showAuthError('Invalid squad access code. Ask your squad leader.'); return; }
+
+  const btn = document.getElementById('signup-btn');
+  btn.disabled = true; btn.textContent = 'Creating operator...';
+
+  const { data, error } = await sb.auth.signUp({ email, password, options: { data: { callsign } } });
+  if (error) { showAuthError(error.message); btn.disabled = false; btn.textContent = '⬡ CREATE OPERATOR'; return; }
+
+  showAuthError('');
+  document.getElementById('auth-error').style.background = 'rgba(61,139,78,0.15)';
+  document.getElementById('auth-error').style.borderColor = 'var(--green2)';
+  document.getElementById('auth-error').style.color = 'var(--green2)';
+  document.getElementById('auth-error').textContent = '✓ Account created! Check your email to confirm, then sign in.';
+  document.getElementById('auth-error').classList.add('show');
+  btn.disabled = false; btn.textContent = '⬡ CREATE OPERATOR';
+}
+
+// ══════════════════════════════════════════════════════
+// BOOT APP
+// ══════════════════════════════════════════════════════
+async function bootApp(user) {
+  currentUser = user;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('loading-fill').style.width = '0%';
+
+  await setLoading('Authenticating operator...', 20);
+
+  // Get or create operator record
+  let { data: op, error } = await sb.from('operators').select('*').eq('user_id', user.id).single();
+
+  if (error && error.code === 'PGRST116') {
+    // No operator yet — create one
+    const callsign = user.user_metadata?.callsign || user.email.split('@')[0].toUpperCase();
+    const { data: newOp } = await sb.from('operators').insert({ user_id: user.id, callsign }).select().single();
+    op = newOp;
+  }
+
+  currentOperator = op;
+  await setLoading('Loading squad data...', 60);
+
+  // Load all operators for leaderboard
+  const { data: allOps } = await sb.from('operators').select('*').order('xp', { ascending: false });
+
+  await setLoading('Building command interface...', 85);
+  await new Promise(r => setTimeout(r, 200));
+  await setLoading('Ready.', 100);
+
+  hideLoading();
+  loadMainApp(op, allOps || []);
+}
+
+// ══════════════════════════════════════════════════════
+// LOAD MAIN APP
+// ══════════════════════════════════════════════════════
+function loadMainApp(op, allOps) {
+  // The main app HTML — injects the full interface
+  const app = document.getElementById('app');
+  app.style.display = 'block';
+  app.innerHTML = buildAppHTML(op, allOps);
+  initApp(op, allOps);
+}
+
+// ══════════════════════════════════════════════════════
+// BUILD APP HTML
+// ══════════════════════════════════════════════════════
+function buildAppHTML(op, allOps) {
+  const col = '#7A9460'; // operator color (can be customised)
+  return `
+<style>
+/* Full app styles — same military theme */
+.z1{position:relative;z-index:1;}
+.command-bar{background:var(--bg1);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;width:100%;}
+.cb-inner{max-width:1300px;margin:0 auto;display:flex;align-items:stretch;height:54px;}
+.cb-logo{display:flex;align-items:center;padding:0 18px;border-right:1px solid var(--border);gap:10px;flex-shrink:0;}
+.cb-emblem{width:26px;height:26px;border:1.5px solid var(--olive2);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--olive3);}
+.cb-title{font-family:'Barlow Condensed',sans-serif;font-size:0.92rem;font-weight:800;letter-spacing:4px;color:var(--white);text-transform:uppercase;line-height:1;}
+.cb-subtitle{font-size:0.55rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.cb-op-wrap{display:flex;align-items:center;padding:0 18px;border-right:1px solid var(--border);gap:8px;}
+.cb-op-dot{width:8px;height:8px;border-radius:50%;background:${col};box-shadow:0 0 6px ${col};}
+.cb-op-name{font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:2px;color:${col};text-transform:uppercase;}
+.cb-op-rank{font-size:0.58rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.cb-stats{display:flex;flex:1;}
+.cb-stat{display:flex;flex-direction:column;justify-content:center;padding:0 14px;border-right:1px solid var(--border);}
+.cb-val{font-family:'Share Tech Mono',monospace;font-size:0.92rem;color:var(--white);line-height:1;}
+.cb-val.amber{color:var(--amber2);}.cb-val.green{color:var(--green2);}.cb-val.olive{color:var(--olive3);}
+.cb-lbl{font-size:0.5rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+.cb-right{display:flex;align-items:center;padding:0 14px;gap:10px;margin-left:auto;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green2);box-shadow:0 0 6px var(--green2);animation:pdot 2s infinite;}
+@keyframes pdot{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.status-text{font-size:0.6rem;letter-spacing:2px;color:var(--green2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;}
+.btn-sm{background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:0.62rem;letter-spacing:2px;padding:4px 10px;cursor:pointer;text-transform:uppercase;transition:all 0.2s;}
+.btn-sm:hover{border-color:var(--red);color:var(--red2);}
+.main-layout{max-width:1300px;margin:0 auto;padding:18px 20px;display:grid;grid-template-columns:250px 1fr;gap:16px;align-items:start;}
+.sidebar{display:flex;flex-direction:column;gap:12px;}
+.panel{background:var(--bg2);border:1px solid var(--border);}
+.panel-header{padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:3px;color:var(--olive3);text-transform:uppercase;}
+.panel-badge{font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--muted);}
+.panel-body{padding:14px;}
+.op-accent{height:2px;background:${col};}
+.rank-insignia{width:60px;height:60px;margin:0 auto 8px;border:2px solid var(--olive2);display:flex;align-items:center;justify-content:center;position:relative;background:var(--bg3);text-align:center;}
+.rank-insignia::before{content:'';position:absolute;inset:3px;border:1px solid var(--olive-dim);}
+.rank-num{font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;color:${col};line-height:1;}
+.operator-name{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:4px;color:var(--white);text-transform:uppercase;}
+.op-designation{font-size:0.6rem;letter-spacing:3px;color:${col};text-transform:uppercase;margin-top:2px;}
+.readiness-bar{height:4px;background:var(--bg0);border:1px solid var(--border);margin:10px 0 4px;}
+.readiness-fill{height:100%;background:repeating-linear-gradient(90deg,var(--olive2) 0,var(--olive2) 6px,var(--olive3) 6px,var(--olive3) 8px);transition:width 1s ease;}
+.xp-label{display:flex;justify-content:space-between;font-size:0.57rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.attr-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);}
+.attr-row:last-child{border-bottom:none;}
+.attr-label{font-size:0.58rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;width:64px;flex-shrink:0;}
+.attr-track{flex:1;height:3px;background:var(--bg0);border:1px solid var(--border);overflow:hidden;}
+.attr-fill{height:100%;transition:width 1.5s ease;}
+.attr-val{font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--slate2);width:24px;text-align:right;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:all 0.15s;}
+.nav-item:last-child{border-bottom:none;}
+.nav-item:hover{background:var(--bg3);}
+.nav-item.active{background:var(--olive-dim);border-left:2px solid var(--olive3);}
+.nav-item.active .nav-label{color:var(--white);}
+.nav-icon{font-size:0.78rem;width:16px;text-align:center;flex-shrink:0;}
+.nav-label{font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.nav-tag{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:0.55rem;padding:1px 5px;}
+.nav-tag.squad{color:var(--amber2);background:var(--amber-dim);}
+.nav-tag.active-tag{color:var(--olive3);background:var(--olive-dim);}
+.section{display:none;}.section.active{display:block;}
+.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.section-code{font-size:0.57rem;letter-spacing:3px;color:var(--olive3);text-transform:uppercase;font-family:'Share Tech Mono',monospace;}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:800;letter-spacing:2px;color:var(--white);text-transform:uppercase;line-height:1;margin-top:3px;}
+.section-sub{font-size:0.78rem;color:var(--muted);margin-top:3px;}
+/* LEADERBOARD */
+.lb-table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+.lb-table th{font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:8px 12px;text-align:left;background:var(--bg3);border-bottom:1px solid var(--border);font-family:'Share Tech Mono',monospace;}
+.lb-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.84rem;}
+.lb-table tr:hover td{background:var(--bg3);cursor:pointer;}
+.lb-table tr.you td{background:var(--olive-dim);}
+.lb-op-name{font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+.lb-mono{font-family:'Share Tech Mono',monospace;}
+.you-tag{font-size:0.55rem;letter-spacing:2px;padding:1px 6px;color:var(--olive3);background:var(--olive-dim);font-family:'Share Tech Mono',monospace;margin-left:6px;}
+/* LOG FORM */
+.log-form{background:var(--bg2);border:1px solid var(--border2);border-left:3px solid var(--olive3);padding:18px 20px;margin-bottom:18px;}
+.log-form-title{font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;letter-spacing:3px;color:var(--white);text-transform:uppercase;margin-bottom:14px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:span 2;}
+.form-label{font-size:0.58rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-family:'Share Tech Mono',monospace;}
+.form-input,.form-select,.form-textarea{background:var(--bg3);border:1px solid var(--border2);color:var(--white);font-family:'Barlow',sans-serif;font-size:0.86rem;padding:8px 10px;width:100%;outline:none;transition:border-color 0.2s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--olive3);}
+.form-select option{background:var(--bg3);}
+.form-textarea{resize:vertical;min-height:60px;line-height:1.5;}
+.rating-row{display:flex;gap:4px;flex-wrap:wrap;}
+.rating-btn{width:30px;height:30px;background:var(--bg3);border:1px solid var(--border2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.rating-btn.sel{background:var(--olive-dim);border-color:var(--olive3);color:var(--olive3);}
+.trade-add-row{display:grid;grid-template-columns:80px 70px 80px 60px 1fr auto;gap:6px;margin-bottom:6px;}
+.trade-add-row .form-input,.trade-add-row .form-select{padding:6px 8px;font-size:0.8rem;}
+.btn-add-trade{background:transparent;border:1px dashed var(--border2);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:0.68rem;letter-spacing:2px;padding:5px 12px;cursor:pointer;text-transform:uppercase;transition:all 0.2s;width:100%;margin-bottom:10px;}
+.btn-add-trade:hover{border-color:var(--olive2);color:var(--olive3);}
+.btn-remove{background:transparent;border:none;color:var(--red2);font-size:0.9rem;cursor:pointer;padding:0 2px;}
+.btn-save{background:var(--olive2);border:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:3px;padding:9px 22px;cursor:pointer;text-transform:uppercase;transition:all 0.2s;}
+.btn-save:hover{background:var(--olive3);}
+.btn-save:disabled{opacity:0.5;cursor:not-allowed;}
+/* CALENDAR */
+.cal-controls{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.cal-nav{background:transparent;border:1px solid var(--border2);color:var(--slate2);font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;padding:5px 10px;cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+.cal-nav:hover{border-color:var(--olive2);color:var(--olive3);}
+.cal-title{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:3px;color:var(--white);text-transform:uppercase;flex:1;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:16px;}
+.cal-hdr{text-align:center;font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:5px 0;font-family:'Share Tech Mono',monospace;}
+.cal-cell{background:var(--bg2);border:1px solid var(--border);min-height:64px;padding:5px;cursor:pointer;transition:all 0.15s;}
+.cal-cell:hover{border-color:var(--border2);}
+.cal-cell.has-log{border-color:var(--olive-dim);}
+.cal-cell.today{border-color:var(--olive3);}
+.cal-cell.empty{background:var(--bg1);opacity:0.2;cursor:default;}
+.cal-cell.win-day{background:rgba(61,139,78,0.08);}
+.cal-cell.loss-day{background:rgba(155,44,44,0.07);}
+.cal-day-num{font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--muted);}
+.cal-cell.today .cal-day-num{color:var(--olive3);}
+.cal-pip{display:flex;gap:2px;flex-wrap:wrap;margin-top:3px;}
+.pip{width:5px;height:5px;border-radius:50%;}
+.pip.win{background:var(--green2);}.pip.loss{background:var(--red2);}.pip.be{background:var(--amber2);}
+.cal-pnl{font-family:'Share Tech Mono',monospace;font-size:0.6rem;margin-top:2px;}
+.cal-pnl.pos{color:var(--green2);}.cal-pnl.neg{color:var(--red2);}
+/* MONTH SUMMARY */
+.month-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.ms-card{background:var(--bg2);border:1px solid var(--border);padding:12px 14px;}
+.ms-label{font-size:0.56rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.ms-val{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;color:var(--white);line-height:1;}
+.ms-sub{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+/* OPS */
+.ops-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ops-block{background:var(--bg2);border:1px solid var(--border);}
+.ops-hdr{padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.ops-icon{font-size:0.8rem;}
+.ops-title{font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:3px;color:var(--slate2);text-transform:uppercase;}
+.ops-count{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--muted);}
+.ops-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.12s;}
+.ops-item:last-child{border-bottom:none;}
+.ops-item:hover{background:var(--bg3);}
+.ops-item.done{opacity:0.5;}
+.ops-item.done .ops-label{text-decoration:line-through;color:var(--muted);}
+.ops-box{width:13px;height:13px;flex-shrink:0;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:var(--bg0);transition:all 0.2s;}
+.ops-item.done .ops-box{background:var(--olive3);border-color:var(--olive3);}
+.ops-label{flex:1;font-size:0.8rem;color:var(--slate2);}
+.ops-pts{font-family:'Share Tech Mono',monospace;font-size:0.63rem;color:var(--olive3);}
+/* PROFILE */
+.profile-section{background:var(--bg2);border:1px solid var(--border2);border-left:3px solid var(--olive3);padding:18px 20px;margin-bottom:16px;}
+.profile-section-title{font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;letter-spacing:3px;color:var(--white);text-transform:uppercase;margin-bottom:14px;}
+.account-row{display:grid;grid-template-columns:1fr 80px 80px 80px auto;gap:10px;align-items:center;padding:9px 14px;background:var(--bg3);border:1px solid var(--border);margin-bottom:4px;font-size:0.84rem;}
+.account-row.hdr{font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-family:'Share Tech Mono',monospace;background:var(--bg2);}
+.ast{font-size:0.6rem;letter-spacing:2px;padding:2px 7px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;white-space:nowrap;}
+.ast-ch{color:var(--amber2);border:1px solid var(--amber-dim);}
+.ast-fu{color:var(--green2);border:1px solid rgba(61,139,78,0.3);}
+.ast-li{color:var(--olive3);border:1px solid var(--olive-dim);}
+.ast-de{color:var(--muted);border:1px solid var(--border);}
+.goal-row{background:var(--bg3);border:1px solid var(--border);padding:10px 14px;margin-bottom:4px;}
+.goal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.goal-name{font-size:0.86rem;color:var(--white);font-weight:600;}
+.goal-target{font-family:'Share Tech Mono',monospace;font-size:0.76rem;color:var(--amber2);}
+.goal-bar-track{height:3px;background:var(--bg0);overflow:hidden;margin-top:4px;}
+.goal-bar-fill{height:100%;background:linear-gradient(90deg,var(--olive),var(--olive3));}
+/* COMPARE */
+.cmp-metric{background:var(--bg2);border:1px solid var(--border);padding:14px 16px;margin-bottom:6px;}
+.cmp-label{font-size:0.6rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;font-family:'Share Tech Mono',monospace;}
+.cmp-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:5px;}
+.cmp-name{width:80px;font-size:0.72rem;color:var(--slate2);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cmp-track{flex:1;height:6px;background:var(--bg0);border:1px solid var(--border);overflow:hidden;}
+.cmp-fill{height:100%;transition:width 1.5s ease;}
+.cmp-val{width:52px;font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:var(--slate2);}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-top:2px solid var(--olive3);width:600px;max-width:95vw;max-height:88vh;overflow-y:auto;}
+.modal-hdr{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:1;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;letter-spacing:3px;color:var(--white);text-transform:uppercase;}
+.modal-close{background:transparent;border:1px solid var(--border2);color:var(--muted);width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;}
+.modal-close:hover{border-color:var(--red);color:var(--red2);}
+.modal-body{padding:18px;}
+.modal-sec-title{font-size:0.57rem;letter-spacing:3px;color:var(--olive3);text-transform:uppercase;margin-bottom:7px;font-family:'Share Tech Mono',monospace;}
+.modal-text{font-size:0.84rem;color:var(--slate2);line-height:1.6;}
+.trade-tbl{width:100%;border-collapse:collapse;}
+.trade-tbl th{font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);font-family:'Share Tech Mono',monospace;}
+.trade-tbl td{font-size:0.82rem;padding:6px 8px;border-bottom:1px solid var(--border);}
+.td-win{color:var(--green2);}.td-loss{color:var(--red2);}.td-be{color:var(--amber2);}
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--bg2);border:1px solid var(--olive2);border-left:3px solid var(--olive3);padding:11px 15px;min-width:250px;z-index:999;transform:translateX(130%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);}
+.toast.show{transform:translateX(0);}
+.toast-code{font-family:'Share Tech Mono',monospace;font-size:0.57rem;letter-spacing:3px;color:var(--olive3);text-transform:uppercase;margin-bottom:3px;}
+.toast-msg{font-size:0.84rem;color:var(--slate2);}
+.xp-float{position:fixed;pointer-events:none;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;letter-spacing:2px;z-index:999;animation:floatXP 1.4s ease forwards;}
+@keyframes floatXP{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-55px);}}
+@media(max-width:900px){.main-layout{grid-template-columns:1fr;}.ops-grid{grid-template-columns:1fr;}.month-sum{grid-template-columns:1fr 1fr;}}
+</style>
+
+<!-- COMMAND BAR -->
+<div class="command-bar z1">
+  <div class="cb-inner">
+    <div class="cb-logo">
+      <div class="cb-emblem">◈</div>
+      <div><div class="cb-title">Operator HQ</div><div class="cb-subtitle">Squad Command · Cloud</div></div>
+    </div>
+    <div class="cb-op-wrap">
+      <div class="cb-op-dot"></div>
+      <div>
+        <div class="cb-op-name" id="cb-name">${op.callsign}</div>
+        <div class="cb-op-rank" id="cb-rank">LVL ${computeLvl(op.xp)} · ${getTitleForLevel(computeLvl(op.xp))}</div>
+      </div>
+    </div>
+    <div class="cb-stats">
+      <div class="cb-stat"><div class="cb-val amber" id="cb-xp">${op.xp||0}</div><div class="cb-lbl">XP</div></div>
+      <div class="cb-stat"><div class="cb-val olive" id="cb-lvl">LVL ${computeLvl(op.xp)}</div><div class="cb-lbl">Rank</div></div>
+      <div class="cb-stat"><div class="cb-val" id="cb-streak">${op.streak||0}</div><div class="cb-lbl">Streak 🔥</div></div>
+      <div class="cb-stat"><div class="cb-val green" id="cb-wr">${calcWR(op)}%</div><div class="cb-lbl">Win Rate</div></div>
+      <div class="cb-stat"><div class="cb-val ${(op.total_pnl||0)>=0?'green':''}" id="cb-pnl">${(op.total_pnl||0)>=0?'+':''}$${Math.abs(op.total_pnl||0).toLocaleString()}</div><div class="cb-lbl">Total P&L</div></div>
+    </div>
+    <div class="cb-right">
+      <div class="status-dot"></div>
+      <div class="status-text">Connected</div>
+      <button class="btn-sm" onclick="handleSignOut()">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<div class="main-layout z1">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="panel">
+      <div class="op-accent"></div>
+      <div class="panel-header"><div class="panel-title">Operator File</div><div class="panel-badge" id="sb-clearance">CLEARANCE: DELTA</div></div>
+      <div class="panel-body">
+        <div style="text-align:center;margin-bottom:12px">
+          <div class="rank-insignia"><div class="rank-num" id="sb-lvl">${computeLvl(op.xp)}</div></div>
+          <div class="operator-name">${op.callsign}</div>
+          <div class="op-designation" id="sb-title">${getTitleForLevel(computeLvl(op.xp))}</div>
+        </div>
+        <div class="xp-label"><span>READINESS</span><span id="sb-xp-label">${(op.xp||0)%500}/500 XP</span></div>
+        <div class="readiness-bar"><div class="readiness-fill" id="sb-xp-fill" style="width:${((op.xp||0)%500)/500*100}%"></div></div>
+        <div style="margin-top:10px">
+          <div class="attr-row"><div class="attr-label">Discipline</div><div class="attr-track"><div class="attr-fill" id="af-d" style="width:${Math.min(72+Math.min((op.xp||0)/50,18),100)}%;background:var(--olive3)"></div></div><div class="attr-val">${Math.round(Math.min(72+Math.min((op.xp||0)/50,18),100))}</div></div>
+          <div class="attr-row"><div class="attr-label">Patience</div><div class="attr-track"><div class="attr-fill" id="af-p" style="width:${Math.min(68+Math.min((op.xp||0)/50,18),100)}%;background:var(--amber2)"></div></div><div class="attr-val">${Math.round(Math.min(68+Math.min((op.xp||0)/50,18),100))}</div></div>
+          <div class="attr-row"><div class="attr-label">Edge IQ</div><div class="attr-track"><div class="attr-fill" id="af-e" style="width:${Math.min(88+Math.min((op.xp||0)/50,18)*0.5,100)}%;background:var(--slate2)"></div></div><div class="attr-val">${Math.round(Math.min(88+Math.min((op.xp||0)/50,18)*0.5,100))}</div></div>
+          <div class="attr-row"><div class="attr-label">Risk Ctrl</div><div class="attr-track"><div class="attr-fill" id="af-r" style="width:${Math.min(75+Math.min((op.xp||0)/50,18),100)}%;background:var(--green2)"></div></div><div class="attr-val">${Math.round(Math.min(75+Math.min((op.xp||0)/50,18),100))}</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Command Menu</div></div>
+      <div class="nav-item active" onclick="showSec('leaderboard',this)"><div class="nav-icon">⬡</div><div class="nav-label">Leaderboard</div><div class="nav-tag squad">SQUAD</div></div>
+      <div class="nav-item" onclick="showSec('log',this)"><div class="nav-icon">✎</div><div class="nav-label">Mission Log</div><div class="nav-tag active-tag">DAILY</div></div>
+      <div class="nav-item" onclick="showSec('calendar',this)"><div class="nav-icon">▦</div><div class="nav-label">Intel Calendar</div></div>
+      <div class="nav-item" onclick="showSec('ops',this)"><div class="nav-icon">☑</div><div class="nav-label">Daily Operations</div></div>
+      <div class="nav-item" onclick="showSec('profile',this)"><div class="nav-icon">◈</div><div class="nav-label">My Profile</div></div>
+      <div class="nav-item" onclick="showSec('squad',this)"><div class="nav-icon">◻</div><div class="nav-label">Squad Profiles</div><div class="nav-tag squad">SQUAD</div></div>
+      <div class="nav-item" onclick="showSec('compare',this)"><div class="nav-icon">≡</div><div class="nav-label">Compare</div><div class="nav-tag squad">SQUAD</div></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div>
+    <!-- LEADERBOARD -->
+    <div class="section active" id="sec-leaderboard">
+      <div class="section-header"><div><div class="section-code">SQUAD-01 // LEADERBOARD</div><div class="section-title">Squad Rankings</div><div class="section-sub">Live standings — updates when anyone logs in</div></div></div>
+      <div id="lb-content"></div>
+    </div>
+
+    <!-- MISSION LOG -->
+    <div class="section" id="sec-log">
+      <div class="section-header"><div><div class="section-code">OP-01 // MISSION LOG</div><div class="section-title">Daily Entry</div><div class="section-sub">Saved to cloud — reviewable forever</div></div></div>
+      <div class="log-form">
+        <div class="log-form-title">NEW ENTRY</div>
+        <div class="form-grid">
+          <div class="form-group"><div class="form-label">Date</div><input type="date" class="form-input" id="e-date"></div>
+          <div class="form-group"><div class="form-label">Session Result</div><select class="form-select" id="e-session"><option value="">—</option><option value="win">WIN DAY</option><option value="loss">LOSS DAY</option><option value="be">BREAK EVEN</option><option value="no-trade">NO TRADE</option></select></div>
+          <div class="form-group"><div class="form-label">P&L (USD)</div><input type="number" class="form-input" id="e-pnl" placeholder="e.g. 1240 or -800"></div>
+          <div class="form-group"><div class="form-label">Discipline (1–10)</div><div class="rating-row" id="disc-rating"></div></div>
+          <div class="form-group full"><div class="form-label">Trades</div><div id="trade-entries"></div><button class="btn-add-trade" onclick="addTrade()">+ Add Trade</button></div>
+          <div class="form-group full"><div class="form-label">What I Did Well</div><textarea class="form-textarea" id="e-well"></textarea></div>
+          <div class="form-group full"><div class="form-label">What to Improve</div><textarea class="form-textarea" id="e-improve"></textarea></div>
+          <div class="form-group full"><div class="form-label">Notes / Mindset</div><textarea class="form-textarea" id="e-notes"></textarea></div>
+          <div class="form-group"><div class="form-label">Strategy Followed?</div><select class="form-select" id="e-strategy"><option value="yes">✓ Yes</option><option value="partial">△ Partial</option><option value="no">✗ No</option></select></div>
+          <div class="form-group"><div class="form-label">Emotional State</div><select class="form-select" id="e-emotion"><option value="focused">Focused</option><option value="calm">Calm</option><option value="anxious">Anxious</option><option value="revenge">Revenge mode</option><option value="fomo">FOMO</option><option value="confident">Confident</option></select></div>
+        </div>
+        <button class="btn-save" id="save-log-btn" onclick="saveLog()">⬡ SAVE LOG</button>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="section" id="sec-calendar">
+      <div class="section-header"><div><div class="section-code">OP-02 // INTEL CALENDAR</div><div class="section-title">Mission Archive</div><div class="section-sub">Click any day to review your entry</div></div></div>
+      <div class="cal-controls">
+        <button class="cal-nav" onclick="calNav(-1)">◀</button>
+        <div class="cal-title" id="cal-title">—</div>
+        <button class="cal-nav" onclick="calNav(1)">▶</button>
+      </div>
+      <div id="cal-container"></div>
+      <div id="month-summary"></div>
+    </div>
+
+    <!-- OPS -->
+    <div class="section" id="sec-ops">
+      <div class="section-header"><div><div class="section-code">OP-03 // DAILY OPS</div><div class="section-title">Operations Log</div><div class="section-sub">Resets each day · Saves to cloud</div></div></div>
+      <div class="ops-grid" id="ops-grid"></div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="section" id="sec-profile">
+      <div class="section-header"><div><div class="section-code">OP-04 // MY PROFILE</div><div class="section-title">Operator Setup</div><div class="section-sub">Your personal goals, accounts and targets</div></div></div>
+      <div class="profile-section">
+        <div class="profile-section-title">⬡ Identity</div>
+        <div class="form-grid">
+          <div class="form-group"><div class="form-label">Callsign</div><input class="form-input" id="pf-callsign" placeholder="Your name / callsign"></div>
+          <div class="form-group"><div class="form-label">Markets Traded</div><input class="form-input" id="pf-markets" placeholder="e.g. NAS100, Gold, US30"></div>
+          <div class="form-group"><div class="form-label">Trading Style</div><input class="form-input" id="pf-style" placeholder="e.g. ICT, SMC, liquidity"></div>
+          <div class="form-group"><div class="form-label">Monthly Income Goal (USD)</div><input class="form-input" type="number" id="pf-goal" placeholder="e.g. 30000"></div>
+          <div class="form-group full"><div class="form-label">Mission Statement</div><textarea class="form-textarea" id="pf-mission" placeholder="Why you're doing this..."></textarea></div>
+        </div>
+        <button class="btn-save" onclick="saveProfile()">SAVE PROFILE</button>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title">◈ Trading Accounts</div>
+        <div id="accts-list"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;align-items:end;background:var(--bg3);border:1px dashed var(--border2);padding:12px;margin-top:8px">
+          <div class="form-group"><div class="form-label">Name</div><input class="form-input" id="acc-name" placeholder="FTMO $200K"></div>
+          <div class="form-group"><div class="form-label">Size (USD)</div><input class="form-input" type="number" id="acc-size" placeholder="200000"></div>
+          <div class="form-group"><div class="form-label">Type</div><select class="form-select" id="acc-type"><option value="challenge">Challenge</option><option value="funded">Funded</option><option value="live">Live</option><option value="demo">Demo</option></select></div>
+          <div class="form-group"><div class="form-label">Target %</div><input class="form-input" type="number" id="acc-target" placeholder="8"></div>
+          <button class="btn-save" onclick="addAccount()" style="height:38px;margin-top:auto">ADD</button>
+        </div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title">◻ Personal Goals</div>
+        <div id="goals-list"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;background:var(--bg3);border:1px dashed var(--border2);padding:12px;margin-top:8px">
+          <div class="form-group"><div class="form-label">Goal</div><input class="form-input" id="g-name" placeholder="e.g. Dream Car"></div>
+          <div class="form-group"><div class="form-label">Target</div><input class="form-input" id="g-target" placeholder="e.g. $5,000 payout"></div>
+          <div class="form-group"><div class="form-label">Progress %</div><input class="form-input" type="number" id="g-progress" placeholder="0"></div>
+          <button class="btn-save" onclick="addGoal()" style="height:38px;margin-top:auto">ADD</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SQUAD -->
+    <div class="section" id="sec-squad">
+      <div class="section-header"><div><div class="section-code">SQUAD-02 // SQUAD PROFILES</div><div class="section-title">Operator Files</div><div class="section-sub">Click any operator to view their full profile</div></div></div>
+      <div id="squad-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
+    </div>
+
+    <!-- COMPARE -->
+    <div class="section" id="sec-compare">
+      <div class="section-header"><div><div class="section-code">SQUAD-03 // COMPARE</div><div class="section-title">Head-to-Head</div><div class="section-sub">All operators side by side</div></div></div>
+      <div id="compare-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="modal-title">—</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-code" id="toast-code">INTEL</div><div class="toast-msg" id="toast-msg"></div></div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════
+// APP LOGIC
+// ══════════════════════════════════════════════════════
+const TITLES_MAP = {4:'SHARPENED EDGE',5:'CHALLENGE FIGHTER',6:'PROP WARRIOR',7:'FUNDED ELITE',8:'ACCOUNT SCALER',9:'SIX-FIGURE OPERATOR',10:'MARKET COMMANDER'};
+const CLEARANCE_MAP = {4:'CLEARANCE: DELTA',5:'CLEARANCE: ECHO',6:'CLEARANCE: FOXTROT',7:'CLEARANCE: GOLF',8:'CLEARANCE: HOTEL',9:'CLEARANCE: INDIA',10:'CLEARANCE: JULIET'};
+const OP_COLORS_LIST = ['#7A9460','#F0B429','#60A5FA','#C084FC','#F87171','#34D399'];
+const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+
+function computeLvl(xp){ return Math.min(Math.floor((xp||0)/500)+4, 10); }
+function getTitleForLevel(l){ return TITLES_MAP[l]||'LEGEND'; }
+function calcWR(op){ const t=(op.wins||0)+(op.losses||0); return t>0?Math.round(op.wins/t*100):0; }
+function fmtDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+let allOperators = [];
+let myLogs = [];
+let myAccounts = [];
+let myGoals = [];
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let discRating = 0;
+let tradeRows = [];
+
+function initApp(op, ops) {
+  allOperators = ops;
+  document.getElementById('entry-date') || null;
+
+  // Set today's date
+  const today = new Date();
+  const todayEl = document.getElementById('e-date');
+  if(todayEl) todayEl.value = fmtDate(today);
+
+  buildRatingBtns();
+  buildOpsGrid();
+  buildLeaderboard();
+  loadMyData();
+}
+
+// XP
+async function gainXP(amt, x, y) {
+  if(!currentOperator) return;
+  currentOperator.xp = (currentOperator.xp||0) + amt;
+  if(x&&y){ const el=document.createElement('div'); el.className='xp-float'; el.textContent=`+${amt} XP`; el.style.cssText=`left:${x}px;top:${y}px;color:#7A9460;`; document.body.appendChild(el); setTimeout(()=>el.remove(),1500); }
+  await sb.from('operators').update({ xp: currentOperator.xp }).eq('id', currentOperator.id);
+  updateStatBar();
+  toast('XP EARNED', `+${amt} XP — Total: ${currentOperator.xp}`);
+}
+
+function updateStatBar() {
+  const op = currentOperator;
+  const xp = op.xp||0, lvl = computeLvl(xp);
+  const cur = xp%500;
+  const el = document.getElementById('sb-xp-fill');
+  const lbl = document.getElementById('sb-xp-label');
+  if(el) el.style.width = (cur/500*100)+'%';
+  if(lbl) lbl.textContent = `${cur}/500 XP`;
+  ['cb-xp','cb-lvl'].forEach(id=>{ const e=document.getElementById(id); if(e){ if(id==='cb-xp') e.textContent=xp; else e.textContent=`LVL ${lvl}`; } });
+}
+
+// LOAD MY DATA
+async function loadMyData() {
+  if(!currentOperator) return;
+  const [logsRes, accRes, goalRes] = await Promise.all([
+    sb.from('mission_logs').select('*').eq('operator_id', currentOperator.id).order('log_date', {ascending:false}),
+    sb.from('accounts').select('*').eq('operator_id', currentOperator.id),
+    sb.from('goals').select('*').eq('operator_id', currentOperator.id)
+  ]);
+  myLogs = logsRes.data || [];
+  myAccounts = accRes.data || [];
+  myGoals = goalRes.data || [];
+  loadProfileForm();
+  renderAccounts();
+  renderGoals();
+}
+
+// LEADERBOARD
+function buildLeaderboard() {
+  const sorted = [...allOperators].sort((a,b)=>(b.xp||0)-(a.xp||0));
+  let html = `<table class="lb-table"><thead><tr><th>#</th><th>Operator</th><th>XP</th><th>Win Rate</th><th>P&L</th><th>Streak</th></tr></thead><tbody>`;
+  sorted.forEach((op, i) => {
+    const isMe = op.id === currentOperator?.id;
+    const col = OP_COLORS_LIST[i % OP_COLORS_LIST.length];
+    const wr = calcWR(op);
+    const pnl = op.total_pnl||0;
+    html += `<tr class="${isMe?'you':''}" onclick="viewOpProfile('${op.id}')">
+      <td style="font-family:'Share Tech Mono',monospace;color:${i===0?'var(--amber2)':i===1?'var(--slate2)':'var(--muted)'}">${i+1}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:${col};box-shadow:0 0 5px ${col};flex-shrink:0"></div><span class="lb-op-name" style="color:${col}">${op.callsign}</span>${isMe?'<span class="you-tag">YOU</span>':''}</div><div style="font-size:0.68rem;color:var(--muted);margin-top:2px">${getTitleForLevel(computeLvl(op.xp||0))}</div></td>
+      <td class="lb-mono" style="color:var(--amber2)">${(op.xp||0).toLocaleString()}</td>
+      <td class="lb-mono" style="color:${wr>=50?'var(--green2)':wr>0?'var(--amber2)':'var(--muted)'}">${wr?wr+'%':'—'}</td>
+      <td class="lb-mono" style="color:${pnl>=0?'var(--green2)':'var(--red2)'}">${pnl>=0?'+':''}$${Math.abs(pnl).toLocaleString()}</td>
+      <td class="lb-mono">${op.streak?'🔥'+op.streak:'—'}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+
+  // Highlights
+  const leader = sorted[0];
+  const bestPnl = [...sorted].sort((a,b)=>(b.total_pnl||0)-(a.total_pnl||0))[0];
+  if(leader) html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="background:var(--bg2);border:1px solid var(--border);padding:12px 14px"><div style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;font-family:'Share Tech Mono',monospace">⬡ Current Leader</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:${OP_COLORS_LIST[0]}">${leader.callsign}</div><div style="font-size:0.75rem;color:var(--muted)">${(leader.xp||0).toLocaleString()} XP</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);padding:12px 14px"><div style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;font-family:'Share Tech Mono',monospace">$ Top P&L</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:${OP_COLORS_LIST[1]}">${bestPnl.callsign}</div><div style="font-size:0.75rem;color:var(--green2)">${(bestPnl.total_pnl||0)>=0?'+':''}$${Math.abs(bestPnl.total_pnl||0).toLocaleString()}</div></div>
+  </div>`;
+
+  const el = document.getElementById('lb-content');
+  if(el) el.innerHTML = html;
+}
+
+// VIEW OPERATOR PROFILE
+async function viewOpProfile(opId) {
+  const op = allOperators.find(o=>o.id===opId);
+  if(!op) return;
+  const col = OP_COLORS_LIST[allOperators.indexOf(op) % OP_COLORS_LIST.length];
+  const [logsRes, accRes, goalRes] = await Promise.all([
+    sb.from('mission_logs').select('*').eq('operator_id', opId),
+    sb.from('accounts').select('*').eq('operator_id', opId),
+    sb.from('goals').select('*').eq('operator_id', opId)
+  ]);
+  const logs = logsRes.data||[], accs = accRes.data||[], goals = goalRes.data||[];
+  const avgDisc = logs.length?Math.round(logs.reduce((a,l)=>a+(l.discipline_rating||0),0)/logs.length):0;
+  const wr = calcWR(op);
+
+  document.getElementById('modal-title').textContent = `${op.callsign} — OPERATOR FILE`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <div style="background:var(--bg3);padding:10px;text-align:center"><div style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Level</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:${col}">${computeLvl(op.xp||0)}</div></div>
+      <div style="background:var(--bg3);padding:10px;text-align:center"><div style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Win Rate</div><div style="font-family:'Share Tech Mono',monospace;font-size:1rem;color:${wr>=50?'var(--green2)':'var(--muted)'}">${wr||0}%</div></div>
+      <div style="background:var(--bg3);padding:10px;text-align:center"><div style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">P&L</div><div style="font-family:'Share Tech Mono',monospace;font-size:1rem;color:${(op.total_pnl||0)>=0?'var(--green2)':'var(--red2)'}">${(op.total_pnl||0)>=0?'+':''}$${Math.abs(op.total_pnl||0).toLocaleString()}</div></div>
+    </div>
+    ${op.mission_statement?`<div style="margin-bottom:12px"><div class="modal-sec-title">Mission Statement</div><div class="modal-text" style="font-style:italic">"${op.mission_statement}"</div></div>`:''}
+    ${op.markets?`<div style="margin-bottom:12px"><div class="modal-sec-title">Markets</div><div class="modal-text">${op.markets}</div></div>`:''}
+    ${accs.length?`<div style="margin-bottom:12px"><div class="modal-sec-title">Accounts</div>${accs.map(a=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.84rem"><span style="color:var(--white)">${a.name}</span><span style="font-family:'Share Tech Mono',monospace;color:var(--amber2)">$${(a.size||0).toLocaleString()}</span></div>`).join('')}</div>`:''}
+    ${goals.length?`<div style="margin-bottom:12px"><div class="modal-sec-title">Personal Goals</div>${goals.map(g=>`<div style="padding:6px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-size:0.84rem;margin-bottom:3px"><span style="color:var(--white)">${g.name}</span><span style="color:var(--amber2)">${g.progress||0}%</span></div><div style="height:3px;background:var(--bg0);overflow:hidden"><div style="height:100%;width:${g.progress||0}%;background:${col}"></div></div></div>`).join('')}</div>`:''}
+    <div><div class="modal-sec-title">Stats</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:0.82rem"><div style="color:var(--muted)">Sessions: <span style="color:var(--white)">${logs.length}</span></div><div style="color:var(--muted)">Avg discipline: <span style="color:var(--olive3)">${avgDisc||'—'}${avgDisc?'/10':''}</span></div><div style="color:var(--muted)">Streak: <span>${op.streak||0}</span></div><div style="color:var(--muted)">Off-strategy: <span style="color:var(--red2)">${logs.filter(l=>l.strategy_followed==='no').length}</span></div></div></div>`;
+  document.getElementById('modal').classList.add('open');
+}
+
+// COMPARE
+async function buildCompare() {
+  const metrics = [
+    {label:'Readiness XP', fn:op=>(op.xp||0), fmt:v=>v.toLocaleString(), max:null},
+    {label:'Win Rate %', fn:calcWR, fmt:v=>v+'%', max:100},
+    {label:'Day Streak', fn:op=>op.streak||0, fmt:v=>v+' days', max:null},
+    {label:'Total P&L (USD)', fn:op=>Math.max(0,op.total_pnl||0), fmt:v=>'$'+v.toLocaleString(), max:null},
+  ];
+  const sorted = [...allOperators].sort((a,b)=>(b.xp||0)-(a.xp||0));
+  let html='';
+  metrics.forEach(m=>{
+    const vals = sorted.map(m.fn);
+    const maxVal = m.max||Math.max(...vals,1);
+    html+=`<div class="cmp-metric"><div class="cmp-label">${m.label}</div>`;
+    sorted.forEach((op,i)=>{
+      const col = OP_COLORS_LIST[allOperators.indexOf(op)%OP_COLORS_LIST.length];
+      const val = vals[i]; const pct = Math.min(val/maxVal*100,100);
+      html+=`<div class="cmp-bar-row"><div class="cmp-name" style="color:${op.id===currentOperator?.id?col:'var(--muted)'}">${op.callsign.substring(0,8)}</div><div class="cmp-track"><div class="cmp-fill" style="width:${pct}%;background:${col}"></div></div><div class="cmp-val">${m.fmt(val)}</div></div>`;
+    });
+    html+='</div>';
+  });
+  const el=document.getElementById('compare-grid'); if(el) el.innerHTML=html;
+}
+
+// SQUAD PROFILES
+function buildSquadProfiles() {
+  const grid = document.getElementById('squad-grid');
+  if(!grid) return;
+  grid.innerHTML = allOperators.map((op,i)=>{
+    const col = OP_COLORS_LIST[i%OP_COLORS_LIST.length];
+    const lvl = computeLvl(op.xp||0); const wr = calcWR(op);
+    const cur = (op.xp||0)%500;
+    return `<div style="background:var(--bg2);border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:all 0.2s" onclick="viewOpProfile('${op.id}')">
+      <div style="height:2px;background:${col}"></div>
+      <div style="padding:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:${col};background:var(--bg3);border:1px solid ${col}40;flex-shrink:0">${lvl}</div>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;letter-spacing:3px;color:${col};text-transform:uppercase">${op.callsign}</div>
+            <div style="font-size:0.62rem;letter-spacing:2px;color:${col};text-transform:uppercase;margin-top:1px">${getTitleForLevel(lvl)}</div>
+          </div>
+          ${op.id===currentOperator?.id?`<div style="margin-left:auto;font-size:0.55rem;letter-spacing:2px;padding:2px 6px;color:${col};border:1px solid ${col}40;font-family:'Share Tech Mono',monospace;text-transform:uppercase">YOU</div>`:''}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+          <div style="background:var(--bg3);padding:7px 9px"><div style="font-family:'Share Tech Mono',monospace;font-size:0.88rem;color:var(--amber2)">${(op.xp||0).toLocaleString()}</div><div style="font-size:0.52rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:2px">XP</div></div>
+          <div style="background:var(--bg3);padding:7px 9px"><div style="font-family:'Share Tech Mono',monospace;font-size:0.88rem;color:${wr>=50?'var(--green2)':'var(--muted)'}">${wr||0}%</div><div style="font-size:0.52rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:2px">Win Rate</div></div>
+          <div style="background:var(--bg3);padding:7px 9px"><div style="font-family:'Share Tech Mono',monospace;font-size:0.88rem;color:${(op.total_pnl||0)>=0?'var(--green2)':'var(--red2)'}">${(op.total_pnl||0)>=0?'+':''}$${Math.abs(op.total_pnl||0).toLocaleString()}</div><div style="font-size:0.52rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:2px">P&L</div></div>
+        </div>
+        <div style="font-size:0.58rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">READINESS</div>
+        <div style="height:3px;background:var(--bg0);overflow:hidden"><div style="height:100%;width:${cur/500*100}%;background:${col}"></div></div>
+        ${op.markets?`<div style="font-size:0.74rem;color:var(--muted);margin-top:8px">Markets: <span style="color:var(--slate2)">${op.markets}</span></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// PROFILE
+function loadProfileForm() {
+  const op = currentOperator;
+  if(!op) return;
+  const fields = {
+    'pf-callsign': op.callsign||'',
+    'pf-markets': op.markets||'',
+    'pf-style': op.trading_style||'',
+    'pf-goal': op.income_goal||'',
+    'pf-mission': op.mission_statement||''
+  };
+  Object.entries(fields).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.value=val; });
+  renderAccounts(); renderGoals();
+}
+
+async function saveProfile() {
+  const updates = {
+    callsign: document.getElementById('pf-callsign')?.value?.toUpperCase()||currentOperator.callsign,
+    markets: document.getElementById('pf-markets')?.value||'',
+    trading_style: document.getElementById('pf-style')?.value||'',
+    income_goal: parseFloat(document.getElementById('pf-goal')?.value)||0,
+    mission_statement: document.getElementById('pf-mission')?.value||''
+  };
+  await sb.from('operators').update(updates).eq('id', currentOperator.id);
+  Object.assign(currentOperator, updates);
+  toast('PROFILE SAVED', 'Your operator file has been updated.');
+}
+
+// ACCOUNTS
+async function addAccount() {
+  const name = document.getElementById('acc-name')?.value; if(!name) return;
+  const acc = { operator_id: currentOperator.id, name, size: parseFloat(document.getElementById('acc-size')?.value)||0, account_type: document.getElementById('acc-type')?.value||'challenge', profit_target: parseFloat(document.getElementById('acc-target')?.value)||8 };
+  const { data } = await sb.from('accounts').insert(acc).select().single();
+  if(data){ myAccounts.push(data); renderAccounts(); ['acc-name','acc-size','acc-target'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); toast('ACCOUNT ADDED', name); }
+}
+
+async function removeAccount(id) {
+  await sb.from('accounts').delete().eq('id', id);
+  myAccounts = myAccounts.filter(a=>a.id!==id); renderAccounts();
+}
+
+function renderAccounts() {
+  const el=document.getElementById('accts-list'); if(!el) return;
+  if(!myAccounts.length){ el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:6px 0">No accounts added yet.</div>'; return; }
+  const stMap={challenge:'ast-ch',funded:'ast-fu',live:'ast-li',demo:'ast-de'};
+  const stLabel={challenge:'CHALLENGE',funded:'FUNDED',live:'LIVE',demo:'DEMO'};
+  el.innerHTML=`<div class="account-row hdr"><div>Account</div><div>Size</div><div>Target</div><div>P&L</div><div>Status</div></div>`+myAccounts.map(a=>`<div class="account-row"><div style="color:var(--white);font-size:0.88rem">${a.name}</div><div class="lb-mono" style="color:var(--amber2)">$${(a.size||0).toLocaleString()}</div><div class="lb-mono">${a.profit_target}%</div><div class="lb-mono" style="color:${(a.current_pnl||0)>=0?'var(--green2)':'var(--red2)'}">${(a.current_pnl||0)>=0?'+':''}$${Math.abs(a.current_pnl||0).toLocaleString()}</div><div style="display:flex;align-items:center;gap:6px"><div class="ast ${stMap[a.account_type]||'ast-de'}">${stLabel[a.account_type]||a.account_type}</div><button class="btn-remove" onclick="removeAccount('${a.id}')">✕</button></div></div>`).join('');
+}
+
+// GOALS
+async function addGoal() {
+  const name=document.getElementById('g-name')?.value; if(!name) return;
+  const goal={operator_id:currentOperator.id,name,target_description:document.getElementById('g-target')?.value||'',progress:parseInt(document.getElementById('g-progress')?.value)||0};
+  const{data}=await sb.from('goals').insert(goal).select().single();
+  if(data){myGoals.push(data);renderGoals();['g-name','g-target','g-progress'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});toast('GOAL ADDED',name);}
+}
+
+async function removeGoal(id) {
+  await sb.from('goals').delete().eq('id',id);
+  myGoals=myGoals.filter(g=>g.id!==id); renderGoals();
+}
+
+async function updateGoalProgress(id,val) {
+  await sb.from('goals').update({progress:parseInt(val)||0}).eq('id',id);
+  const g=myGoals.find(g=>g.id===id); if(g) g.progress=parseInt(val)||0;
+}
+
+function renderGoals() {
+  const el=document.getElementById('goals-list'); if(!el) return;
+  if(!myGoals.length){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:6px 0">No goals yet. Add your personal lifestyle targets.</div>';return;}
+  el.innerHTML=myGoals.map(g=>`<div class="goal-row"><div class="goal-top"><div class="goal-name">${g.name}</div><div style="display:flex;align-items:center;gap:8px"><div class="goal-target">${g.target_description}</div><button class="btn-remove" onclick="removeGoal('${g.id}')">✕</button></div></div><div style="display:flex;align-items:center;gap:8px"><div class="goal-bar-track" style="flex:1;height:3px;background:var(--bg0);overflow:hidden"><div class="goal-bar-fill" style="width:${g.progress||0}%"></div></div><input type="range" min="0" max="100" value="${g.progress||0}" style="width:70px;accent-color:var(--olive3)" onchange="updateGoalProgress('${g.id}',this.value);this.nextElementSibling.textContent=this.value+'%'"><span style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--muted);white-space:nowrap">${g.progress||0}%</span></div></div>`).join('');
+}
+
+// MISSION LOG
+function buildRatingBtns() {
+  const row=document.getElementById('disc-rating'); if(!row) return; row.innerHTML='';
+  for(let i=1;i<=10;i++){const btn=document.createElement('button');btn.className='rating-btn';btn.dataset.val=i;btn.textContent=i;btn.onclick=()=>{discRating=i;document.querySelectorAll('#disc-rating .rating-btn').forEach(b=>b.classList.toggle('sel',parseInt(b.dataset.val)===i));};row.appendChild(btn);}
+}
+
+function addTrade(){
+  const id=Date.now(); tradeRows.push(id);
+  const c=document.getElementById('trade-entries'); if(!c) return;
+  const row=document.createElement('div'); row.className='trade-add-row'; row.id=`tr-${id}`;
+  row.innerHTML=`<input class="form-input" placeholder="Pair" id="tp-${id}"><select class="form-select" id="td-${id}"><option>LONG</option><option>SHORT</option></select><select class="form-select" id="tr2-${id}"><option value="win">WIN</option><option value="loss">LOSS</option><option value="be">B/E</option></select><input class="form-input" placeholder="R:R" id="trr-${id}"><input class="form-input" placeholder="Notes" id="tn-${id}"><button class="btn-remove" onclick="removeTrade(${id})">✕</button>`;
+  c.appendChild(row);
+}
+
+function removeTrade(id){ tradeRows=tradeRows.filter(t=>t!==id); document.getElementById(`tr-${id}`)?.remove(); }
+
+async function saveLog() {
+  const date=document.getElementById('e-date')?.value; if(!date){toast('ERROR','Select a date.'); return;}
+  const session=document.getElementById('e-session')?.value;
+  const pnl=parseFloat(document.getElementById('e-pnl')?.value)||0;
+  const trades=tradeRows.map(id=>({pair:document.getElementById(`tp-${id}`)?.value||'',direction:document.getElementById(`td-${id}`)?.value||'LONG',result:document.getElementById(`tr2-${id}`)?.value||'be',rr:document.getElementById(`trr-${id}`)?.value||'',notes:document.getElementById(`tn-${id}`)?.value||''})).filter(t=>t.pair);
+
+  const btn=document.getElementById('save-log-btn'); if(btn){btn.disabled=true;btn.textContent='Saving...';}
+
+  // Update operator totals
+  const existing=myLogs.find(l=>l.log_date===date);
+  let wins=currentOperator.wins||0, losses=currentOperator.losses||0, totalPnl=currentOperator.total_pnl||0;
+  if(existing){ totalPnl-=existing.pnl||0; if(existing.session_result==='win') wins--; if(existing.session_result==='loss') losses--; }
+  totalPnl+=pnl;
+  if(session==='win') wins++;
+  if(session==='loss') losses++;
+
+  const logData={operator_id:currentOperator.id,log_date:date,session_result:session,pnl,discipline_rating:discRating,trades,what_went_well:document.getElementById('e-well')?.value||'',what_to_improve:document.getElementById('e-improve')?.value||'',notes:document.getElementById('e-notes')?.value||'',strategy_followed:document.getElementById('e-strategy')?.value||'yes',emotional_state:document.getElementById('e-emotion')?.value||'focused'};
+
+  await sb.from('mission_logs').upsert(logData,{onConflict:'operator_id,log_date'});
+  await sb.from('operators').update({wins,losses,total_pnl:totalPnl}).eq('id',currentOperator.id);
+
+  currentOperator.wins=wins; currentOperator.total_pnl=totalPnl; currentOperator.losses=losses;
+  if(existing){ const idx=myLogs.indexOf(existing); myLogs[idx]={...existing,...logData}; } else { myLogs.unshift(logData); }
+
+  await gainXP(50, null, null);
+  toast('LOG SAVED','Entry recorded. View in Intel Calendar.');
+
+  if(btn){btn.disabled=false;btn.textContent='⬡ SAVE LOG';}
+  ['e-pnl','e-well','e-improve','e-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('e-session').value=''; document.getElementById('trade-entries').innerHTML=''; tradeRows=[]; discRating=0;
+  document.querySelectorAll('#disc-rating .rating-btn').forEach(b=>b.classList.remove('sel'));
+}
+
+// CALENDAR
+function calNav(dir){ calMonth+=dir; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
+
+function renderCal() {
+  const el=document.getElementById('cal-title'); if(el) el.textContent=`${MONTHS[calMonth]} ${calYear}`;
+  const days=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const today=new Date(); const todayStr=fmtDate(today);
+  const first=new Date(calYear,calMonth,1); const last=new Date(calYear,calMonth+1,0);
+  let startDay=(first.getDay()+6)%7;
+  let html='<div class="cal-grid">';
+  days.forEach(d=>html+=`<div class="cal-hdr">${d}</div>`);
+  for(let i=0;i<startDay;i++) html+=`<div class="cal-cell empty"></div>`;
+  for(let d=1;d<=last.getDate();d++){
+    const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const log=myLogs.find(l=>l.log_date===ds);
+    const isToday=ds===todayStr;
+    const cls=['cal-cell',log?'has-log':'',isToday?'today':'',log?.session_result==='win'?'win-day':'',log?.session_result==='loss'?'loss-day':''].filter(Boolean).join(' ');
+    html+=`<div class="${cls}" onclick="openLogModal('${ds}')">
+      <div class="cal-day-num">${d}</div>
+      ${log?`<div class="cal-pip">${(log.trades||[]).map(()=>`<div class="pip ${log.session_result||'be'}"></div>`).join('')}</div>`:''}
+      ${log?.pnl?`<div class="cal-pnl ${log.pnl>=0?'pos':'neg'}">${log.pnl>=0?'+':''}$${Math.abs(log.pnl).toLocaleString()}</div>`:''}
+    </div>`;
+  }
+  html+='</div>';
+  const cc=document.getElementById('cal-container'); if(cc) cc.innerHTML=html;
+
+  const logs=myLogs.filter(l=>{ const[y,m]=l.log_date.split('-').map(Number); return y===calYear&&m-1===calMonth; });
+  const totalPnl=logs.reduce((a,l)=>a+(l.pnl||0),0);
+  const wins=logs.filter(l=>l.session_result==='win').length, losses=logs.filter(l=>l.session_result==='loss').length;
+  const trades=logs.reduce((a,l)=>a+(l.trades?.length||0),0);
+  const avgDisc=logs.length?Math.round(logs.reduce((a,l)=>a+(l.discipline_rating||0),0)/logs.length):0;
+  const wr=wins+losses>0?Math.round(wins/(wins+losses)*100):0;
+  const ms=document.getElementById('month-summary');
+  if(ms) ms.innerHTML=`<div style="font-family:'Barlow Condensed',sans-serif;font-size:0.62rem;letter-spacing:3px;color:var(--olive3);text-transform:uppercase;margin:16px 0 10px">${MONTHS[calMonth]} ${calYear} — SUMMARY</div><div class="month-sum"><div class="ms-card"><div class="ms-label">P&L</div><div class="ms-val" style="color:${totalPnl>=0?'var(--green2)':'var(--red2)'}">${totalPnl>=0?'+':''}$${totalPnl.toLocaleString()}</div><div class="ms-sub">${logs.length} sessions</div></div><div class="ms-card"><div class="ms-label">Win Rate</div><div class="ms-val">${wr}%</div><div class="ms-sub">${wins}W · ${losses}L</div></div><div class="ms-card"><div class="ms-label">Trades</div><div class="ms-val">${trades}</div><div class="ms-sub">${logs.length?Math.round(trades/logs.length):0} avg</div></div><div class="ms-card"><div class="ms-label">Avg Discipline</div><div class="ms-val" style="color:${avgDisc>=7?'var(--olive3)':avgDisc>=5?'var(--amber2)':'var(--red2)'}">${avgDisc||'—'}/10</div><div class="ms-sub">${logs.filter(l=>l.strategy_followed==='no').length} off-strategy</div></div></div>`;
+}
+
+function openLogModal(dateStr) {
+  const log=myLogs.find(l=>l.log_date===dateStr);
+  const[y,m,d]=dateStr.split('-');
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('modal-title').textContent=`${d} ${months[parseInt(m)-1]} ${y}`;
+  if(!log){ document.getElementById('modal-body').innerHTML=`<div style="color:var(--muted);font-size:0.86rem">No entry for this day.</div>`; }
+  else {
+    const sc={win:'var(--green2)',loss:'var(--red2)',be:'var(--amber2)','no-trade':'var(--muted)'}[log.session_result]||'var(--muted)';
+    let tHtml='';
+    if(log.trades?.length){tHtml=`<table class="trade-tbl"><thead><tr><th>Pair</th><th>Dir</th><th>Result</th><th>R:R</th><th>Notes</th></tr></thead><tbody>`;log.trades.forEach(t=>{const c={win:'td-win',loss:'td-loss',be:'td-be'}[t.result]||'';tHtml+=`<tr><td>${t.pair}</td><td>${t.direction}</td><td class="${c}">${t.result?.toUpperCase()}</td><td>${t.rr||'—'}</td><td>${t.notes||'—'}</td></tr>`;});tHtml+='</tbody></table>';}
+    else tHtml='<div style="color:var(--muted);font-size:0.82rem">No trades logged.</div>';
+    document.getElementById('modal-body').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:var(--bg3);padding:10px"><div style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Session</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;color:${sc}">${(log.session_result||'—').toUpperCase()}</div></div>
+        <div style="background:var(--bg3);padding:10px"><div style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">P&L</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;color:${(log.pnl||0)>=0?'var(--green2)':'var(--red2)'}">${(log.pnl||0)>=0?'+':''}$${(log.pnl||0).toLocaleString()}</div></div>
+        <div style="background:var(--bg3);padding:10px"><div style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Discipline</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;color:var(--olive3)">${log.discipline_rating||'—'}/10</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:0.82rem">
+        <div><span style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Strategy</span><br><span style="color:${log.strategy_followed==='yes'?'var(--green2)':log.strategy_followed==='no'?'var(--red2)':'var(--amber2)'}">${{yes:'✓ Followed',partial:'△ Partial',no:'✗ Deviated'}[log.strategy_followed]||'—'}</span></div>
+        <div><span style="font-size:0.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Emotional State</span><br><span style="color:var(--slate2)">${log.emotional_state||'—'}</span></div>
+      </div>
+      <div style="margin-bottom:12px"><div class="modal-sec-title">Trades</div>${tHtml}</div>
+      ${log.what_went_well?`<div style="margin-bottom:10px"><div class="modal-sec-title">What I Did Well</div><div class="modal-text">${log.what_went_well}</div></div>`:''}
+      ${log.what_to_improve?`<div style="margin-bottom:10px"><div class="modal-sec-title">To Improve</div><div class="modal-text">${log.what_to_improve}</div></div>`:''}
+      ${log.notes?`<div><div class="modal-sec-title">Notes</div><div class="modal-text">${log.notes}</div></div>`:''}`;
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(){ document.getElementById('modal')?.classList.remove('open'); }
+
+// OPS
+const OPS_DEF=[
+  {id:'pre',icon:'◈',title:'Pre-Mission Prep',items:[{id:'p1',label:'Check economic calendar',pts:20},{id:'p2',label:'Mark HTF structure and key levels',pts:25},{id:'p3',label:'Identify POI before session',pts:20},{id:'p4',label:'Set price alerts',pts:15},{id:'p5',label:'Define max daily loss',pts:20}]},
+  {id:'eng',icon:'⬡',title:'Engagement Protocol',items:[{id:'e1',label:'All 5 pre-trade criteria confirmed',pts:35},{id:'e2',label:'Risk within 1% limit',pts:25},{id:'e3',label:'Min 1:2 R:R confirmed',pts:20},{id:'e4',label:'Stop loss not adjusted',pts:40},{id:'e5',label:'Zero off-strategy trades',pts:50}]},
+  {id:'deb',icon:'◻',title:'Debrief',items:[{id:'d1',label:'All trades journaled',pts:30},{id:'d2',label:'Screenshots saved',pts:20},{id:'d3',label:'One strength identified',pts:25},{id:'d4',label:'One improvement set',pts:25}]},
+  {id:'wk',icon:'⊕',title:'Weekly Review',items:[{id:'w1',label:'Full week trade audit',pts:60},{id:'w2',label:'Win rate calculated',pts:40},{id:'w3',label:'P&L tracker updated',pts:35},{id:'w4',label:'Next week focus defined',pts:35}]},
+];
+
+function buildOpsGrid() {
+  const grid=document.getElementById('ops-grid'); if(!grid) return;
+  const opsState=currentOperator?.ops_state||{};
+  const today=new Date().toDateString();
+  const lastDate=currentOperator?.last_active_date||'';
+  const isDifferentDay=lastDate&&lastDate!==today;
+
+  grid.innerHTML='';
+  OPS_DEF.forEach(block=>{
+    const done=block.items.filter(i=>!isDifferentDay&&opsState[i.id]).length;
+    const div=document.createElement('div'); div.className='ops-block';
+    div.innerHTML=`<div class="ops-hdr"><div class="ops-icon">${block.icon}</div><div class="ops-title">${block.title}</div><div class="ops-count" id="cnt-${block.id}">${done}/${block.items.length}</div></div>`;
+    block.items.forEach(item=>{
+      const isDone=!isDifferentDay&&!!opsState[item.id];
+      const row=document.createElement('div'); row.className=`ops-item${isDone?' done':''}`;
+      row.innerHTML=`<div class="ops-box">${isDone?'✓':''}</div><div class="ops-label">${item.label}</div><div class="ops-pts">+${item.pts}</div>`;
+      row.onclick=async e=>{
+        const was=!!currentOperator.ops_state?.[item.id];
+        if(!currentOperator.ops_state) currentOperator.ops_state={};
+        currentOperator.ops_state[item.id]=!was;
+        currentOperator.last_active_date=today;
+        row.classList.toggle('done',!was); row.querySelector('.ops-box').textContent=!was?'✓':'';
+        await sb.from('operators').update({ops_state:currentOperator.ops_state,last_active_date:today}).eq('id',currentOperator.id);
+        if(!was) gainXP(item.pts,e.clientX,e.clientY);
+        const cnt=OPS_DEF.find(b=>b.id===block.id).items.filter(i=>currentOperator.ops_state?.[i.id]).length;
+        document.getElementById(`cnt-${block.id}`).textContent=`${cnt}/${block.items.length}`;
+      };
+      div.appendChild(row);
+    });
+    grid.appendChild(div);
+  });
+}
+
+// NAV
+function showSec(name,navEl) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(`sec-${name}`)?.classList.add('active');
+  navEl.classList.add('active');
+  if(name==='calendar') renderCal();
+  if(name==='squad') buildSquadProfiles();
+  if(name==='compare') buildCompare();
+  if(name==='profile') loadProfileForm();
+}
+
+// TOAST
+let tt;
+function toast(code,msg){ clearTimeout(tt); document.getElementById('toast-code').textContent=code; document.getElementById('toast-msg').textContent=msg; const el=document.getElementById('toast'); el.classList.add('show'); tt=setTimeout(()=>el.classList.remove('show'),3800); }
+
+// SIGN OUT
+async function handleSignOut() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+// ══════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════
+async function init() {
+  await setLoading('Connecting to Command...', 30);
+
+  const { data: { session } } = await sb.auth.getSession();
+
+  await setLoading('Authenticating...', 60);
+
+  if (session?.user) {
+    await bootApp(session.user);
+  } else {
+    await setLoading('Ready.', 100);
+    hideLoading();
+    document.getElementById('auth-screen').style.display = 'flex';
+  }
+
+  // Listen for auth changes
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session?.user && !currentUser) {
+      await bootApp(session.user);
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
