@@ -235,6 +235,7 @@ body::after{
 /* ── XP FLOAT ────────────────────────────────────────── */
 .xp-float{position:fixed;pointer-events:none;font-family:var(--font-display);font-size:0.9rem;font-weight:800;letter-spacing:3px;z-index:999;animation:fxp 1.5s ease forwards;color:var(--neon);text-shadow:0 0 15px var(--neon-glow2);}
 @keyframes fxp{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-70px);}}
+@keyframes clickRipple{0%{transform:translate(-50%,-50%) scale(1);opacity:1;box-shadow:0 0 0 0 rgba(0,255,136,0.8);}100%{transform:translate(-50%,-50%) scale(1);opacity:0;box-shadow:0 0 0 20px rgba(0,255,136,0);}}
 
 /* ── COMMAND BAR ─────────────────────────────────────── */
 .cmd-bar{
@@ -918,6 +919,459 @@ body::after{
 .op-sel-btn.active{border-color:var(--neon2);color:var(--neon);background:var(--neon-dim);}
 
 /* ── RESPONSIVE ──────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════
+   CYBERPUNK ANIMATION LAYER v9
+═══════════════════════════════════════════════════ */
+
+/* ── FLOATING ORBS BACKGROUND ─────────────────────── */
+.cyber-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orbFloat linear infinite;}
+.orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(0,255,136,0.08),transparent 70%);top:-100px;left:-100px;animation-duration:25s;animation-name:orbFloat1;}
+.orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(0,180,255,0.07),transparent 70%);bottom:-80px;right:-80px;animation-duration:20s;animation-name:orbFloat2;}
+.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(255,0,128,0.05),transparent 70%);top:40%;left:60%;animation-duration:30s;animation-name:orbFloat3;}
+.orb4{width:250px;height:250px;background:radial-gradient(circle,rgba(0,255,136,0.06),transparent 70%);top:60%;left:20%;animation-duration:18s;animation-name:orbFloat1;animation-delay:-9s;}
+@keyframes orbFloat1{0%{transform:translate(0,0) scale(1);}25%{transform:translate(60px,-40px) scale(1.1);}50%{transform:translate(30px,80px) scale(0.95);}75%{transform:translate(-40px,30px) scale(1.05);}100%{transform:translate(0,0) scale(1);}}
+@keyframes orbFloat2{0%{transform:translate(0,0) scale(1);}33%{transform:translate(-80px,40px) scale(1.08);}66%{transform:translate(50px,-60px) scale(0.93);}100%{transform:translate(0,0) scale(1);}}
+@keyframes orbFloat3{0%{transform:translate(0,0) scale(1) rotate(0deg);}50%{transform:translate(-100px,60px) scale(1.2) rotate(180deg);}100%{transform:translate(0,0) scale(1) rotate(360deg);}}
+
+/* ── MATRIX RAIN CANVAS ───────────────────────────── */
+#matrix-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.04;}
+
+/* ── HOLOGRAPHIC BORDER EFFECT ────────────────────── */
+@keyframes holoBorder{
+  0%{border-color:rgba(0,255,136,0.15);box-shadow:0 0 10px rgba(0,255,136,0.1);}
+  25%{border-color:rgba(0,180,255,0.2);box-shadow:0 0 15px rgba(0,180,255,0.15);}
+  50%{border-color:rgba(255,0,128,0.15);box-shadow:0 0 10px rgba(255,0,128,0.1);}
+  75%{border-color:rgba(0,180,255,0.2);box-shadow:0 0 15px rgba(0,180,255,0.15);}
+  100%{border-color:rgba(0,255,136,0.15);box-shadow:0 0 10px rgba(0,255,136,0.1);}
+}
+
+/* ── GLITCH TEXT EFFECT ───────────────────────────── */
+@keyframes glitch{
+  0%,90%,100%{transform:translate(0);clip-path:none;text-shadow:0 0 20px rgba(0,255,136,0.5);}
+  91%{transform:translate(-2px,1px);clip-path:polygon(0 20%,100% 20%,100% 40%,0 40%);text-shadow:-2px 0 var(--mag),2px 0 var(--cyan);}
+  92%{transform:translate(2px,-1px);clip-path:polygon(0 60%,100% 60%,100% 80%,0 80%);text-shadow:2px 0 var(--mag),-2px 0 var(--cyan);}
+  93%{transform:translate(-1px,0);text-shadow:0 0 30px rgba(0,255,136,0.8);}
+  94%{transform:translate(0);clip-path:none;}
+}
+.glitch{animation:glitch 8s ease-in-out infinite;}
+.glitch-fast{animation:glitch 3s ease-in-out infinite;}
+
+/* ── TYPING CURSOR ────────────────────────────────── */
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.type-cursor::after{content:'_';animation:blink 1s step-end infinite;color:var(--neon);}
+
+/* ── NEON PULSE RING ──────────────────────────────── */
+@keyframes neonRing{
+  0%{box-shadow:0 0 0 0 rgba(0,255,136,0.4),0 0 0 0 rgba(0,255,136,0.2);}
+  70%{box-shadow:0 0 0 10px rgba(0,255,136,0),0 0 0 20px rgba(0,255,136,0);}
+  100%{box-shadow:0 0 0 0 rgba(0,255,136,0),0 0 0 0 rgba(0,255,136,0);}
+}
+@keyframes neonRingCyan{
+  0%{box-shadow:0 0 0 0 rgba(0,180,255,0.4);}
+  70%{box-shadow:0 0 0 12px rgba(0,180,255,0);}
+  100%{box-shadow:0 0 0 0 rgba(0,180,255,0);}
+}
+
+/* ── SCAN LINE WIPE ───────────────────────────────── */
+@keyframes scanWipe{
+  0%{transform:translateY(-100%);}
+  100%{transform:translateY(100vh);}
+}
+.scan-wipe{position:fixed;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--neon),var(--cyan),transparent);z-index:10;pointer-events:none;animation:scanWipe 6s linear infinite;opacity:0.3;}
+
+/* ── DATA STREAM LINES ────────────────────────────── */
+@keyframes dataStream{
+  0%{opacity:0;transform:scaleX(0);transform-origin:left;}
+  20%{opacity:1;}
+  80%{opacity:1;}
+  100%{opacity:0;transform:scaleX(1);transform-origin:left;}
+}
+
+/* ── FLOAT UP ─────────────────────────────────────── */
+@keyframes floatUp{
+  0%{transform:translateY(0);}
+  50%{transform:translateY(-8px);}
+  100%{transform:translateY(0);}
+}
+@keyframes floatUpSlow{
+  0%{transform:translateY(0) rotate(0deg);}
+  50%{transform:translateY(-12px) rotate(1deg);}
+  100%{transform:translateY(0) rotate(0deg);}
+}
+
+/* ── STAGGER REVEAL ───────────────────────────────── */
+@keyframes revealUp{
+  from{opacity:0;transform:translateY(20px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.reveal-1{animation:revealUp 0.5s ease forwards;}
+.reveal-2{animation:revealUp 0.5s ease 0.1s both;}
+.reveal-3{animation:revealUp 0.5s ease 0.2s both;}
+.reveal-4{animation:revealUp 0.5s ease 0.3s both;}
+.reveal-5{animation:revealUp 0.5s ease 0.4s both;}
+
+/* ── SPINNING RING ────────────────────────────────── */
+@keyframes spinSlow{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes spinReverse{from{transform:rotate(360deg);}to{transform:rotate(0deg);}}
+@keyframes spinPulse{
+  0%{transform:rotate(0deg);box-shadow:0 0 20px var(--neon-glow);}
+  50%{box-shadow:0 0 40px var(--neon-glow2),0 0 60px rgba(0,255,136,0.15);}
+  100%{transform:rotate(360deg);box-shadow:0 0 20px var(--neon-glow);}
+}
+
+/* ── PROGRESS BAR SHIMMER ─────────────────────────── */
+@keyframes shimmer{
+  0%{background-position:-200% center;}
+  100%{background-position:200% center;}
+}
+.shimmer-bar{
+  background:linear-gradient(90deg,var(--neon2) 0%,var(--neon) 40%,var(--cyan3) 60%,var(--neon2) 100%);
+  background-size:200% auto;
+  animation:shimmer 2s linear infinite;
+}
+
+/* ── FLICKER ──────────────────────────────────────── */
+@keyframes flicker{
+  0%,19.9%,22%,62.9%,64%,64.9%,70%,100%{opacity:1;}
+  20%{opacity:0.8;}
+  21%{opacity:1;}
+  63%{opacity:0.6;}
+  63.5%{opacity:0.9;}
+  65%{opacity:0.7;}
+  65.5%{opacity:1;}
+}
+
+/* ════════════════════════════════════════════════════
+   HOME PAGE v9 — CYBERPUNK WAR ROOM
+════════════════════════════════════════════════════ */
+
+/* Hero overhaul */
+.home-hero{
+  background:linear-gradient(135deg,rgba(0,255,136,0.04) 0%,rgba(0,2,6,0.95) 40%,rgba(0,180,255,0.03) 100%);
+  border:1px solid var(--border2);
+  border-radius:var(--r-lg);padding:28px 30px;margin-bottom:20px;
+  position:relative;overflow:hidden;
+  animation:holoBorder 8s ease-in-out infinite;
+}
+.home-hero::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 0%,var(--neon) 20%,var(--cyan) 50%,var(--mag) 80%,transparent 100%);
+  animation:heroLine 4s ease-in-out infinite alternate;
+}
+.home-hero::after{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300FF88' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;
+}
+.hh-content{position:relative;z-index:1;}
+.hh-greeting{
+  font-family:var(--font-mono);font-size:0.52rem;letter-spacing:4px;
+  color:var(--neon);text-transform:uppercase;margin-bottom:6px;
+  text-shadow:0 0 10px var(--neon-glow);
+}
+.hh-name{
+  font-family:var(--font-display);font-size:2.4rem;font-weight:900;
+  color:var(--white);letter-spacing:4px;text-transform:uppercase;line-height:1;
+  animation:glitch 10s ease-in-out infinite;
+  text-shadow:0 0 40px rgba(255,255,255,0.1);
+}
+.hh-status{
+  font-family:var(--font-mono);font-size:0.68rem;color:var(--muted2);
+  line-height:1.7;margin-top:8px;max-width:600px;letter-spacing:0.5px;
+}
+
+/* KPI cards overhaul */
+.kpi-card{
+  background:rgba(0,255,136,0.03);
+  border:1px solid rgba(0,255,136,0.1);
+  border-radius:var(--r-md);padding:16px 18px;
+  position:relative;overflow:hidden;
+  transition:all 0.3s ease;cursor:default;
+}
+.kpi-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(0,255,136,0.04) 0%,transparent 60%);
+  opacity:0;transition:opacity 0.3s ease;
+}
+.kpi-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--neon),transparent);
+  transform:scaleX(0);transition:transform 0.4s ease;
+}
+.kpi-card:hover{
+  border-color:rgba(0,255,136,0.3);
+  transform:translateY(-4px) scale(1.02);
+  box-shadow:0 8px 30px rgba(0,0,0,0.5),0 0 20px rgba(0,255,136,0.1);
+}
+.kpi-card:hover::before{opacity:1;}
+.kpi-card:hover::after{transform:scaleX(1);}
+.kpi-v{
+  font-family:var(--font-display);font-size:1.6rem;font-weight:900;
+  line-height:1;color:var(--white);
+  transition:all 0.3s ease;
+}
+.kpi-card:hover .kpi-v{text-shadow:0 0 20px currentColor;}
+.kpi-v.g{color:var(--neon);text-shadow:0 0 15px var(--neon-glow);}
+.kpi-v.a{color:var(--amber2);text-shadow:0 0 15px var(--amber-glow);}
+.kpi-v.o{color:var(--cyan3);text-shadow:0 0 15px var(--cyan-glow);}
+
+/* ════════════════════════════════════════════════════
+   PROFILE PAGE v9 — OPERATOR COMMAND CARD
+════════════════════════════════════════════════════ */
+
+.profile-page{display:grid;grid-template-columns:300px 1fr;gap:18px;}
+
+/* Left column — Operator Identity Card */
+.op-identity-card{
+  background:linear-gradient(160deg,rgba(0,255,136,0.06) 0%,rgba(0,2,6,0.98) 40%,rgba(0,180,255,0.04) 100%);
+  border:1px solid rgba(0,255,136,0.2);
+  border-radius:var(--r-lg);padding:24px;
+  position:relative;overflow:hidden;
+  animation:holoBorder 10s ease-in-out infinite;
+  animation:floatUpSlow 6s ease-in-out infinite;
+}
+.op-identity-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--neon),var(--cyan),transparent);
+  animation:heroLine 5s ease-in-out infinite;
+}
+/* Corner decorators */
+.op-identity-card .corner{position:absolute;width:16px;height:16px;border-color:var(--neon);border-style:solid;opacity:0.6;}
+.op-identity-card .corner-tl{top:8px;left:8px;border-width:2px 0 0 2px;}
+.op-identity-card .corner-tr{top:8px;right:8px;border-width:2px 2px 0 0;}
+.op-identity-card .corner-bl{bottom:8px;left:8px;border-width:0 0 2px 2px;}
+.op-identity-card .corner-br{bottom:8px;right:8px;border-width:0 2px 2px 0;}
+
+/* Spinning rank ring */
+.rank-ring-wrap{
+  position:relative;width:110px;height:110px;margin:0 auto 20px;
+}
+.rank-ring-outer{
+  position:absolute;inset:0;border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--neon);border-right-color:rgba(0,255,136,0.3);
+  animation:spinPulse 4s linear infinite;
+}
+.rank-ring-inner{
+  position:absolute;inset:8px;border-radius:50%;
+  border:1px solid transparent;
+  border-bottom-color:var(--cyan);border-left-color:rgba(0,180,255,0.3);
+  animation:spinReverse 3s linear infinite;
+}
+.rank-ring-dots{
+  position:absolute;inset:0;
+  animation:spinSlow 8s linear infinite;
+}
+.rank-ring-dot{
+  position:absolute;width:5px;height:5px;border-radius:50%;
+  background:var(--neon);box-shadow:0 0 8px var(--neon);
+  top:50%;left:50%;transform-origin:0 0;
+}
+.rank-ring-core{
+  position:absolute;inset:14px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,255,136,0.08),rgba(0,2,6,0.95));
+  border:1px solid rgba(0,255,136,0.15);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  gap:2px;
+}
+.rank-lvl{font-family:var(--font-display);font-size:1.8rem;font-weight:900;color:var(--neon);text-shadow:0 0 20px var(--neon-glow2);line-height:1;}
+.rank-lbl{font-family:var(--font-mono);font-size:0.38rem;letter-spacing:3px;color:var(--neon);text-transform:uppercase;}
+
+/* Callsign display */
+.op-callsign{
+  font-family:var(--font-display);font-size:1.3rem;font-weight:900;
+  color:var(--white);letter-spacing:3px;text-transform:uppercase;
+  text-align:center;margin-bottom:4px;
+  text-shadow:0 0 20px rgba(255,255,255,0.1);
+}
+.op-rank-title{
+  font-family:var(--font-mono);font-size:0.5rem;letter-spacing:3px;
+  color:var(--neon);text-transform:uppercase;text-align:center;
+  margin-bottom:16px;text-shadow:0 0 8px var(--neon-glow);
+}
+.op-clearance{
+  font-family:var(--font-mono);font-size:0.44rem;letter-spacing:2px;
+  color:var(--muted2);text-transform:uppercase;text-align:center;
+  margin-bottom:18px;
+  padding:4px 12px;border:1px solid var(--border);
+  display:inline-block;width:100%;
+}
+
+/* XP progress bar */
+.xp-progress-wrap{margin-bottom:18px;}
+.xp-progress-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.xp-progress-lbl{font-family:var(--font-mono);font-size:0.46rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;}
+.xp-progress-val{font-family:var(--font-display);font-size:0.72rem;font-weight:700;color:var(--neon);}
+.xp-bar-outer{height:8px;background:rgba(0,255,136,0.06);border-radius:4px;overflow:hidden;position:relative;border:1px solid rgba(0,255,136,0.1);}
+.xp-bar-fill{
+  height:100%;border-radius:4px;
+  background:linear-gradient(90deg,var(--neon2),var(--neon),var(--cyan3));
+  background-size:200% auto;
+  animation:shimmer 2s linear infinite;
+  box-shadow:0 0 10px var(--neon-glow);
+  transition:width 1.5s ease;
+}
+.xp-bar-glow{
+  position:absolute;top:0;bottom:0;width:20px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,136,0.6),transparent);
+  animation:xpGlowSweep 2s ease-in-out infinite;
+}
+@keyframes xpGlowSweep{
+  0%{left:-20px;}100%{left:100%;}
+}
+
+/* Stat bars — interactive */
+.stat-bars{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.stat-bar-row{position:relative;}
+.stat-bar-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.stat-bar-name{font-family:var(--font-mono);font-size:0.52rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;}
+.stat-bar-val{font-family:var(--font-display);font-size:0.9rem;font-weight:800;}
+.stat-bar-track{height:8px;background:rgba(0,255,136,0.04);border-radius:4px;overflow:visible;position:relative;cursor:pointer;}
+.stat-bar-track::before{content:'';position:absolute;inset:0;border-radius:4px;border:1px solid rgba(0,255,136,0.08);}
+.stat-bar-fill{height:100%;border-radius:4px;transition:width 1.5s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden;}
+.stat-bar-fill::after{
+  content:'';position:absolute;top:0;bottom:0;right:0;width:3px;
+  background:rgba(255,255,255,0.8);border-radius:2px;
+  box-shadow:0 0 6px currentColor;
+}
+.stat-bar-tooltip{
+  position:absolute;top:-32px;left:50%;transform:translateX(-50%);
+  background:rgba(0,2,6,0.95);border:1px solid var(--border2);
+  font-family:var(--font-mono);font-size:0.52rem;color:var(--white);
+  padding:4px 8px;border-radius:4px;white-space:nowrap;
+  opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:10;
+}
+.stat-bar-row:hover .stat-bar-tooltip{opacity:1;}
+
+/* Stat trend indicator */
+.stat-trend{font-family:var(--font-mono);font-size:0.52rem;margin-left:6px;}
+.stat-trend.up{color:var(--neon);}
+.stat-trend.down{color:var(--red3);}
+
+/* Right column — profile settings */
+.profile-settings{display:flex;flex-direction:column;gap:12px;}
+.ps-card{
+  background:rgba(0,255,136,0.02);
+  border:1px solid rgba(0,255,136,0.08);
+  border-radius:var(--r-lg);padding:18px 20px;
+  position:relative;overflow:hidden;
+  transition:border-color 0.3s ease;
+}
+.ps-card:hover{border-color:rgba(0,255,136,0.15);}
+.ps-card::before{
+  content:'';position:absolute;top:0;left:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,var(--neon),var(--cyan));
+  border-radius:2px 0 0 2px;
+  opacity:0;transition:opacity 0.3s ease;
+}
+.ps-card:hover::before{opacity:1;}
+.ps-t{
+  font-family:var(--font-display);font-size:0.62rem;font-weight:700;
+  letter-spacing:3px;color:var(--neon);text-transform:uppercase;
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;
+  text-shadow:0 0 8px var(--neon-glow);
+}
+.ps-t::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(0,255,136,0.3),transparent);}
+
+/* Interactive mission statement with typing effect */
+.mission-display{
+  font-family:var(--font-mono);font-size:0.72rem;color:var(--neon);
+  line-height:1.8;padding:12px 14px;
+  background:rgba(0,255,136,0.03);border:1px solid rgba(0,255,136,0.1);
+  border-radius:var(--r-sm);margin-bottom:10px;min-height:50px;
+  position:relative;
+}
+.mission-display.empty{color:var(--muted2);font-style:italic;}
+.mission-display::before{
+  content:'> ';color:var(--neon);opacity:0.5;
+}
+
+/* Goal cards — interactive */
+.goal-card{
+  background:rgba(0,255,136,0.02);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:12px 14px;margin-bottom:6px;
+  transition:all 0.2s ease;cursor:default;position:relative;overflow:hidden;
+}
+.goal-card:hover{border-color:rgba(0,255,136,0.2);background:rgba(0,255,136,0.04);}
+.goal-card::after{
+  content:'';position:absolute;top:0;right:0;bottom:0;
+  width:3px;background:linear-gradient(180deg,var(--neon),var(--cyan));
+  transform:scaleY(0);transition:transform 0.3s ease;
+  transform-origin:bottom;
+}
+.goal-card:hover::after{transform:scaleY(1);}
+.goal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.goal-n{font-family:var(--font-display);font-size:0.78rem;font-weight:700;color:var(--white);letter-spacing:1px;text-transform:uppercase;}
+.goal-pct{font-family:var(--font-display);font-size:1rem;font-weight:900;color:var(--neon);}
+.goal-bar-track{height:4px;background:rgba(0,255,136,0.06);border-radius:2px;overflow:hidden;margin-bottom:5px;}
+.goal-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--neon2),var(--neon));transition:width 1.5s ease;box-shadow:0 0 8px var(--neon-glow);}
+.goal-tgt{font-family:var(--font-mono);font-size:0.58rem;color:var(--muted2);}
+
+/* Account card interactive */
+.acc-profile-card{
+  background:rgba(0,255,136,0.02);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:10px 14px;margin-bottom:5px;
+  display:flex;align-items:center;gap:10px;
+  transition:all 0.2s ease;
+}
+.acc-profile-card:hover{border-color:rgba(0,255,136,0.2);background:rgba(0,255,136,0.04);transform:translateX(3px);}
+.acc-profile-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.acc-profile-name{font-family:var(--font-display);font-size:0.72rem;font-weight:700;color:var(--white);letter-spacing:1px;text-transform:uppercase;flex:1;}
+.acc-profile-size{font-family:var(--font-mono);font-size:0.64rem;color:var(--amber2);}
+.acc-profile-type{font-family:var(--font-mono);font-size:0.48rem;letter-spacing:1.5px;padding:2px 6px;border-radius:2px;text-transform:uppercase;}
+
+/* Stats hexagon display */
+.hex-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.hex-stat{
+  background:rgba(0,255,136,0.03);border:1px solid rgba(0,255,136,0.1);
+  border-radius:var(--r-md);padding:12px;text-align:center;
+  transition:all 0.3s ease;cursor:default;position:relative;overflow:hidden;
+}
+.hex-stat::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,rgba(0,255,136,0.05),transparent 70%);
+  opacity:0;transition:opacity 0.3s ease;
+}
+.hex-stat:hover{border-color:rgba(0,255,136,0.3);transform:scale(1.03);}
+.hex-stat:hover::before{opacity:1;}
+.hex-stat-v{font-family:var(--font-display);font-size:1.4rem;font-weight:900;line-height:1;margin-bottom:3px;}
+.hex-stat-l{font-family:var(--font-mono);font-size:0.44rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;}
+
+/* Live indicator dots */
+.live-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--font-mono);font-size:0.44rem;letter-spacing:2px;
+  color:var(--neon);text-transform:uppercase;
+  padding:3px 8px;border:1px solid rgba(0,255,136,0.2);
+  border-radius:10px;background:rgba(0,255,136,0.06);
+}
+.live-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--neon);animation:neonRing 1.5s ease-out infinite,dotPulse 1.5s ease-in-out infinite;}
+
+/* Section enter animation */
+.sec.active .stat-bar-fill{transition-delay:0.3s;}
+.sec.active .xp-bar-fill{transition-delay:0.2s;}
+
+/* Decorative hex grid background for profile */
+.profile-bg-hex{
+  position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg id='hexagons' fill='%2300FF88' fill-opacity='0.012'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L13 41l-1-1.66-11-6.35v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-7.5l12.99-7.5H28v2.31h-.01L17 42.65V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity:0.5;
+}
+
+/* Interactive hover glow on charts */
+.chart-c{position:relative;transition:border-color 0.3s ease,box-shadow 0.3s ease;}
+.chart-c:hover{border-color:rgba(0,255,136,0.2);box-shadow:0 0 20px rgba(0,255,136,0.05);}
+
+/* Neon text variants */
+.text-neon{color:var(--neon);text-shadow:0 0 10px var(--neon-glow);}
+.text-cyan{color:var(--cyan3);text-shadow:0 0 10px var(--cyan-glow);}
+.text-mag{color:var(--mag3);text-shadow:0 0 10px var(--mag-glow);}
+.text-amber{color:var(--amber2);text-shadow:0 0 10px var(--amber-glow);}
+
+@media(max-width:900px){.profile-page{grid-template-columns:1fr;}.hex-stats{grid-template-columns:1fr 1fr 1fr 1fr;}}
+@media(max-width:600px){.hex-stats{grid-template-columns:1fr 1fr;}}
+
 @media(max-width:1200px){.app-layout{grid-template-columns:200px 1fr;}.chat-col{display:none;}.save-pill{right:20px;}}
 @media(max-width:900px){.kpi-row{grid-template-columns:repeat(3,1fr);}.home-grid{grid-template-columns:1fr;}.charts-2col{grid-template-columns:1fr;}.stat-grid{grid-template-columns:1fr 1fr;}.ops-grid{grid-template-columns:1fr;}.squad-grid{grid-template-columns:1fr;}.month-sum-grid{grid-template-columns:1fr 1fr;}.acc-stat-row{grid-template-columns:1fr 1fr;}.cap-grid{grid-template-columns:1fr 1fr;}.fin-row{grid-template-columns:1fr 1fr;}.acct-mini-grid{grid-template-columns:1fr 1fr;}.bar-row{grid-template-columns:60px 1fr 60px;}.cmp-r{grid-template-columns:60px 1fr 50px;}}
 @media(max-width:700px){.app-layout{grid-template-columns:1fr;}.sidebar{display:none;}.kpi-row{grid-template-columns:1fr 1fr;}}
@@ -927,6 +1381,17 @@ body::after{
 <body>
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursor-ring"></div>
+<!-- Floating background orbs -->
+<div class="cyber-bg">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+  <div class="orb orb4"></div>
+</div>
+<!-- Matrix rain canvas -->
+<canvas id="matrix-canvas"></canvas>
+<!-- Scan line wipe -->
+<div class="scan-wipe"></div>
 
 <canvas id="p-canvas"></canvas>
 
@@ -1439,37 +1904,164 @@ body::after{
 
     <!-- PROFILE -->
     <div class="sec" id="sec-profile">
-      <div class="sh"><div><div class="sc">OP-06 // MY PROFILE</div><div class="st">Operator Setup</div><div class="ss">Your personal goals, accounts and targets</div></div></div>
-      <div class="profile-sec">
-        <div class="ps-t">⬡ Identity</div>
-        <div class="form-grid">
-          <div class="form-group"><div class="form-label">Callsign</div><input class="form-input" id="pf-c" placeholder="Your callsign"></div>
-          <div class="form-group"><div class="form-label">Markets Traded</div><input class="form-input" id="pf-m" placeholder="e.g. NAS100, Gold, US30"></div>
-          <div class="form-group"><div class="form-label">Trading Style</div><input class="form-input" id="pf-s" placeholder="e.g. ICT, SMC, liquidity"></div>
-          <div class="form-group"><div class="form-label">Monthly Income Goal (USD)</div><input class="form-input" type="number" id="pf-g" placeholder="e.g. 30000"></div>
-          <div class="form-group full"><div class="form-label">Mission Statement</div><textarea class="form-input form-textarea" id="pf-ms" placeholder="Why you're doing this..."></textarea></div>
-        </div>
-        <button class="btn-save" onclick="saveProfile()">SAVE PROFILE</button>
+      <div class="sh"><div><div class="sc">OP-06 // OPERATOR FILE</div><div class="st">Command Profile</div><div class="ss">Identity · Stats · Accounts · Mission</div></div>
+        <div class="live-badge">Live Stats</div>
       </div>
-      <div class="profile-sec">
-        <div class="ps-t">◈ Trading Accounts</div>
-        <div id="accts-list"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:7px;align-items:end;background:var(--bg3);border:1px dashed var(--border2);padding:10px;margin-top:5px">
-          <div class="form-group"><div class="form-label">Name</div><input class="form-input" id="acc-n" placeholder="FTMO $200K"></div>
-          <div class="form-group"><div class="form-label">Size (USD)</div><input class="form-input" type="number" id="acc-s" placeholder="200000"></div>
-          <div class="form-group"><div class="form-label">Type</div><select class="form-select" id="acc-t"><option value="challenge">Challenge</option><option value="funded">Funded</option><option value="live">Live</option><option value="demo">Demo</option></select></div>
-          <div class="form-group"><div class="form-label">Target %</div><input class="form-input" type="number" id="acc-tg" placeholder="8"></div>
-          <button class="btn-save" onclick="addAccount()" style="height:36px;margin-top:auto">ADD</button>
+      <div class="profile-page">
+
+        <!-- LEFT — Operator Identity Card -->
+        <div class="op-identity-card reveal-1">
+          <div class="corner corner-tl"></div>
+          <div class="corner corner-tr"></div>
+          <div class="corner corner-bl"></div>
+          <div class="corner corner-br"></div>
+          <div class="profile-bg-hex"></div>
+          <div style="position:relative;z-index:1">
+            <!-- Spinning rank ring -->
+            <div class="rank-ring-wrap">
+              <div class="rank-ring-outer"></div>
+              <div class="rank-ring-inner"></div>
+              <div class="rank-ring-dots" id="pf-ring-dots"></div>
+              <div class="rank-ring-core">
+                <div class="rank-lvl" id="pf-lvl">4</div>
+                <div class="rank-lbl">RANK</div>
+              </div>
+            </div>
+
+            <!-- Identity -->
+            <div class="op-callsign glitch" id="pf-callsign">—</div>
+            <div class="op-rank-title" id="pf-rank-title">SHARPENED EDGE</div>
+            <div class="op-clearance" id="pf-clearance">CLEARANCE: DELTA</div>
+
+            <!-- XP bar -->
+            <div class="xp-progress-wrap">
+              <div class="xp-progress-hdr">
+                <span class="xp-progress-lbl">Readiness XP</span>
+                <span class="xp-progress-val" id="pf-xp-val">0 / 500</span>
+              </div>
+              <div class="xp-bar-outer">
+                <div class="xp-bar-fill" id="pf-xp-bar" style="width:0%"></div>
+                <div class="xp-bar-glow"></div>
+              </div>
+            </div>
+
+            <!-- Live stat bars -->
+            <div class="stat-bars">
+              <div class="stat-bar-row">
+                <div class="stat-bar-hdr">
+                  <span class="stat-bar-name">Edge IQ</span>
+                  <span class="stat-bar-val text-cyan" id="pf-edge">0<span class="stat-trend" id="pf-edge-tr"></span></span>
+                </div>
+                <div class="stat-bar-track" title="Based on R:R consistency vs planned">
+                  <div class="stat-bar-fill" id="pf-edge-bar" style="width:0%;background:linear-gradient(90deg,var(--cyan2),var(--cyan3));box-shadow:0 0 8px var(--cyan-glow);"></div>
+                </div>
+                <div class="stat-bar-tooltip">R:R consistency & on-strategy win rate</div>
+              </div>
+              <div class="stat-bar-row">
+                <div class="stat-bar-hdr">
+                  <span class="stat-bar-name">Discipline</span>
+                  <span class="stat-bar-val text-neon" id="pf-disc">0<span class="stat-trend" id="pf-disc-tr"></span></span>
+                </div>
+                <div class="stat-bar-track" title="Strategy adherence — drops on revenge/FOMO">
+                  <div class="stat-bar-fill" id="pf-disc-bar" style="width:0%;background:linear-gradient(90deg,var(--neon2),var(--neon));box-shadow:0 0 8px var(--neon-glow);"></div>
+                </div>
+                <div class="stat-bar-tooltip">Drops on revenge trades, moved stops, FOMO</div>
+              </div>
+              <div class="stat-bar-row">
+                <div class="stat-bar-hdr">
+                  <span class="stat-bar-name">Patience</span>
+                  <span class="stat-bar-val text-amber" id="pf-pat">0<span class="stat-trend" id="pf-pat-tr"></span></span>
+                </div>
+                <div class="stat-bar-track" title="No-trade days, avoiding overtrading">
+                  <div class="stat-bar-fill" id="pf-pat-bar" style="width:0%;background:linear-gradient(90deg,var(--amber),var(--amber2));box-shadow:0 0 8px var(--amber-glow);"></div>
+                </div>
+                <div class="stat-bar-tooltip">No-trade days, FOMO avoidance, not overtrading</div>
+              </div>
+              <div class="stat-bar-row">
+                <div class="stat-bar-hdr">
+                  <span class="stat-bar-name">Risk Ctrl</span>
+                  <span class="stat-bar-val" id="pf-risk" style="color:var(--neon3)">0<span class="stat-trend" id="pf-risk-tr"></span></span>
+                </div>
+                <div class="stat-bar-track" title="Clean trades — SL held, no daily breach">
+                  <div class="stat-bar-fill" id="pf-risk-bar" style="width:0%;background:linear-gradient(90deg,var(--green2),var(--neon3));box-shadow:0 0 8px var(--neon-glow);"></div>
+                </div>
+                <div class="stat-bar-tooltip">SL held, daily limits respected, clean exits</div>
+              </div>
+            </div>
+
+            <!-- Quick stat grid -->
+            <div class="hex-stats">
+              <div class="hex-stat">
+                <div class="hex-stat-v text-neon" id="pf-wr">—</div>
+                <div class="hex-stat-l">Win Rate</div>
+              </div>
+              <div class="hex-stat">
+                <div class="hex-stat-v text-amber" id="pf-streak">0</div>
+                <div class="hex-stat-l">Streak 🔥</div>
+              </div>
+              <div class="hex-stat">
+                <div class="hex-stat-v" id="pf-pnl" style="color:var(--neon3)">$0</div>
+                <div class="hex-stat-l">Total P&L</div>
+              </div>
+              <div class="hex-stat">
+                <div class="hex-stat-v text-cyan" id="pf-trades">0</div>
+                <div class="hex-stat-l">Trades</div>
+              </div>
+            </div>
+
+            <!-- Mission statement display -->
+            <div class="mission-display" id="pf-mission-display" style="display:none"></div>
+          </div>
         </div>
-      </div>
-      <div class="profile-sec">
-        <div class="ps-t">◻ Personal Goals</div>
-        <div id="goals-list"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:7px;align-items:end;background:var(--bg3);border:1px dashed var(--border2);padding:10px;margin-top:5px">
-          <div class="form-group"><div class="form-label">Goal</div><input class="form-input" id="g-n" placeholder="e.g. Dream Car"></div>
-          <div class="form-group"><div class="form-label">Target</div><input class="form-input" id="g-t" placeholder="e.g. $5,000 payout"></div>
-          <div class="form-group"><div class="form-label">Progress %</div><input class="form-input" type="number" id="g-p" placeholder="0"></div>
-          <button class="btn-save" onclick="addGoal()" style="height:36px;margin-top:auto">ADD</button>
+
+        <!-- RIGHT — Settings & Data -->
+        <div class="profile-settings">
+
+          <!-- Identity settings -->
+          <div class="ps-card reveal-2">
+            <div class="ps-t">⬡ Identity Config</div>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:10px">
+              <div class="form-group"><div class="form-label">Callsign</div><input class="form-input" id="pf-c" placeholder="Your callsign" oninput="previewCallsign(this.value)"></div>
+              <div class="form-group"><div class="form-label">Markets</div><input class="form-input" id="pf-m" placeholder="e.g. NAS100, Gold, US30"></div>
+              <div class="form-group"><div class="form-label">Trading Style</div><input class="form-input" id="pf-s" placeholder="e.g. ICT, SMC, liquidity"></div>
+              <div class="form-group"><div class="form-label">Monthly Goal (USD)</div><input class="form-input" type="number" id="pf-g" placeholder="e.g. 30000"></div>
+              <div class="form-group full"><div class="form-label">Mission Statement</div><textarea class="form-input form-textarea" id="pf-ms" placeholder="Why you're doing this..." oninput="previewMission(this.value)"></textarea></div>
+            </div>
+            <button class="btn-save" onclick="saveProfile()">⬡ SAVE PROFILE</button>
+          </div>
+
+          <!-- Accounts -->
+          <div class="ps-card reveal-3">
+            <div class="ps-t">◈ Trading Accounts</div>
+            <div id="accts-list"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:7px;align-items:end;background:rgba(0,255,136,0.02);border:1px dashed rgba(0,255,136,0.1);padding:12px;border-radius:var(--r-sm);margin-top:8px">
+              <div class="form-group"><div class="form-label">Name</div><input class="form-input" id="acc-n" placeholder="FTMO $200K"></div>
+              <div class="form-group"><div class="form-label">Size (USD)</div><input class="form-input" type="number" id="acc-s" placeholder="200000"></div>
+              <div class="form-group"><div class="form-label">Type</div>
+                <select class="form-select" id="acc-t">
+                  <option value="challenge">Challenge</option>
+                  <option value="funded">Funded</option>
+                  <option value="live">Live</option>
+                  <option value="demo">Demo</option>
+                </select>
+              </div>
+              <div class="form-group"><div class="form-label">Target %</div><input class="form-input" type="number" id="acc-tg" placeholder="8"></div>
+              <button class="btn-save" onclick="addAccount()" style="height:36px;margin-top:auto">+ ADD</button>
+            </div>
+          </div>
+
+          <!-- Goals -->
+          <div class="ps-card reveal-4">
+            <div class="ps-t">◻ Mission Objectives</div>
+            <div id="goals-list"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:7px;align-items:end;background:rgba(0,255,136,0.02);border:1px dashed rgba(0,255,136,0.1);padding:12px;border-radius:var(--r-sm);margin-top:8px">
+              <div class="form-group"><div class="form-label">Objective</div><input class="form-input" id="g-n" placeholder="e.g. Dream Car"></div>
+              <div class="form-group"><div class="form-label">Target</div><input class="form-input" id="g-t" placeholder="e.g. $5,000 payout"></div>
+              <div class="form-group"><div class="form-label">Progress %</div><input class="form-input" type="number" id="g-p" placeholder="0"></div>
+              <button class="btn-save" onclick="addGoal()" style="height:36px;margin-top:auto">+ ADD</button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -1607,16 +2199,52 @@ function initCursor(){
     mx=e.clientX; my=e.clientY;
     cur.style.left=mx+'px'; cur.style.top=my+'px';
   });
-  // Ring follows with slight lag
   function animRing(){
     rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
     ring.style.left=rx+'px'; ring.style.top=ry+'px';
     requestAnimationFrame(animRing);
   }
   animRing();
-  // Hide default cursor on canvas and main app
   document.addEventListener('mouseleave',()=>{cur.style.opacity='0';ring.style.opacity='0';});
   document.addEventListener('mouseenter',()=>{cur.style.opacity='1';ring.style.opacity='1';});
+  // Click ripple
+  document.addEventListener('click',e=>{
+    const r=document.createElement('div');
+    r.style.cssText=`position:fixed;left:${e.clientX}px;top:${e.clientY}px;width:4px;height:4px;background:var(--neon);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);animation:clickRipple 0.6s ease forwards;`;
+    document.body.appendChild(r);
+    setTimeout(()=>r.remove(),600);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// MATRIX RAIN
+// ══════════════════════════════════════════════════
+function initMatrix(){
+  const c=document.getElementById('matrix-canvas'); if(!c) return;
+  const ctx=c.getContext('2d');
+  c.width=window.innerWidth; c.height=window.innerHeight;
+  window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight;});
+  const chars='01アイウエオカキクケコサシスセソタチツテトHQOPERATOR><{}[]$#@!';
+  const fontSize=11, cols=Math.floor(c.width/fontSize);
+  const drops=Array(cols).fill(1);
+  function draw(){
+    ctx.fillStyle='rgba(0,2,6,0.05)';
+    ctx.fillRect(0,0,c.width,c.height);
+    ctx.font=fontSize+'px Space Mono';
+    drops.forEach((y,i)=>{
+      const char=chars[Math.floor(Math.random()*chars.length)];
+      const x=i*fontSize;
+      // Random brightness for depth
+      const bright=Math.random();
+      if(bright>0.98) ctx.fillStyle='rgba(200,255,230,0.8)';
+      else if(bright>0.9) ctx.fillStyle='rgba(0,255,136,0.6)';
+      else ctx.fillStyle='rgba(0,255,136,0.15)';
+      ctx.fillText(char,x,y*fontSize);
+      if(y*fontSize>c.height&&Math.random()>0.975) drops[i]=0;
+      drops[i]++;
+    });
+  }
+  setInterval(draw,50);
 }
 
 // ══════════════════════════════════════════════════
@@ -2925,12 +3553,96 @@ function loadProfile(){
   const f={'pf-c':currentOp.callsign||'','pf-m':currentOp.markets||'','pf-s':currentOp.trading_style||'','pf-g':currentOp.income_goal||'','pf-ms':currentOp.mission_statement||''};
   Object.entries(f).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v;});
   renderAccounts(); renderGoals();
+  updateProfileCard();
 }
+
+function updateProfileCard(){
+  if(!currentOp) return;
+  const op=currentOp, xp=op.xp||0, l=lvl(xp), col=opCol(op);
+  const cur=xp%XPL, pct=cur/XPL*100;
+
+  // Update identity card
+  const cs=document.getElementById('pf-callsign'); if(cs) cs.textContent=op.callsign||'—';
+  const rt=document.getElementById('pf-rank-title'); if(rt) rt.textContent=title(l);
+  const cl=document.getElementById('pf-clearance'); if(cl) cl.textContent=CLEARANCE[l]||'CLEARANCE: KILO';
+  const lv=document.getElementById('pf-lvl'); if(lv){ lv.textContent=l; lv.style.color=col; }
+
+  // XP bar
+  const xpBar=document.getElementById('pf-xp-bar'); if(xpBar) setTimeout(()=>xpBar.style.width=pct+'%',300);
+  const xpVal=document.getElementById('pf-xp-val'); if(xpVal) xpVal.textContent=`${cur} / ${XPL}`;
+
+  // Stat bars
+  const bars=[
+    ['edge',op.stat_edge_iq||0,'pf-edge','pf-edge-bar'],
+    ['disc',op.stat_discipline||0,'pf-disc','pf-disc-bar'],
+    ['pat',op.stat_patience||0,'pf-pat','pf-pat-bar'],
+    ['risk',op.stat_risk_control||0,'pf-risk','pf-risk-bar'],
+  ];
+  bars.forEach(([,val,valId,barId])=>{
+    const v=document.getElementById(valId); if(v) v.firstChild.textContent=val;
+    const b=document.getElementById(barId); if(b) setTimeout(()=>b.style.width=val+'%',400);
+  });
+
+  // Hex stats
+  const wr=calcWR(op);
+  const setPf=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setPf('pf-wr',wr?wr+'%':'—');
+  setPf('pf-streak',(op.streak||0)+'🔥');
+  const pnl=op.total_pnl||0;
+  const pnlEl=document.getElementById('pf-pnl');
+  if(pnlEl){ pnlEl.textContent=fmt$(pnl); pnlEl.style.color=pnl>=0?'var(--neon3)':'var(--red3)'; }
+  setPf('pf-trades',myTrades.length);
+
+  // Mission statement display
+  const md=document.getElementById('pf-mission-display');
+  if(md){
+    if(op.mission_statement){
+      md.textContent=op.mission_statement;
+      md.classList.remove('empty');
+      md.style.display='block';
+    } else {
+      md.textContent='No mission statement set.';
+      md.classList.add('empty');
+      md.style.display='block';
+    }
+  }
+
+  // Animated ring dots
+  const ring=document.getElementById('pf-ring-dots');
+  if(ring){
+    const count=l-3;
+    ring.innerHTML=Array.from({length:count}).map((_,i)=>{
+      const angle=(i/count)*360;
+      const rad=angle*Math.PI/180;
+      const r=45;
+      const x=50+r*Math.cos(rad)-2.5;
+      const y=50+r*Math.sin(rad)-2.5;
+      return `<div class="rank-ring-dot" style="transform:translate(${x-50}px,${y-50}px);background:${col};box-shadow:0 0 8px ${col};"></div>`;
+    }).join('');
+  }
+}
+
+function previewCallsign(val){
+  const el=document.getElementById('pf-callsign');
+  if(el && val) el.textContent=val.toUpperCase();
+}
+
+function previewMission(val){
+  const md=document.getElementById('pf-mission-display');
+  if(md){
+    md.textContent=val||'No mission statement set.';
+    md.classList.toggle('empty',!val);
+    md.style.display='block';
+  }
+}
+
 async function saveProfile(){
   const u={callsign:document.getElementById('pf-c')?.value?.toUpperCase()||currentOp.callsign,markets:document.getElementById('pf-m')?.value||'',trading_style:document.getElementById('pf-s')?.value||'',income_goal:parseFloat(document.getElementById('pf-g')?.value)||0,mission_statement:document.getElementById('pf-ms')?.value||''};
   await sb.from('operators').update(u).eq('id',currentOp.id);
-  Object.assign(currentOp,u); syncUI(); toast('SAVED','Profile updated.');
+  Object.assign(currentOp,u); syncUI(); updateProfileCard();
+  toast('PROFILE SAVED','Operator file updated — stats synced.');
 }
+
 async function addAccount(){
   const n=document.getElementById('acc-n')?.value; if(!n) return;
   const a={operator_id:currentOp.id,name:n,size:parseFloat(document.getElementById('acc-s')?.value)||0,account_type:document.getElementById('acc-t')?.value,profit_target:parseFloat(document.getElementById('acc-tg')?.value)||8};
@@ -2938,13 +3650,29 @@ async function addAccount(){
   if(data){myAccounts.push(data);renderAccounts();['acc-n','acc-s','acc-tg'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
 }
 async function removeAccount(id){ await sb.from('accounts').delete().eq('id',id); myAccounts=myAccounts.filter(a=>a.id!==id); renderAccounts(); }
+
 function renderAccounts(){
   const el=document.getElementById('accts-list'); if(!el) return;
-  if(!myAccounts.length){el.innerHTML='<div style="color:var(--muted2);font-size:0.78rem;padding:5px 0">No accounts added yet.</div>';return;}
-  const sm={challenge:'st-ch',funded:'st-fu',live:'st-li',demo:'st-de'};
-  const sl={challenge:'CHALLENGE',funded:'FUNDED',live:'LIVE',demo:'DEMO'};
-  el.innerHTML=`<div class="acc-row hdr"><div>Account</div><div>Size</div><div>Target</div><div>P&L</div><div></div></div>`+myAccounts.map(a=>`<div class="acc-row"><div style="color:var(--white)">${a.name}</div><div style="font-family:'Space Mono',monospace;color:var(--amber2)">$${(a.size||0).toLocaleString()}</div><div style="font-family:'Space Mono',monospace">${a.profit_target}%</div><div style="font-family:'Space Mono',monospace;color:${(a.current_pnl||0)>=0?'var(--green3)':'var(--red3)'}">${fmt$(a.current_pnl||0)}</div><div style="display:flex;align-items:center;gap:5px"><div class="a-st ${sm[a.account_type]||'st-de'}">${sl[a.account_type]||a.account_type}</div><button style="background:none;border:none;color:var(--red3);cursor:pointer;font-size:0.8rem" onclick="removeAccount('${a.id}')">✕</button></div></div>`).join('');
+  if(!myAccounts.length){
+    el.innerHTML='<div style="color:var(--muted2);font-family:var(--font-mono);font-size:0.68rem;padding:8px 0;letter-spacing:1px">NO ACCOUNTS LINKED — ADD BELOW</div>';
+    return;
+  }
+  const dotCol={challenge:'var(--amber2)',funded:'var(--neon)',live:'var(--cyan3)',demo:'var(--muted2)',passed:'var(--neon3)',failed:'var(--red3)'};
+  const typeLabel={challenge:'CHALLENGE',funded:'FUNDED',live:'LIVE',demo:'DEMO',passed:'✓ PASSED',failed:'✗ FAILED'};
+  el.innerHTML=myAccounts.map(a=>{
+    const col=dotCol[a.account_type]||'var(--muted2)';
+    const pnl=a.current_pnl||0;
+    return `<div class="acc-profile-card">
+      <div class="acc-profile-dot" style="background:${col};box-shadow:0 0 8px ${col}"></div>
+      <div class="acc-profile-name">${a.name}</div>
+      <div class="acc-profile-size">$${(a.size||0).toLocaleString()}</div>
+      <div class="acc-profile-type" style="color:${col};background:${col}18;border:1px solid ${col}40">${typeLabel[a.account_type]||a.account_type}</div>
+      <div style="font-family:var(--font-display);font-size:0.72rem;font-weight:700;color:${pnl>=0?'var(--neon3)':'var(--red3)'};min-width:60px;text-align:right">${fmt$(pnl)}</div>
+      <button style="background:none;border:none;color:var(--red3);cursor:pointer;font-size:0.8rem;padding:0 4px;opacity:0.6;transition:opacity 0.2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6" onclick="removeAccount('${a.id}')">✕</button>
+    </div>`;
+  }).join('');
 }
+
 async function addGoal(){
   const n=document.getElementById('g-n')?.value; if(!n) return;
   const g={operator_id:currentOp.id,name:n,target_description:document.getElementById('g-t')?.value||'',progress:parseInt(document.getElementById('g-p')?.value)||0};
@@ -2952,11 +3680,40 @@ async function addGoal(){
   if(data){myGoals.push(data);renderGoals();['g-n','g-t','g-p'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
 }
 async function removeGoal(id){ await sb.from('goals').delete().eq('id',id); myGoals=myGoals.filter(g=>g.id!==id); renderGoals(); }
-async function updateGoalProg(id,val){ await sb.from('goals').update({progress:parseInt(val)||0}).eq('id',id); const g=myGoals.find(g=>g.id===id); if(g) g.progress=parseInt(val)||0; }
+async function updateGoalProg(id,val){
+  await sb.from('goals').update({progress:parseInt(val)||0}).eq('id',id);
+  const g=myGoals.find(g=>g.id===id); if(g) g.progress=parseInt(val)||0;
+}
+
 function renderGoals(){
   const el=document.getElementById('goals-list'); if(!el) return;
-  if(!myGoals.length){el.innerHTML='<div style="color:var(--muted2);font-size:0.78rem;padding:5px 0">No goals yet.</div>';return;}
-  el.innerHTML=myGoals.map(g=>`<div class="goal-r"><div class="goal-top"><div class="goal-n">${g.name}</div><div style="display:flex;align-items:center;gap:7px"><div class="goal-tgt">${g.target_description}</div><button style="background:none;border:none;color:var(--red3);cursor:pointer;font-size:0.78rem" onclick="removeGoal('${g.id}')">✕</button></div></div><div style="display:flex;align-items:center;gap:7px"><div style="flex:1;height:3px;background:var(--bg0);overflow:hidden"><div style="height:100%;width:${g.progress||0}%;background:linear-gradient(90deg,var(--neon2),var(--neon));transition:width 1s ease"></div></div><input type="range" min="0" max="100" value="${g.progress||0}" style="width:60px;accent-color:var(--neon)" onchange="updateGoalProg('${g.id}',this.value);this.nextElementSibling.textContent=this.value+'%'"><span style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--muted2);white-space:nowrap">${g.progress||0}%</span></div></div>`).join('');
+  if(!myGoals.length){
+    el.innerHTML='<div style="color:var(--muted2);font-family:var(--font-mono);font-size:0.68rem;padding:8px 0;letter-spacing:1px">NO OBJECTIVES SET — ADD BELOW</div>';
+    return;
+  }
+  el.innerHTML=myGoals.map(g=>{
+    const pct=g.progress||0;
+    const col=pct>=100?'var(--neon)':pct>=70?'var(--amber2)':pct>=40?'var(--cyan3)':'var(--muted2)';
+    return `<div class="goal-card">
+      <div class="goal-top">
+        <div class="goal-n">${g.name}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="goal-pct" style="color:${col}">${pct}%</div>
+          <button style="background:none;border:none;color:var(--red3);cursor:pointer;font-size:0.75rem;opacity:0.5;transition:opacity 0.2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="removeGoal('${g.id}')">✕</button>
+        </div>
+      </div>
+      <div class="goal-bar-track">
+        <div class="goal-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${col},${col}aa);box-shadow:0 0 8px ${col}66"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+        <div class="goal-tgt">${g.target_description}</div>
+        <input type="range" min="0" max="100" value="${pct}" style="width:80px;accent-color:var(--neon);cursor:pointer"
+          oninput="this.nextElementSibling.textContent=this.value+'%'"
+          onchange="updateGoalProg('${g.id}',this.value)">
+        <span style="font-family:var(--font-mono);font-size:0.58rem;color:${col};width:34px;text-align:right">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════
@@ -3025,7 +3782,7 @@ function showSec(name,navEl){
   if(name==='achievements') buildAchievements();
   if(name==='assets') updateAssetBars();
   if(name==='financials') updateFinancials();
-  if(name==='profile') loadProfile();
+  if(name==='profile'){ loadProfile(); setTimeout(updateProfileCard,100); }
 }
 
 // ══════════════════════════════════════════════════
@@ -3443,6 +4200,7 @@ function toast(code,msg){
 function buildUI(){
   initParticles();
   initCursor();
+  initMatrix();
   syncUI();
   buildDiscRating();
   buildOpsGrid();
