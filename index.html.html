@@ -1369,8 +1369,216 @@ body::after{
 .text-mag{color:var(--mag3);text-shadow:0 0 10px var(--mag-glow);}
 .text-amber{color:var(--amber2);text-shadow:0 0 10px var(--amber-glow);}
 
-@media(max-width:900px){.profile-page{grid-template-columns:1fr;}.hex-stats{grid-template-columns:1fr 1fr 1fr 1fr;}}
-@media(max-width:600px){.hex-stats{grid-template-columns:1fr 1fr;}}
+/* ═══════════════════════════════════════════════════
+   OPERATOR RADAR — Tactical Stat Sheet
+═══════════════════════════════════════════════════ */
+
+/* Radar container */
+.radar-section{
+  display:grid;
+  grid-template-columns:280px 1fr;
+  gap:16px;
+  margin-bottom:16px;
+  align-items:start;
+}
+.radar-card{
+  background:#000206;
+  border:1px solid rgba(100,200,255,0.15);
+  padding:20px 16px 16px;
+  position:relative;
+  overflow:hidden;
+}
+/* Sharp corner cuts — no border-radius */
+.radar-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(100,200,255,0.6),rgba(180,140,255,0.4),transparent);
+}
+.radar-card::after{
+  content:'';position:absolute;top:0;left:0;width:8px;height:8px;
+  border-top:1px solid rgba(100,200,255,0.8);border-left:1px solid rgba(100,200,255,0.8);
+}
+.radar-card .corner-br-dec{
+  position:absolute;bottom:0;right:0;width:8px;height:8px;
+  border-bottom:1px solid rgba(100,200,255,0.8);border-right:1px solid rgba(100,200,255,0.8);
+}
+.radar-title{
+  font-family:'Space Mono',monospace;font-size:0.48rem;
+  letter-spacing:4px;color:rgba(100,200,255,0.7);
+  text-transform:uppercase;margin-bottom:4px;
+}
+.radar-subtitle{
+  font-family:'Space Mono',monospace;font-size:0.38rem;
+  letter-spacing:2px;color:rgba(255,255,255,0.2);
+  text-transform:uppercase;margin-bottom:14px;
+}
+.radar-canvas-wrap{
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+#radar-cv{display:block;}
+
+/* Radar legend */
+.radar-legend{
+  display:flex;flex-direction:column;gap:8px;
+  margin-top:14px;
+  border-top:1px solid rgba(100,200,255,0.08);
+  padding-top:12px;
+}
+.radar-leg-row{
+  display:flex;align-items:center;gap:8px;
+}
+.radar-leg-dot{width:6px;height:6px;flex-shrink:0;}
+.radar-leg-label{
+  font-family:'Space Mono',monospace;font-size:0.46rem;
+  letter-spacing:2px;color:rgba(255,255,255,0.35);
+  text-transform:uppercase;flex:1;
+}
+.radar-leg-val{
+  font-family:'Space Mono',monospace;font-size:0.58rem;
+  font-weight:700;
+}
+.radar-leg-bar{
+  flex:1;height:2px;background:rgba(255,255,255,0.06);
+  position:relative;overflow:hidden;
+}
+.radar-leg-fill{
+  position:absolute;top:0;left:0;height:100%;
+  transition:width 1.4s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Ghost overlay legend */
+.radar-ghost-note{
+  font-family:'Space Mono',monospace;font-size:0.38rem;
+  letter-spacing:2px;color:rgba(255,255,255,0.18);
+  text-transform:uppercase;margin-top:10px;
+  display:flex;align-items:center;gap:6px;
+}
+.radar-ghost-note::before{
+  content:'';width:20px;height:1px;
+  background:rgba(150,150,150,0.3);
+  border:1px dashed rgba(150,150,150,0.3);
+}
+
+/* Right panel — stat detail cards */
+.radar-stats-panel{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.rstat-card{
+  background:#000206;
+  border:1px solid rgba(255,255,255,0.06);
+  padding:14px 16px;
+  position:relative;overflow:hidden;
+  transition:border-color 0.2s,box-shadow 0.2s;
+  cursor:default;
+}
+.rstat-card::before{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  transform:scaleX(0);transition:transform 0.3s ease;
+  transform-origin:left;
+}
+.rstat-card:hover{border-color:rgba(100,200,255,0.25);}
+.rstat-card:hover::before{transform:scaleX(1);}
+.rstat-card:hover{box-shadow:0 0 20px rgba(100,200,255,0.04),inset 0 0 20px rgba(100,200,255,0.02);}
+.rstat-code{
+  font-family:'Space Mono',monospace;font-size:0.38rem;
+  letter-spacing:3px;color:rgba(255,255,255,0.2);
+  text-transform:uppercase;margin-bottom:8px;
+}
+.rstat-val{
+  font-family:'Space Mono',monospace;font-size:1.8rem;
+  font-weight:700;line-height:1;margin-bottom:4px;
+}
+.rstat-name{
+  font-family:'Space Mono',monospace;font-size:0.44rem;
+  letter-spacing:2px;color:rgba(255,255,255,0.3);
+  text-transform:uppercase;margin-bottom:10px;
+}
+.rstat-bar-track{
+  height:3px;background:rgba(255,255,255,0.05);
+  position:relative;overflow:hidden;
+}
+.rstat-bar-fill{
+  position:absolute;top:0;left:0;height:100%;
+  transition:width 1.4s cubic-bezier(0.4,0,0.2,1);
+}
+.rstat-delta{
+  font-family:'Space Mono',monospace;font-size:0.38rem;
+  letter-spacing:1px;margin-top:5px;
+}
+.rstat-delta.up{color:rgba(0,255,136,0.7);}
+.rstat-delta.dn{color:rgba(255,51,102,0.7);}
+.rstat-delta.flat{color:rgba(255,255,255,0.2);}
+
+/* ═══════════════════════════════════════════════════
+   SPLIT XP SYSTEM
+═══════════════════════════════════════════════════ */
+.xp-split-wrap{margin-bottom:18px;}
+.xp-split-hdr{
+  font-family:'Space Mono',monospace;font-size:0.4rem;
+  letter-spacing:3px;color:rgba(255,255,255,0.2);
+  text-transform:uppercase;margin-bottom:10px;
+}
+.xp-track-row{margin-bottom:8px;}
+.xp-track-label{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:5px;
+}
+.xp-track-name{
+  font-family:'Space Mono',monospace;font-size:0.44rem;
+  letter-spacing:2px;color:rgba(255,255,255,0.4);
+  text-transform:uppercase;display:flex;align-items:center;gap:6px;
+}
+.xp-track-name .xp-dot{
+  width:4px;height:4px;flex-shrink:0;
+}
+.xp-track-amt{
+  font-family:'Space Mono',monospace;font-size:0.56rem;
+  font-weight:700;
+}
+.xp-track-bar{
+  height:6px;background:rgba(255,255,255,0.05);
+  position:relative;overflow:hidden;
+}
+.xp-track-fill{
+  position:absolute;top:0;left:0;height:100%;
+  transition:width 1.4s cubic-bezier(0.4,0,0.2,1);
+}
+/* Discipline XP — neon green */
+.xp-disc-fill{
+  background:linear-gradient(90deg,rgba(0,180,80,0.8),rgba(0,255,136,1));
+  box-shadow:0 0 8px rgba(0,255,136,0.4);
+}
+/* Community XP — electric blue/purple */
+.xp-comm-fill{
+  background:linear-gradient(90deg,rgba(80,80,255,0.8),rgba(140,80,255,1));
+  box-shadow:0 0 8px rgba(140,80,255,0.4);
+}
+/* Shimmer on both */
+.xp-track-fill::after{
+  content:'';position:absolute;top:0;bottom:0;width:30px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);
+  animation:xpShimmer 2s ease-in-out infinite;
+}
+@keyframes xpShimmer{0%{left:-30px;}100%{left:110%;}}
+
+/* cmd bar split XP */
+.cmd-xp-split{
+  display:flex;flex-direction:column;gap:3px;
+  padding:0 14px;border-left:1px solid rgba(255,255,255,0.06);
+}
+.cmd-xp-row{display:flex;align-items:center;gap:6px;}
+.cmd-xp-dot{width:4px;height:4px;flex-shrink:0;}
+.cmd-xp-mini-bar{width:60px;height:3px;background:rgba(255,255,255,0.05);}
+.cmd-xp-mini-fill{height:100%;transition:width 1s ease;}
+.cmd-xp-lbl-sm{
+  font-family:'Space Mono',monospace;font-size:0.38rem;
+  color:rgba(255,255,255,0.25);letter-spacing:1px;
+  text-transform:uppercase;white-space:nowrap;
+}
+
+@media(max-width:900px){.profile-page{grid-template-columns:1fr;}.hex-stats{grid-template-columns:1fr 1fr 1fr 1fr;}.radar-section{grid-template-columns:1fr;}.radar-stats-panel{grid-template-columns:1fr 1fr;}}
+@media(max-width:600px){.hex-stats{grid-template-columns:1fr 1fr;}.radar-stats-panel{grid-template-columns:1fr 1fr;}}
 
 @media(max-width:1200px){.app-layout{grid-template-columns:200px 1fr;}.chat-col{display:none;}.save-pill{right:20px;}}
 @media(max-width:900px){.kpi-row{grid-template-columns:repeat(3,1fr);}.home-grid{grid-template-columns:1fr;}.charts-2col{grid-template-columns:1fr;}.stat-grid{grid-template-columns:1fr 1fr;}.ops-grid{grid-template-columns:1fr;}.squad-grid{grid-template-columns:1fr;}.month-sum-grid{grid-template-columns:1fr 1fr;}.acc-stat-row{grid-template-columns:1fr 1fr;}.cap-grid{grid-template-columns:1fr 1fr;}.fin-row{grid-template-columns:1fr 1fr;}.acct-mini-grid{grid-template-columns:1fr 1fr;}.bar-row{grid-template-columns:60px 1fr 60px;}.cmp-r{grid-template-columns:60px 1fr 50px;}}
@@ -1456,12 +1664,24 @@ body::after{
       <div><div class="cmd-op-n" id="cmd-nm">—</div><div class="cmd-op-r" id="cmd-rk">—</div></div>
     </div>
     <div class="cmd-stats">
-      <div class="cmd-stat"><div class="cv a" id="cv-xp">0</div><div class="cl">XP</div></div>
       <div class="cmd-stat"><div class="cv o" id="cv-lv">LVL 4</div><div class="cl">Rank</div></div>
       <div class="cmd-stat"><div class="cv" id="cv-st">0</div><div class="cl">Streak 🔥</div></div>
       <div class="cmd-stat"><div class="cv g" id="cv-wr">—</div><div class="cl">Win Rate</div></div>
       <div class="cmd-stat"><div class="cv" id="cv-pnl">$0</div><div class="cl">P&L</div></div>
       <div class="cmd-stat"><div class="cv" id="cv-rr">—</div><div class="cl">Avg R:R</div></div>
+    </div>
+    <!-- Split XP in cmd bar -->
+    <div class="cmd-xp-split">
+      <div class="cmd-xp-row">
+        <span class="cmd-xp-dot" style="background:#00FF88;box-shadow:0 0 3px #00FF88"></span>
+        <div class="cmd-xp-mini-bar"><div class="cmd-xp-mini-fill" id="cmd-disc-xp-bar" style="width:0%;background:linear-gradient(90deg,#00CC6A,#00FF88);box-shadow:0 0 4px #00FF8855"></div></div>
+        <span class="cmd-xp-lbl-sm" id="cmd-disc-xp-lbl">0 DXP</span>
+      </div>
+      <div class="cmd-xp-row">
+        <span class="cmd-xp-dot" style="background:#8C50FF;box-shadow:0 0 3px #8C50FF"></span>
+        <div class="cmd-xp-mini-bar"><div class="cmd-xp-mini-fill" id="cmd-comm-xp-bar" style="width:0%;background:linear-gradient(90deg,#5050FF,#8C50FF);box-shadow:0 0 4px #8C50FF55"></div></div>
+        <span class="cmd-xp-lbl-sm" id="cmd-comm-xp-lbl">0 CXP</span>
+      </div>
     </div>
     <div class="cmd-right">
       <div class="live-d"></div><div class="live-t">Live</div>
@@ -1484,8 +1704,24 @@ body::after{
           <div class="op-t" id="sb-tt">SHARPENED EDGE</div>
         </div>
         <div class="xp-wrap">
-          <div class="xp-lbl"><span>READINESS</span><span id="sb-xl">0/500</span></div>
-          <div class="xp-track"><div class="xp-fill" id="sb-xf"></div></div>
+          <div style="margin-bottom:6px">
+            <div class="xp-lbl" style="margin-bottom:3px">
+              <span style="color:#00FF88;font-size:0.38rem">DXP</span>
+              <span id="sb-disc-xl" style="color:#00FF88">0</span>
+            </div>
+            <div class="xp-track" style="height:3px;background:rgba(0,255,136,0.06)">
+              <div id="sb-disc-xf" style="height:100%;background:linear-gradient(90deg,#00CC6A,#00FF88);box-shadow:0 0 6px rgba(0,255,136,0.5);transition:width 1.5s ease;width:0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="xp-lbl" style="margin-bottom:3px">
+              <span style="color:#8C50FF;font-size:0.38rem">CXP</span>
+              <span id="sb-comm-xl" style="color:#8C50FF">0</span>
+            </div>
+            <div class="xp-track" style="height:3px;background:rgba(140,80,255,0.06)">
+              <div id="sb-comm-xf" style="height:100%;background:linear-gradient(90deg,#5050FF,#8C50FF);box-shadow:0 0 6px rgba(140,80,255,0.5);transition:width 1.5s ease;width:0%"></div>
+            </div>
+          </div>
         </div>
         <div class="attr-r"><div class="a-l">Edge IQ</div><div class="a-t"><div class="a-f" id="af-e" style="background:var(--blue3)"></div></div><div class="a-v" id="av-e">0</div></div>
         <div class="attr-r"><div class="a-l">Discipline</div><div class="a-t"><div class="a-f" id="af-d" style="background:var(--neon)"></div></div><div class="a-v" id="av-d">0</div></div>
@@ -1545,6 +1781,25 @@ body::after{
           <div class="kpi-row" id="kpi-row"></div>
         </div>
       </div>
+
+      <!-- OPERATOR RADAR ANALYTICS SYSTEM -->
+      <div class="radar-section">
+        <!-- Left: Radar Chart -->
+        <div class="radar-card">
+          <div class="corner-br-dec"></div>
+          <div class="radar-title">Operator Radar</div>
+          <div class="radar-subtitle">Tactical performance profile // live data</div>
+          <div class="radar-canvas-wrap">
+            <canvas id="radar-cv" width="240" height="240"></canvas>
+          </div>
+          <div class="radar-legend" id="radar-legend"></div>
+          <div class="radar-ghost-note">Squad average overlay</div>
+        </div>
+
+        <!-- Right: 5 stat detail cards -->
+        <div class="radar-stats-panel" id="radar-stats-panel"></div>
+      </div>
+
       <div class="home-grid">
         <div class="chart-c">
           <div class="chart-t">P&L Over Time <span class="chart-tr" id="pnl-lbl">—</span></div>
@@ -1933,15 +2188,32 @@ body::after{
             <div class="op-rank-title" id="pf-rank-title">SHARPENED EDGE</div>
             <div class="op-clearance" id="pf-clearance">CLEARANCE: DELTA</div>
 
-            <!-- XP bar -->
-            <div class="xp-progress-wrap">
-              <div class="xp-progress-hdr">
-                <span class="xp-progress-lbl">Readiness XP</span>
-                <span class="xp-progress-val" id="pf-xp-val">0 / 500</span>
+            <!-- Split XP bars -->
+            <div class="xp-split-wrap">
+              <div class="xp-split-hdr">XP Breakdown</div>
+              <div class="xp-track-row">
+                <div class="xp-track-label">
+                  <span class="xp-track-name">
+                    <span class="xp-dot" style="background:#00FF88;box-shadow:0 0 4px #00FF88"></span>
+                    Discipline XP
+                  </span>
+                  <span class="xp-track-amt" style="color:#00FF88" id="pf-disc-xp-val">0</span>
+                </div>
+                <div class="xp-track-bar">
+                  <div class="xp-track-fill xp-disc-fill" id="pf-disc-xp-bar" style="width:0%"></div>
+                </div>
               </div>
-              <div class="xp-bar-outer">
-                <div class="xp-bar-fill" id="pf-xp-bar" style="width:0%"></div>
-                <div class="xp-bar-glow"></div>
+              <div class="xp-track-row">
+                <div class="xp-track-label">
+                  <span class="xp-track-name">
+                    <span class="xp-dot" style="background:#8C50FF;box-shadow:0 0 4px #8C50FF"></span>
+                    Community XP
+                  </span>
+                  <span class="xp-track-amt" style="color:#8C50FF" id="pf-comm-xp-val">0</span>
+                </div>
+                <div class="xp-track-bar">
+                  <div class="xp-track-fill xp-comm-fill" id="pf-comm-xp-bar" style="width:0%"></div>
+                </div>
               </div>
             </div>
 
@@ -2139,6 +2411,9 @@ let chatMessages=[], chatSub=null;
 let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
 let discRating=0, selectedCustomTags=[], chatRef=null;
 let reviewPeriod='daily';
+// Split XP tracking
+let disciplineXP=0, communityXP=0;
+const DISC_XP_MAX=300, COMM_XP_MAX=200; // per level
 
 function lvl(xp){ return Math.min(Math.floor((xp||0)/XPL)+4,10); }
 function title(l){ return TITLES[l]||'LEGEND'; }
@@ -2565,16 +2840,14 @@ function syncUI(){
   const op=currentOp, xp=op.xp||0, l=lvl(xp), col=opCol(op);
   const cur=xp%XPL;
 
-  // Sidebar
+  // Sidebar identity
   document.getElementById('sb-acc').style.background=col;
   document.getElementById('sb-lv').textContent=l; document.getElementById('sb-lv').style.color=col;
   document.getElementById('sb-nm').textContent=op.callsign||'—';
   document.getElementById('sb-tt').textContent=title(l); document.getElementById('sb-tt').style.color=col;
   document.getElementById('sb-cl').textContent=CLEARANCE[l]||'CLEARANCE: KILO';
-  document.getElementById('sb-xf').style.width=(cur/XPL*100)+'%';
-  document.getElementById('sb-xl').textContent=`${cur}/${XPL}`;
 
-  // Stats from real data (start at 0)
+  // Stats bars
   const stats=[
     ['e',op.stat_edge_iq||0,'var(--blue3)'],
     ['d',op.stat_discipline||0,'var(--neon)'],
@@ -2591,18 +2864,18 @@ function syncUI(){
   document.getElementById('cmd-dot').style.cssText=`background:${col};box-shadow:0 0 7px ${col};`;
   document.getElementById('cmd-nm').textContent=op.callsign||'—'; document.getElementById('cmd-nm').style.color=col;
   document.getElementById('cmd-rk').textContent=`LVL ${l} · ${title(l)}`;
-  document.getElementById('cv-xp').textContent=xp.toLocaleString();
   document.getElementById('cv-lv').textContent=`LVL ${l}`;
   document.getElementById('cv-st').textContent=op.streak||0;
   const wr=calcWR(op); document.getElementById('cv-wr').textContent=wr?wr+'%':'—';
   const pnl=op.total_pnl||0;
   document.getElementById('cv-pnl').textContent=fmt$(pnl);
   document.getElementById('cv-pnl').style.color=pnl>=0?'var(--green3)':'var(--red3)';
-
-  // Avg R:R from trades
   const rrTrades=myTrades.filter(t=>t.rr_actual>0);
   const avgRR=rrTrades.length?( rrTrades.reduce((a,t)=>a+(t.rr_actual||0),0)/rrTrades.length ).toFixed(2):null;
   document.getElementById('cv-rr').textContent=avgRR?avgRR+'R':'—';
+
+  // Split XP bars
+  syncSplitXP();
 }
 
 // ══════════════════════════════════════════════════
@@ -2638,6 +2911,254 @@ function buildHome(){
   }),300);
 
   buildLBSnap(); buildHomeCharts(); buildStreakGrid(); buildHomeAccounts();
+  setTimeout(()=>buildRadar(),400);
+}
+
+// ══════════════════════════════════════════════════
+// CONSISTENCY METRIC
+// ══════════════════════════════════════════════════
+function calcConsistency(){
+  // Measures smoothness of equity curve — low variance day-to-day = high consistency
+  const sorted=[...myTrades].sort((a,b)=>a.trade_date.localeCompare(b.trade_date));
+  if(sorted.length<3) return 0;
+  // Build daily P&L
+  const dailyMap={};
+  sorted.forEach(t=>{ dailyMap[t.trade_date]=(dailyMap[t.trade_date]||0)+(t.pnl||0); });
+  const daily=Object.values(dailyMap);
+  if(daily.length<2) return 0;
+  // Coefficient of variation of daily P&L — lower = more consistent
+  const mean=daily.reduce((a,v)=>a+v,0)/daily.length;
+  const variance=daily.reduce((a,v)=>a+Math.pow(v-mean,2),0)/daily.length;
+  const stdDev=Math.sqrt(variance);
+  const cv=mean!==0?Math.abs(stdDev/mean):1;
+  // Map CV to 0-100 score: CV=0 → 100, CV=3+ → 0
+  const score=Math.max(0,Math.min(100,Math.round((1-Math.min(cv,3)/3)*100)));
+  // Also penalise for many losing days
+  const profitDays=daily.filter(v=>v>0).length;
+  const profitRate=profitDays/daily.length;
+  return Math.round(score*0.7+profitRate*30);
+}
+
+// ══════════════════════════════════════════════════
+// SPLIT XP CALCULATION
+// ══════════════════════════════════════════════════
+function calcSplitXP(){
+  const totalXP=currentOp?.xp||0;
+  // Discipline XP: earned from on-strategy trades, good ops completion, no violations
+  // Proxy: ratio of on-strategy trades drives discipline proportion
+  const n=myTrades.length;
+  const onStrat=myTrades.filter(t=>t.followed_strategy).length;
+  const stratRate=n>0?onStrat/n:0.5;
+  // Recent ops state from logs
+  const recentLogs=myLogs.slice(0,10);
+  const avgDisc=recentLogs.length
+    ?recentLogs.reduce((a,l)=>a+(l.discipline_rating||0),0)/recentLogs.length/10
+    :0.5;
+  const discProportion=Math.min(0.75, (stratRate*0.6+avgDisc*0.4));
+  disciplineXP=Math.round(totalXP*discProportion);
+  communityXP=totalXP-disciplineXP;
+  return {disciplineXP, communityXP};
+}
+
+function syncSplitXP(){
+  const{disciplineXP:dxp,communityXP:cxp}=calcSplitXP();
+  const totalXP=currentOp?.xp||0;
+  const maxXP=Math.max(totalXP,DISC_XP_MAX+COMM_XP_MAX);
+
+  // Sidebar
+  const sbDiscXl=document.getElementById('sb-disc-xl'); if(sbDiscXl) sbDiscXl.textContent=dxp.toLocaleString();
+  const sbCommXl=document.getElementById('sb-comm-xl'); if(sbCommXl) sbCommXl.textContent=cxp.toLocaleString();
+  const sbDiscXf=document.getElementById('sb-disc-xf'); if(sbDiscXf) setTimeout(()=>sbDiscXf.style.width=Math.min(dxp/DISC_XP_MAX*100,100)+'%',300);
+  const sbCommXf=document.getElementById('sb-comm-xf'); if(sbCommXf) setTimeout(()=>sbCommXf.style.width=Math.min(cxp/COMM_XP_MAX*100,100)+'%',400);
+
+  // Command bar
+  const cmdDisc=document.getElementById('cmd-disc-xp-bar'); if(cmdDisc) setTimeout(()=>cmdDisc.style.width=Math.min(dxp/DISC_XP_MAX*100,100)+'%',300);
+  const cmdComm=document.getElementById('cmd-comm-xp-bar'); if(cmdComm) setTimeout(()=>cmdComm.style.width=Math.min(cxp/COMM_XP_MAX*100,100)+'%',400);
+  const cmdDiscLbl=document.getElementById('cmd-disc-xp-lbl'); if(cmdDiscLbl) cmdDiscLbl.textContent=dxp+' DXP';
+  const cmdCommLbl=document.getElementById('cmd-comm-xp-lbl'); if(cmdCommLbl) cmdCommLbl.textContent=cxp+' CXP';
+
+  // Profile bars
+  const pfDiscBar=document.getElementById('pf-disc-xp-bar'); if(pfDiscBar) setTimeout(()=>pfDiscBar.style.width=Math.min(dxp/DISC_XP_MAX*100,100)+'%',300);
+  const pfCommBar=document.getElementById('pf-comm-xp-bar'); if(pfCommBar) setTimeout(()=>pfCommBar.style.width=Math.min(cxp/COMM_XP_MAX*100,100)+'%',400);
+  const pfDiscVal=document.getElementById('pf-disc-xp-val'); if(pfDiscVal) pfDiscVal.textContent=dxp.toLocaleString();
+  const pfCommVal=document.getElementById('pf-comm-xp-val'); if(pfCommVal) pfCommVal.textContent=cxp.toLocaleString();
+}
+
+// ══════════════════════════════════════════════════
+// OPERATOR RADAR — pentagonal canvas chart
+// ══════════════════════════════════════════════════
+function buildRadar(){
+  const canvas=document.getElementById('radar-cv'); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const op=currentOp;
+
+  // The 5 axes
+  const axes=[
+    {code:'DCP',label:'Discipline',val:op.stat_discipline||0,col:'rgba(0,255,136,1)',glowCol:'rgba(0,255,136,0.4)'},
+    {code:'RSK',label:'Risk Ctrl', val:op.stat_risk_control||0,col:'rgba(0,200,255,1)',glowCol:'rgba(0,200,255,0.4)'},
+    {code:'CON',label:'Consistency',val:calcConsistency(),col:'rgba(180,140,255,1)',glowCol:'rgba(180,140,255,0.4)'},
+    {code:'PAT',label:'Patience',  val:op.stat_patience||0,col:'rgba(255,184,0,1)',glowCol:'rgba(255,184,0,0.4)'},
+    {code:'EDG',label:'Edge',      val:op.stat_edge_iq||0,col:'rgba(0,255,200,1)',glowCol:'rgba(0,255,200,0.4)'},
+  ];
+
+  // Squad average per axis
+  const squadAvg=axes.map((a,i)=>{
+    const vals=allOps.map(op2=>{
+      const v=[op2.stat_discipline,op2.stat_risk_control,calcConsistency(),op2.stat_patience,op2.stat_edge_iq][i]||0;
+      return v;
+    });
+    return vals.length?vals.reduce((s,v)=>s+v,0)/vals.length:0;
+  });
+
+  const cx=120, cy=120, R=90, sides=5;
+  const angleOffset=-Math.PI/2;
+
+  function pentPoint(r,i){
+    const a=angleOffset+(2*Math.PI/sides)*i;
+    return {x:cx+r*Math.cos(a), y:cy+r*Math.sin(a)};
+  }
+
+  // Animate draw
+  let progress=0;
+  const duration=900;
+  let startTime=null;
+
+  function draw(ts){
+    if(!startTime) startTime=ts;
+    progress=Math.min((ts-startTime)/duration,1);
+    const ease=1-Math.pow(1-progress,3);
+
+    ctx.clearRect(0,0,240,240);
+
+    // ── Concentric pentagon grids ──
+    [0.2,0.4,0.6,0.8,1.0].forEach((t,gi)=>{
+      ctx.beginPath();
+      for(let i=0;i<sides;i++){
+        const p=pentPoint(R*t,i);
+        i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle=`rgba(100,200,255,${0.08+(gi===4?0.06:0)})`;
+      ctx.lineWidth=gi===4?0.8:0.5;
+      ctx.stroke();
+      // Grid labels at outermost ring
+      if(gi===4){
+        for(let i=0;i<sides;i++){
+          const p=pentPoint(R*1.18,i);
+          ctx.fillStyle='rgba(100,200,255,0.55)';
+          ctx.font='700 8px Space Mono';
+          ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText(axes[i].code,p.x,p.y);
+        }
+      }
+    });
+
+    // ── Axis spokes ──
+    for(let i=0;i<sides;i++){
+      const p=pentPoint(R,i);
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(p.x,p.y);
+      ctx.strokeStyle='rgba(100,200,255,0.06)'; ctx.lineWidth=0.5; ctx.stroke();
+    }
+
+    // ── Ghost overlay — squad average ──
+    if(allOps.length>1){
+      ctx.beginPath();
+      for(let i=0;i<sides;i++){
+        const r=R*(squadAvg[i]/100)*ease;
+        const p=pentPoint(r,i);
+        i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+      }
+      ctx.closePath();
+      ctx.fillStyle='rgba(120,120,160,0.08)';
+      ctx.fill();
+      ctx.strokeStyle='rgba(180,180,220,0.18)';
+      ctx.setLineDash([3,4]); ctx.lineWidth=0.8; ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // ── Main operator fill ──
+    ctx.beginPath();
+    for(let i=0;i<sides;i++){
+      const r=R*(axes[i].val/100)*ease;
+      const p=pentPoint(r,i);
+      i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath();
+    // Purple/electric blue gradient fill
+    const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+    grad.addColorStop(0,'rgba(140,80,255,0.35)');
+    grad.addColorStop(0.5,'rgba(80,80,255,0.20)');
+    grad.addColorStop(1,'rgba(0,180,255,0.10)');
+    ctx.fillStyle=grad;
+    ctx.fill();
+    // Bright stroke
+    ctx.strokeStyle='rgba(140,100,255,0.7)';
+    ctx.lineWidth=1.2; ctx.stroke();
+
+    // ── Vertex dots with glow ──
+    for(let i=0;i<sides;i++){
+      const r=R*(axes[i].val/100)*ease;
+      const p=pentPoint(r,i);
+      // Outer glow
+      const radGrad=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,8);
+      radGrad.addColorStop(0,axes[i].glowCol);
+      radGrad.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.arc(p.x,p.y,8,0,Math.PI*2);
+      ctx.fillStyle=radGrad; ctx.fill();
+      // Core dot
+      ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2);
+      ctx.fillStyle=axes[i].col; ctx.fill();
+    }
+
+    // ── Centre point ──
+    ctx.beginPath(); ctx.arc(cx,cy,2,0,Math.PI*2);
+    ctx.fillStyle='rgba(100,200,255,0.4)'; ctx.fill();
+
+    if(progress<1) requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  // Build legend
+  const legend=document.getElementById('radar-legend'); if(!legend) return;
+  legend.innerHTML=axes.map((a,i)=>`
+    <div class="radar-leg-row">
+      <div class="radar-leg-dot" style="background:${a.col};box-shadow:0 0 5px ${a.glowCol}"></div>
+      <div class="radar-leg-label">${a.label}</div>
+      <div class="radar-leg-bar">
+        <div class="radar-leg-fill" style="width:0%;background:${a.col}" data-w="${a.val}"></div>
+      </div>
+      <div class="radar-leg-val" style="color:${a.col}">${a.val}</div>
+    </div>`).join('');
+  setTimeout(()=>legend.querySelectorAll('.radar-leg-fill[data-w]').forEach(el=>{
+    el.style.transition='width 1.4s cubic-bezier(0.4,0,0.2,1)';
+    el.style.width=el.dataset.w+'%';
+  }),200);
+
+  // Build stat detail cards
+  const panel=document.getElementById('radar-stats-panel'); if(!panel) return;
+  const statDefs=[
+    {code:'DCP // 01',name:'Discipline',val:axes[0].val,col:axes[0].col,bg:'rgba(0,255,136,0.04)',border:'rgba(0,255,136,0.15)',desc:'Strategy adherence rate'},
+    {code:'RSK // 02',name:'Risk Control',val:axes[1].val,col:axes[1].col,bg:'rgba(0,200,255,0.04)',border:'rgba(0,200,255,0.15)',desc:'Drawdown vs target ratio'},
+    {code:'CON // 03',name:'Consistency',val:axes[2].val,col:axes[2].col,bg:'rgba(180,140,255,0.04)',border:'rgba(180,140,255,0.15)',desc:'Equity curve smoothness'},
+    {code:'PAT // 04',name:'Patience',val:axes[3].val,col:axes[3].col,bg:'rgba(255,184,0,0.04)',border:'rgba(255,184,0,0.15)',desc:'Entry quality vs idle time'},
+    {code:'EDG // 05',name:'Edge',val:axes[4].val,col:axes[4].col,bg:'rgba(0,255,200,0.04)',border:'rgba(0,255,200,0.15)',desc:'Execution power & win rate'},
+  ];
+  panel.innerHTML=statDefs.map(s=>{
+    const prev=0; // future: track deltas
+    return `<div class="rstat-card" style="background:${s.bg};border-color:${s.border}" onmouseenter="this.style.borderColor='${s.col.replace('1)','0.4)')}'" onmouseleave="this.style.borderColor='${s.border}'">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${s.col},transparent);opacity:0.5"></div>
+      <div class="rstat-code">${s.code}</div>
+      <div class="rstat-val" style="color:${s.col};text-shadow:0 0 15px ${s.col.replace('1)','0.4)')}">${s.val}<span style="font-size:0.7rem;color:rgba(255,255,255,0.2)">/100</span></div>
+      <div class="rstat-name">${s.name}</div>
+      <div class="rstat-bar-track">
+        <div class="rstat-bar-fill" style="width:0%;background:${s.col};box-shadow:0 0 6px ${s.col.replace('1)','0.4)')}" data-w="${s.val}"></div>
+      </div>
+      <div class="rstat-delta flat">${s.desc}</div>
+    </div>`;
+  }).join('');
+  setTimeout(()=>panel.querySelectorAll('.rstat-bar-fill[data-w]').forEach(el=>{
+    el.style.transition='width 1.4s cubic-bezier(0.4,0,0.2,1)';
+    el.style.width=el.dataset.w+'%';
+  }),300);
 }
 
 function buildLBSnap(){
