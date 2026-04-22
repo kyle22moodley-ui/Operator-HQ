@@ -1714,11 +1714,297 @@ body::after{
 
 
 
+/* ═══════════════════════════════════════════════════
+   PRE-TRADE CHECKLIST GATE — v12
+═══════════════════════════════════════════════════ */
+.checklist-gate{
+  position:fixed;inset:0;background:rgba(0,2,6,0.94);
+  backdrop-filter:blur(16px);z-index:600;
+  display:none;align-items:center;justify-content:center;
+}
+.checklist-gate.open{display:flex;}
+.checklist-modal{
+  width:520px;max-width:95vw;
+  background:#000206;border:1px solid rgba(0,255,136,0.2);
+  position:relative;overflow:hidden;
+}
+.checklist-modal::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--neon),var(--cyan),var(--mag),transparent);
+}
+.cg-header{padding:18px 20px 12px;border-bottom:1px solid rgba(0,255,136,0.08);}
+.cg-code{font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:4px;color:var(--neon);text-transform:uppercase;margin-bottom:4px;text-shadow:0 0 8px rgba(0,255,136,0.4);}
+.cg-title{font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:900;color:var(--white);letter-spacing:3px;text-transform:uppercase;}
+.cg-sub{font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.25);letter-spacing:1px;margin-top:4px;}
+.cg-body{padding:16px 20px;}
+.cg-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:10px 12px;margin-bottom:4px;
+  border:1px solid rgba(255,255,255,0.05);
+  cursor:pointer;transition:all 0.15s ease;position:relative;
+}
+.cg-item:hover{border-color:rgba(0,255,136,0.15);background:rgba(0,255,136,0.02);}
+.cg-item.checked{border-color:rgba(0,255,136,0.25);background:rgba(0,255,136,0.04);}
+.cg-item.failed{border-color:rgba(255,51,102,0.25);background:rgba(255,51,102,0.04);}
+.cg-cb{
+  width:18px;height:18px;border:1px solid rgba(0,255,136,0.3);
+  flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s ease;font-size:0.7rem;
+}
+.cg-item.checked .cg-cb{background:var(--neon);border-color:var(--neon);color:#000;box-shadow:0 0 8px var(--neon-glow);}
+.cg-item.failed .cg-cb{background:var(--red2);border-color:var(--red3);color:#fff;}
+.cg-question{flex:1;}
+.cg-q{font-family:'Space Mono',monospace;font-size:0.65rem;color:rgba(255,255,255,0.75);letter-spacing:0.5px;line-height:1.5;}
+.cg-hint{font-family:'Space Mono',monospace;font-size:0.48rem;color:rgba(255,255,255,0.2);margin-top:3px;letter-spacing:0.5px;}
+.cg-flag{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;
+  padding:2px 6px;text-transform:uppercase;
+}
+.cg-flag.crit{color:var(--amber2);border:1px solid rgba(255,184,0,0.3);background:rgba(255,184,0,0.06);}
+.cg-score-bar{
+  margin:12px 0 0;padding:10px 12px;
+  background:rgba(0,255,136,0.03);border:1px solid rgba(0,255,136,0.1);
+  display:flex;align-items:center;gap:12px;
+}
+.cg-score-num{font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:900;color:var(--neon);min-width:32px;}
+.cg-score-track{flex:1;height:6px;background:rgba(0,255,136,0.08);}
+.cg-score-fill{height:100%;background:linear-gradient(90deg,var(--neon2),var(--neon));transition:width 0.4s ease;box-shadow:0 0 8px var(--neon-glow);}
+.cg-score-lbl{font-family:'Space Mono',monospace;font-size:0.44rem;letter-spacing:2px;color:rgba(255,255,255,0.3);text-transform:uppercase;white-space:nowrap;}
+.cg-footer{padding:12px 20px;border-top:1px solid rgba(0,255,136,0.08);display:flex;gap:8px;align-items:center;}
+.cg-warning{font-family:'Space Mono',monospace;font-size:0.48rem;color:var(--amber2);flex:1;letter-spacing:0.5px;}
+
+/* ═══════════════════════════════════════════════════
+   SESSION DEBRIEF MODAL — v12
+═══════════════════════════════════════════════════ */
+.debrief-modal{
+  width:600px;max-width:95vw;max-height:88vh;overflow-y:auto;
+  background:#000206;border:1px solid rgba(0,180,255,0.2);
+  position:relative;overflow:hidden;
+}
+.debrief-modal::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--neon),transparent);
+}
+.db-header{padding:18px 20px 12px;border-bottom:1px solid rgba(0,180,255,0.08);}
+.db-code{font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:4px;color:var(--cyan3);text-transform:uppercase;margin-bottom:4px;}
+.db-title{font-family:'Orbitron',monospace;font-size:0.88rem;font-weight:900;color:var(--white);letter-spacing:3px;text-transform:uppercase;}
+.db-body{padding:16px 20px;overflow-y:auto;max-height:calc(88vh - 140px);}
+.db-section{margin-bottom:16px;}
+.db-section-title{
+  font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:4px;
+  color:var(--cyan3);text-transform:uppercase;margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.db-section-title::after{content:'';flex:1;height:1px;background:rgba(0,180,255,0.1);}
+.db-rating-row{display:flex;gap:5px;flex-wrap:wrap;}
+.db-r-btn{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+  color:rgba(255,255,255,0.3);font-family:'Space Mono',monospace;font-size:0.58rem;
+  padding:5px 10px;cursor:pointer;transition:all 0.15s;
+}
+.db-r-btn:hover{border-color:rgba(0,255,136,0.3);color:var(--neon);}
+.db-r-btn.active{background:rgba(0,255,136,0.08);border-color:var(--neon);color:var(--neon);box-shadow:0 0 8px rgba(0,255,136,0.15);}
+.db-textarea{
+  width:100%;background:rgba(0,255,136,0.02);border:1px solid rgba(0,255,136,0.1);
+  color:var(--white);font-family:'Space Mono',monospace;font-size:0.72rem;
+  padding:10px 12px;resize:vertical;min-height:70px;outline:none;line-height:1.6;
+}
+.db-textarea:focus{border-color:rgba(0,255,136,0.3);}
+.db-session-stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;
+}
+.db-stat{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);padding:10px;}
+.db-stat-v{font-family:'Space Mono',monospace;font-size:0.9rem;font-weight:700;}
+.db-stat-l{font-family:'Space Mono',monospace;font-size:0.36rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:3px;}
+.db-footer{padding:12px 20px;border-top:1px solid rgba(0,180,255,0.08);display:flex;gap:8px;}
+
+/* ═══════════════════════════════════════════════════
+   BEHAVIOURAL ANALYTICS — v12
+═══════════════════════════════════════════════════ */
+.insight-card{
+  background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.06);
+  padding:14px 16px;margin-bottom:8px;position:relative;overflow:hidden;
+  transition:border-color 0.2s;
+}
+.insight-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.insight-card.positive::before{background:var(--neon);box-shadow:0 0 8px var(--neon-glow);}
+.insight-card.warning::before{background:var(--amber2);box-shadow:0 0 8px var(--amber-glow);}
+.insight-card.danger::before{background:var(--red3);}
+.insight-card.info::before{background:var(--cyan3);}
+.insight-icon{font-size:1.1rem;margin-bottom:6px;}
+.insight-title{font-family:'Orbitron',monospace;font-size:0.62rem;font-weight:700;letter-spacing:2px;color:var(--white);text-transform:uppercase;margin-bottom:4px;}
+.insight-body{font-family:'Space Mono',monospace;font-size:0.62rem;color:rgba(255,255,255,0.45);line-height:1.7;letter-spacing:0.3px;}
+.insight-stat{
+  display:inline-block;font-family:'Space Mono',monospace;font-weight:700;
+  font-size:0.72rem;padding:1px 4px;
+}
+.insight-section-title{
+  font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:4px;
+  color:rgba(255,255,255,0.2);text-transform:uppercase;
+  margin:16px 0 8px;display:flex;align-items:center;gap:8px;
+}
+.insight-section-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.05);}
+
+/* Emotion performance grid */
+.emo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:12px;}
+.emo-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);padding:10px 12px;transition:border-color 0.2s;}
+.emo-card:hover{border-color:rgba(255,255,255,0.1);}
+.emo-name{font-family:'Space Mono',monospace;font-size:0.5rem;letter-spacing:2px;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:6px;}
+.emo-wr{font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;line-height:1;}
+.emo-sub{font-family:'Space Mono',monospace;font-size:0.42rem;color:rgba(255,255,255,0.2);margin-top:3px;}
+
+/* MAE/MFE diagram */
+.maemfe-wrap{background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.06);padding:14px;margin-bottom:8px;}
+.maemfe-title{font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:10px;}
+.maemfe-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.maemfe-lbl{font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.3);width:48px;text-align:right;}
+.maemfe-track{flex:1;height:10px;background:rgba(255,255,255,0.04);position:relative;overflow:hidden;}
+.maemfe-fill{height:100%;transition:width 1.2s ease;}
+.maemfe-val{font-family:'Space Mono',monospace;font-size:0.58rem;font-weight:700;width:32px;}
+.maemfe-efficiency{
+  display:flex;justify-content:space-between;padding:8px 0;
+  border-top:1px solid rgba(255,255,255,0.05);margin-top:8px;
+}
+.maemfe-eff-item{text-align:center;}
+.maemfe-eff-v{font-family:'Space Mono',monospace;font-size:0.78rem;font-weight:700;}
+.maemfe-eff-l{font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:2px;}
+
+/* Weekly review in mission log */
+.weekly-review-card{
+  background:rgba(0,180,255,0.03);border:1px solid rgba(0,180,255,0.1);
+  padding:16px;margin-bottom:12px;position:relative;
+}
+.weekly-review-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan3),transparent);opacity:0.4;
+}
+.wrc-title{font-family:'Orbitron',monospace;font-size:0.58rem;font-weight:700;letter-spacing:3px;color:var(--cyan3);text-transform:uppercase;margin-bottom:12px;text-shadow:0 0 8px rgba(0,180,255,0.3);}
+
+/* Trade modal deep view */
+.trade-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.tmg-full{grid-column:1/-1;}
+.tm-section{margin-bottom:12px;}
+.tm-section-lbl{font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:4px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.tm-section-lbl::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.05);}
+.tm-stat-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.tm-stat-lbl{font-family:'Space Mono',monospace;font-size:0.52rem;color:rgba(255,255,255,0.25);}
+.tm-stat-val{font-family:'Space Mono',monospace;font-size:0.62rem;font-weight:700;}
+.tm-setup-hist{
+  background:rgba(0,255,136,0.02);border:1px solid rgba(0,255,136,0.08);
+  padding:10px 12px;margin-top:6px;
+}
+.tm-setup-hist-title{font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:3px;color:var(--neon);text-transform:uppercase;margin-bottom:6px;opacity:0.6;}
+
+/* News calendar events */
+.news-event{
+  display:flex;align-items:center;gap:10px;padding:6px 10px;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.news-impact{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.news-impact.high{background:var(--red3);box-shadow:0 0 6px rgba(255,51,102,0.5);}
+.news-impact.medium{background:var(--amber2);box-shadow:0 0 6px rgba(255,184,0,0.4);}
+.news-impact.low{background:rgba(255,255,255,0.2);}
+.news-time{font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.3);width:44px;flex-shrink:0;}
+.news-title{font-family:'Space Mono',monospace;font-size:0.56rem;color:rgba(255,255,255,0.6);flex:1;}
+.news-ccy{font-family:'Space Mono',monospace;font-size:0.44rem;color:rgba(255,255,255,0.2);width:28px;}
+.news-near-trade{font-family:'Space Mono',monospace;font-size:0.38rem;color:var(--amber2);padding:1px 4px;border:1px solid rgba(255,184,0,0.2);}
+
+/* Cross-account risk dashboard */
+.risk-dashboard{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:14px;}
+.risk-card{
+  background:#000206;border:1px solid rgba(255,255,255,0.06);
+  padding:14px;position:relative;overflow:hidden;transition:border-color 0.2s;
+}
+.risk-card.risk-green{border-left:3px solid var(--neon);}
+.risk-card.risk-amber{border-left:3px solid var(--amber2);}
+.risk-card.risk-red{border-left:3px solid var(--red3);animation:holoBorder 3s ease-in-out infinite;}
+.risk-card-name{font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:800;color:var(--white);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.risk-card-type{font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:10px;}
+.risk-meter{margin-bottom:8px;}
+.risk-meter-hdr{display:flex;justify-content:space-between;margin-bottom:4px;}
+.risk-meter-lbl{font-family:'Space Mono',monospace;font-size:0.44rem;letter-spacing:1px;color:rgba(255,255,255,0.25);text-transform:uppercase;}
+.risk-meter-val{font-family:'Space Mono',monospace;font-size:0.52rem;font-weight:700;}
+.risk-meter-track{height:5px;background:rgba(255,255,255,0.05);}
+.risk-meter-fill{height:100%;transition:width 1.2s ease;}
+.risk-alert{
+  font-family:'Space Mono',monospace;font-size:0.48rem;
+  color:var(--red3);letter-spacing:0.5px;margin-top:8px;
+  padding:5px 8px;background:rgba(255,51,102,0.06);border:1px solid rgba(255,51,102,0.15);
+}
+.risk-suggestion{
+  font-family:'Space Mono',monospace;font-size:0.48rem;
+  color:var(--amber2);letter-spacing:0.5px;margin-top:6px;
+}
+
 </style>
 </head>
 <body>
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursor-ring"></div>
+
+<!-- PRE-TRADE CHECKLIST GATE -->
+<div class="checklist-gate" id="checklist-gate">
+  <div class="checklist-modal">
+    <div class="cg-header">
+      <div class="cg-code">Pre-trade protocol // mandatory</div>
+      <div class="cg-title">Confirm Your Edge</div>
+      <div class="cg-sub">All conditions must be verified before entry is logged</div>
+    </div>
+    <div class="cg-body">
+      <div id="cg-items"></div>
+      <div class="cg-score-bar">
+        <div class="cg-score-num" id="cg-score">0/5</div>
+        <div class="cg-score-track"><div class="cg-score-fill" id="cg-score-fill" style="width:0%"></div></div>
+        <div class="cg-score-lbl" id="cg-score-lbl">Not ready</div>
+      </div>
+    </div>
+    <div class="cg-footer">
+      <div class="cg-warning" id="cg-warning"></div>
+      <button class="btn-outline" onclick="closeChecklist()">Cancel</button>
+      <button class="btn-save" id="cg-proceed-btn" onclick="proceedAfterChecklist()" disabled style="opacity:0.4">Proceed to Log</button>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION DEBRIEF MODAL -->
+<div class="checklist-gate" id="debrief-gate">
+  <div class="debrief-modal">
+    <div class="db-header">
+      <div class="db-code">Post-session debrief // review your process</div>
+      <div class="db-title">Session Debrief</div>
+    </div>
+    <div class="db-body">
+      <div class="db-session-stats" id="db-session-stats"></div>
+      <div class="db-section">
+        <div class="db-section-title">Process Rating</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.25);margin-bottom:6px">How well did you follow your process today?</div>
+        <div class="db-rating-row" id="db-process-rating"></div>
+      </div>
+      <div class="db-section">
+        <div class="db-section-title">Emotional State</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.25);margin-bottom:6px">Overall mindset during the session</div>
+        <div class="db-rating-row" id="db-emotion-btns"></div>
+      </div>
+      <div class="db-section">
+        <div class="db-section-title">What did you do well?</div>
+        <textarea class="db-textarea" id="db-did-well" placeholder="Be specific. What went right in your process today?"></textarea>
+      </div>
+      <div class="db-section">
+        <div class="db-section-title">What needs work?</div>
+        <textarea class="db-textarea" id="db-improve" placeholder="One thing to improve tomorrow. Concrete, actionable."></textarea>
+      </div>
+      <div class="db-section">
+        <div class="db-section-title">Tomorrow's focus</div>
+        <textarea class="db-textarea" id="db-tomorrow" placeholder="One rule or intention for your next session..." style="min-height:50px"></textarea>
+      </div>
+    </div>
+    <div class="db-footer">
+      <button class="btn-outline" onclick="closeDebrief()">Skip</button>
+      <button class="btn-save" onclick="saveDebrief()">⬡ Save Debrief</button>
+    </div>
+  </div>
+</div>
 <!-- Floating background orbs -->
 <div class="cyber-bg">
   <div class="orb orb1"></div>
@@ -1893,6 +2179,10 @@ body::after{
       <span class="nav-group-label">Roadmap</span>
       <div class="nav-i" onclick="showSec('playbook',this)"><div class="n-i">📋</div><div class="n-l">Playbook</div></div>
       <div class="nav-i" onclick="showSec('import',this)"><div class="n-i">⬆</div><div class="n-l">Import Trades</div></div>
+      <div class="nav-sep"></div>
+      <span class="nav-group-label">Intelligence</span>
+      <div class="nav-i" onclick="showSec('behaviour',this)"><div class="n-i">🧠</div><div class="n-l">Behaviour Lab</div><div class="n-t n">NEW</div></div>
+      <div class="nav-i" onclick="showSec('riskdash',this)"><div class="n-i">⚠</div><div class="n-l">Risk Dashboard</div><div class="n-t n">NEW</div></div>
       <div class="nav-i" onclick="showSec('deployment',this)"><div class="n-i">◈</div><div class="n-l">Deployment Map</div></div>
       <div class="nav-i" onclick="showSec('capabilities',this)"><div class="n-i">⊕</div><div class="n-l">Capabilities</div></div>
       <div class="nav-i" onclick="showSec('assets',this)"><div class="n-i">◻</div><div class="n-l">Asset Targets</div></div>
@@ -1977,7 +2267,7 @@ body::after{
     <!-- TRADE JOURNAL -->
     <div class="sec" id="sec-journal">
       <div class="sh"><div><div class="sc">OP-01 // TRADE JOURNAL</div><div class="st">Trade Log</div><div class="ss">Full trade history · Filter · Tag · Analyse</div></div>
-        <button class="btn-save" onclick="toggleNewTradeForm()">+ NEW TRADE</button>
+        <button class="btn-save" onclick="openChecklistGate()">+ NEW TRADE</button>
       </div>
 
       <div id="new-trade-form-wrap" style="display:none">
@@ -2162,7 +2452,10 @@ body::after{
 
     <!-- MISSION LOG -->
     <div class="sec" id="sec-log">
-      <div class="sh"><div><div class="sc">OP-03 // MISSION LOG</div><div class="st">Daily Session Entry</div><div class="ss">Saved permanently — reviewable in Intel Calendar</div></div></div>
+      <div class="sh">
+        <div><div class="sc">OP-03 // MISSION LOG</div><div class="st">Daily Session Entry</div><div class="ss">Saved permanently — reviewable in Intel Calendar</div></div>
+        <button class="btn-outline" onclick="openDebrief()" style="font-size:0.56rem;letter-spacing:2px">⬡ SESSION DEBRIEF</button>
+      </div>
       <div class="new-trade-form">
         <div class="ntf-title">NEW ENTRY</div>
         <div class="form-grid">
@@ -2178,6 +2471,21 @@ body::after{
           <div class="form-group"><div class="form-label" style="color:var(--amber2)">⚠ Daily Loss Limit Breached?</div><select class="form-select" id="e-daily-breach"><option value="false">No — stayed within limits</option><option value="true">Yes — breached daily max</option></select></div>
         </div>
         <button class="btn-save" id="save-log-btn" onclick="saveLog()">⬡ SAVE LOG</button>
+      </div>
+
+      <!-- WEEKLY REVIEW -->
+      <div style="margin-top:16px">
+        <div style="font-family:'Space Mono',monospace;font-size:0.44rem;letter-spacing:4px;color:rgba(0,180,255,0.5);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px">Weekly Review <span style="flex:1;height:1px;background:rgba(0,180,255,0.1);display:block"></span></div>
+        <div class="weekly-review-card">
+          <div class="wrc-title">This Week's Reflection</div>
+          <div class="form-grid">
+            <div class="form-group full"><div class="form-label">What patterns did you notice this week?</div><textarea class="db-textarea" id="wr-patterns" placeholder="Market structure patterns, your tendencies, recurring mistakes..."></textarea></div>
+            <div class="form-group full"><div class="form-label">What rule did you break most this week?</div><textarea class="db-textarea" id="wr-broken-rule" placeholder="Be honest. Which rule, why, and what does it cost you?" style="min-height:55px"></textarea></div>
+            <div class="form-group full"><div class="form-label">Next week's one focus</div><textarea class="db-textarea" id="wr-focus" placeholder="One specific thing to work on. Not two things — one." style="min-height:50px"></textarea></div>
+          </div>
+          <button class="btn-save" style="margin-top:8px" onclick="saveWeeklyReview()">⬡ SAVE WEEKLY REVIEW</button>
+        </div>
+        <div id="weekly-reviews-list"></div>
       </div>
     </div>
 
@@ -2577,6 +2885,25 @@ body::after{
       </div>
     </div>
 
+    <!-- BEHAVIOUR LAB -->
+    <div class="sec" id="sec-behaviour">
+      <div class="sh">
+        <div><div class="sc">INTEL-01 // BEHAVIOUR LAB</div><div class="st">Behavioural Analytics</div><div class="ss">Pattern detection across your trade history — what your data actually says</div></div>
+        <button class="btn-save" onclick="buildBehaviourLab()">↻ Refresh Analysis</button>
+      </div>
+      <div id="behaviour-content">
+        <div style="text-align:center;padding:40px 0;font-family:'Space Mono',monospace;font-size:0.68rem;color:rgba(255,255,255,0.15);letter-spacing:2px">Loading analysis...</div>
+      </div>
+    </div>
+
+    <!-- RISK DASHBOARD -->
+    <div class="sec" id="sec-riskdash">
+      <div class="sh">
+        <div><div class="sc">INTEL-02 // RISK DASHBOARD</div><div class="st">Cross-Account Risk</div><div class="ss">Live drawdown status, prop firm rules, recommended sizing across all accounts</div></div>
+      </div>
+      <div id="riskdash-content"></div>
+    </div>
+
   </div>
 
   <!-- CHAT COLUMN -->
@@ -2661,6 +2988,1174 @@ function fmtDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStar
 function opCol(op){ const i=allOps.findIndex(o=>o.id===op.id); return OP_COLORS[i>=0?i%OP_COLORS.length:0]; }
 function fmt$(v){ return (v>=0?'+':'')+'$'+Math.abs(v||0).toLocaleString(); }
 function fmtRR(v){ return v?v.toFixed(2)+'R':'—'; }
+
+// ══════════════════════════════════════════════════
+// PRE-TRADE CHECKLIST GATE
+// ══════════════════════════════════════════════════
+const CHECKLIST_ITEMS = [
+  { id:'htf',  q:'HTF bias is confirmed',           hint:'15M/1H trend aligns with your trade direction.',      critical:true  },
+  { id:'poi',  q:'Point of Interest (POI) is valid', hint:'OB/FVG/level has not been mitigated already.',       critical:true  },
+  { id:'conf', q:'Entry confirmation received',      hint:'MSS, BOS, candle close, or rejection confirmed.',    critical:true  },
+  { id:'rr',   q:'R:R meets your minimum',           hint:'Actual R:R ≥ your personal minimum (usually 1.5R+).', critical:false },
+  { id:'dd',   q:'Within daily loss limits',         hint:'Today\'s drawdown leaves room for this risk.',       critical:true  },
+];
+let checklistState = {};
+let checklistPassedCallback = null;
+
+function openChecklistGate(){
+  checklistState = {};
+  CHECKLIST_ITEMS.forEach(item => checklistState[item.id] = null);
+
+  const gate = document.getElementById('checklist-gate');
+  const itemsEl = document.getElementById('cg-items');
+  if(!gate || !itemsEl) return;
+
+  itemsEl.innerHTML = CHECKLIST_ITEMS.map(item => `
+    <div class="cg-item" id="cgi-${item.id}" onclick="toggleChecklistItem('${item.id}')">
+      <div class="cg-cb" id="cgcb-${item.id}"></div>
+      <div class="cg-question">
+        <div class="cg-q">${item.q}</div>
+        <div class="cg-hint">${item.hint}</div>
+      </div>
+      ${item.critical ? `<div class="cg-flag crit">Required</div>` : ''}
+    </div>
+  `).join('');
+
+  updateChecklistScore();
+  gate.classList.add('open');
+}
+
+function toggleChecklistItem(id){
+  const current = checklistState[id];
+  // Cycle: null → checked → failed → null
+  if(current === null)    checklistState[id] = true;
+  else if(current === true) checklistState[id] = false;
+  else checklistState[id] = null;
+
+  const item = document.getElementById(`cgi-${id}`);
+  const cb   = document.getElementById(`cgcb-${id}`);
+  if(!item || !cb) return;
+  item.className = 'cg-item' + (checklistState[id]===true?' checked':checklistState[id]===false?' failed':'');
+  cb.textContent = checklistState[id]===true ? '✓' : checklistState[id]===false ? '✗' : '';
+  updateChecklistScore();
+}
+
+function updateChecklistScore(){
+  const total    = CHECKLIST_ITEMS.length;
+  const checked  = CHECKLIST_ITEMS.filter(i => checklistState[i.id] === true).length;
+  const failed   = CHECKLIST_ITEMS.filter(i => checklistState[i.id] === false).length;
+  const critFail = CHECKLIST_ITEMS.filter(i => i.critical && checklistState[i.id] === false).length;
+  const allCritOk = CHECKLIST_ITEMS.filter(i => i.critical).every(i => checklistState[i.id] === true);
+  const allChecked = checked === total;
+
+  const scoreEl  = document.getElementById('cg-score');
+  const fillEl   = document.getElementById('cg-score-fill');
+  const lblEl    = document.getElementById('cg-score-lbl');
+  const warnEl   = document.getElementById('cg-warning');
+  const proceedBtn = document.getElementById('cg-proceed-btn');
+
+  if(scoreEl)  scoreEl.textContent  = `${checked}/${total}`;
+  if(fillEl)   fillEl.style.width   = (checked/total*100)+'%';
+
+  if(critFail > 0){
+    if(lblEl)  lblEl.textContent = 'BLOCKED — critical condition failed';
+    if(fillEl) fillEl.style.background = 'var(--red3)';
+    if(warnEl) warnEl.textContent = `${critFail} critical condition${critFail>1?'s':''} not met. Do not enter this trade.`;
+    if(proceedBtn){ proceedBtn.disabled=true; proceedBtn.style.opacity='0.3'; }
+  } else if(allCritOk && allChecked){
+    if(lblEl)  lblEl.textContent = 'EDGE CONFIRMED — proceed';
+    if(fillEl) fillEl.style.background = 'linear-gradient(90deg,var(--neon2),var(--neon))';
+    if(warnEl) warnEl.textContent = 'All conditions met. Your edge is confirmed.';
+    if(proceedBtn){ proceedBtn.disabled=false; proceedBtn.style.opacity='1'; }
+  } else if(allCritOk && checked >= total-1){
+    if(lblEl)  lblEl.textContent = 'Good — proceed with caution';
+    if(fillEl) fillEl.style.background = 'var(--amber2)';
+    if(warnEl) warnEl.textContent = 'Critical conditions met. One optional condition incomplete.';
+    if(proceedBtn){ proceedBtn.disabled=false; proceedBtn.style.opacity='0.9'; }
+  } else {
+    if(lblEl)  lblEl.textContent = `${total-checked} conditions remaining`;
+    if(fillEl) fillEl.style.background = 'var(--amber2)';
+    if(warnEl) warnEl.textContent = '';
+    if(proceedBtn){ proceedBtn.disabled=true; proceedBtn.style.opacity='0.3'; }
+  }
+
+  // Feed checklist score into discipline metric bonus/penalty
+  if(failed > 0) currentOp._checklistViolations = (currentOp._checklistViolations||0) + failed;
+}
+
+function proceedAfterChecklist(){
+  const failed = CHECKLIST_ITEMS.filter(i => checklistState[i.id] === false).length;
+  // If any failed — note it as a discipline deduction
+  if(failed > 0 && currentOp){
+    const pen = failed * 4;
+    currentOp.stat_discipline = Math.max(0, (currentOp.stat_discipline||50) - pen);
+    toast('DISCIPLINE WARNING', `${failed} checklist item${failed>1?'s':''} failed — −${pen} Discipline`);
+  }
+  closeChecklist();
+  toggleNewTradeForm();
+}
+
+function closeChecklist(){
+  document.getElementById('checklist-gate')?.classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════
+// SESSION DEBRIEF
+// ══════════════════════════════════════════════════
+let debriefProcessRating = 0;
+let debriefEmotion = '';
+
+function openDebrief(){
+  // Pre-populate with today's session stats
+  const today = fmtDate(new Date());
+  const todayTrades = myTrades.filter(t => t.trade_date === today);
+  const todayLog = myLogs.find(l => l.log_date === today);
+  const wins = todayTrades.filter(t => t.result === 'win').length;
+  const losses = todayTrades.filter(t => t.result === 'loss').length;
+  const pnl = todayTrades.reduce((s,t) => s+(t.pnl||0), 0);
+
+  const statsEl = document.getElementById('db-session-stats');
+  if(statsEl){
+    statsEl.innerHTML = [
+      {v:todayTrades.length, l:'Trades'},
+      {v:`${wins}W/${losses}L`, l:'Results'},
+      {v:fmt$(pnl), l:'P&L', col:pnl>=0?'var(--neon3)':'var(--red3)'},
+      {v:todayLog?.discipline_rating||'—', l:'Discipline'}
+    ].map(s=>`<div class="db-stat">
+      <div class="db-stat-v" style="color:${s.col||'var(--white)'}">${s.v}</div>
+      <div class="db-stat-l">${s.l}</div>
+    </div>`).join('');
+  }
+
+  // Process rating buttons 1-10
+  const ratingsEl = document.getElementById('db-process-rating');
+  if(ratingsEl){
+    debriefProcessRating = 0;
+    ratingsEl.innerHTML = Array.from({length:10},(_,i)=>i+1).map(n=>
+      `<button class="db-r-btn" onclick="setDebriefRating(${n},this)">${n}</button>`
+    ).join('');
+  }
+
+  // Emotion buttons
+  const emoEl = document.getElementById('db-emotion-btns');
+  if(emoEl){
+    debriefEmotion = '';
+    const emos = ['Focused','Calm','Patient','Anxious','Confident','FOMO','Revenge','Bored'];
+    emoEl.innerHTML = emos.map(e =>
+      `<button class="db-r-btn" onclick="setDebriefEmotion('${e.toLowerCase()}',this)">${e}</button>`
+    ).join('');
+  }
+
+  document.getElementById('debrief-gate')?.classList.add('open');
+}
+
+function setDebriefRating(n, el){
+  debriefProcessRating = n;
+  document.querySelectorAll('#db-process-rating .db-r-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setDebriefEmotion(e, el){
+  debriefEmotion = e;
+  document.querySelectorAll('#db-emotion-btns .db-r-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function saveDebrief(){
+  const well     = document.getElementById('db-did-well')?.value.trim()||'';
+  const improve  = document.getElementById('db-improve')?.value.trim()||'';
+  const tomorrow = document.getElementById('db-tomorrow')?.value.trim()||'';
+  const today    = fmtDate(new Date());
+
+  // Save to mission_logs as extra fields (or create new log entry)
+  const existing = myLogs.find(l => l.log_date === today);
+  const updates = {
+    debrief_process_rating: debriefProcessRating||null,
+    debrief_emotion: debriefEmotion||null,
+    debrief_well: well||null,
+    debrief_improve: improve||null,
+    debrief_tomorrow: tomorrow||null,
+  };
+
+  if(existing){
+    await sb.from('mission_logs').update(updates).eq('id', existing.id);
+    Object.assign(existing, updates);
+  } else {
+    const{data} = await sb.from('mission_logs').insert({
+      operator_id: currentOp.id, squad_code: SQUAD_CODE,
+      log_date: today, ...updates
+    }).select().single();
+    if(data) myLogs.unshift(data);
+  }
+
+  toast('DEBRIEF SAVED','Session reflection recorded.');
+  closeDebrief();
+
+  // Clear fields
+  ['db-did-well','db-improve','db-tomorrow'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+}
+
+function closeDebrief(){
+  document.getElementById('debrief-gate')?.classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════
+// WEEKLY REVIEW
+// ══════════════════════════════════════════════════
+async function saveWeeklyReview(){
+  if(!currentOp) return;
+  const patterns   = document.getElementById('wr-patterns')?.value.trim()||'';
+  const brokenRule = document.getElementById('wr-broken-rule')?.value.trim()||'';
+  const focus      = document.getElementById('wr-focus')?.value.trim()||'';
+  if(!patterns && !brokenRule && !focus){ toast('EMPTY','Write something before saving.'); return; }
+
+  const weekStart = (() => {
+    const d=new Date(); d.setDate(d.getDate()-((d.getDay()+6)%7)); return fmtDate(d);
+  })();
+
+  const{data,error} = await sb.from('weekly_reviews').upsert({
+    operator_id: currentOp.id, week_start: weekStart,
+    patterns, broken_rule: brokenRule, focus,
+    created_at: new Date().toISOString()
+  }, {onConflict:'operator_id,week_start'}).select().single();
+
+  toast('WEEKLY REVIEW SAVED', 'Reflection stored.');
+  ['wr-patterns','wr-broken-rule','wr-focus'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  loadWeeklyReviews();
+}
+
+async function loadWeeklyReviews(){
+  const el=document.getElementById('weekly-reviews-list'); if(!el||!currentOp) return;
+  const{data:reviews}=await sb.from('weekly_reviews')
+    .select('*').eq('operator_id',currentOp.id)
+    .order('week_start',{ascending:false}).limit(8);
+  if(!reviews?.length){ el.innerHTML=''; return; }
+  el.innerHTML = `
+    <div style="font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:4px;color:rgba(0,180,255,0.4);text-transform:uppercase;margin:14px 0 8px;display:flex;align-items:center;gap:8px">Past Reviews <span style="flex:1;height:1px;background:rgba(0,180,255,0.1);display:block"></span></div>
+    ${reviews.map(r=>`
+    <div class="weekly-review-card" style="margin-bottom:8px;opacity:0.7">
+      <div style="font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:3px;color:rgba(0,180,255,0.5);text-transform:uppercase;margin-bottom:8px">Week of ${r.week_start}</div>
+      ${r.patterns?`<div style="margin-bottom:6px"><div style="font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:2px">Patterns</div><div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:rgba(255,255,255,0.45);line-height:1.6">${r.patterns}</div></div>`:''}
+      ${r.focus?`<div><div style="font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:2px;color:rgba(0,255,136,0.3);text-transform:uppercase;margin-bottom:2px">Focus</div><div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:rgba(0,255,136,0.6);line-height:1.6">${r.focus}</div></div>`:''}
+    </div>`).join('')}
+  `;
+}
+
+// ══════════════════════════════════════════════════
+// BEHAVIOUR LAB — Automated pattern detection
+// ══════════════════════════════════════════════════
+function buildBehaviourLab(){
+  const el = document.getElementById('behaviour-content'); if(!el) return;
+  if(myTrades.length < 5){
+    el.innerHTML = `<div style="text-align:center;padding:40px 0;font-family:'Space Mono',monospace;font-size:0.62rem;color:rgba(255,255,255,0.15);letter-spacing:2px;line-height:2">Log at least 5 trades<br>to unlock behavioural analysis.</div>`;
+    return;
+  }
+
+  const insights = [];
+  const n = myTrades.length;
+
+  // ── 1. Emotional performance matrix ──
+  const emoMap = {};
+  myTrades.forEach(t=>{
+    const e = t.emotional_state||'unknown';
+    if(!emoMap[e]) emoMap[e]={wins:0,losses:0,pnl:0,rr:[]};
+    if(t.result==='win')  emoMap[e].wins++;
+    if(t.result==='loss') emoMap[e].losses++;
+    emoMap[e].pnl += (t.pnl||0);
+    if(t.rr_actual>0) emoMap[e].rr.push(t.rr_actual);
+  });
+
+  // Find best and worst emotional states
+  const emoArr = Object.entries(emoMap).filter(([,v])=>v.wins+v.losses>=2);
+  const bestEmo  = emoArr.sort((a,b)=>{ const wa=a[1].wins/(a[1].wins+a[1].losses); const wb=b[1].wins/(b[1].wins+b[1].losses); return wb-wa; })[0];
+  const worstEmo = [...emoArr].sort((a,b)=>{ const wa=a[1].wins/(a[1].wins+a[1].losses); const wb=b[1].wins/(b[1].wins+b[1].losses); return wa-wb; })[0];
+
+  if(bestEmo && worstEmo && bestEmo[0]!==worstEmo[0]){
+    const bWR = Math.round(bestEmo[1].wins/(bestEmo[1].wins+bestEmo[1].losses)*100);
+    const wWR = Math.round(worstEmo[1].wins/(worstEmo[1].wins+worstEmo[1].losses)*100);
+    insights.push({
+      type:'positive',icon:'🧠',
+      title:'Emotional Edge Identified',
+      body:`You win <span class="insight-stat" style="color:var(--neon)">${bWR}%</span> of trades taken in a <strong>${bestEmo[0]}</strong> state vs only <span class="insight-stat" style="color:var(--red3)">${wWR}%</span> when <strong>${worstEmo[0]}</strong>. Your edge is ${Math.round(bWR/Math.max(wWR,1)*10)/10}× higher when you trade in your optimal state.`
+    });
+  }
+
+  // ── 2. Session timing analysis ──
+  const sesMap = {};
+  myTrades.forEach(t=>{
+    const s = t.session||'Other';
+    if(!sesMap[s]) sesMap[s]={wins:0,n:0,pnl:0,rr:[]};
+    sesMap[s].n++;
+    if(t.result==='win') sesMap[s].wins++;
+    sesMap[s].pnl+=(t.pnl||0);
+    if(t.rr_actual>0) sesMap[s].rr.push(t.rr_actual);
+  });
+  const sesArr = Object.entries(sesMap).filter(([,v])=>v.n>=2);
+  if(sesArr.length>=2){
+    const bestSes  = sesArr.sort((a,b)=>b[1].pnl-a[1].pnl)[0];
+    const worstSes = [...sesArr].sort((a,b)=>a[1].pnl-b[1].pnl)[0];
+    const bWR = Math.round(bestSes[1].wins/bestSes[1].n*100);
+    insights.push({
+      type:'info',icon:'⏱',
+      title:'Session Edge',
+      body:`Your strongest session is <span class="insight-stat" style="color:var(--cyan3)">${bestSes[0]}</span> with <span class="insight-stat" style="color:var(--neon)">${fmt$(bestSes[1].pnl)}</span> P&L and ${bWR}% win rate across ${bestSes[1].n} trades. ${worstSes[0]!==bestSes[0]?`The <span class="insight-stat" style="color:var(--amber2)">${worstSes[0]}</span> session is your weakest — consider reducing size or sitting out entirely.`:''}`
+    });
+  }
+
+  // ── 3. Deviation penalty ──
+  const offStrat   = myTrades.filter(t=>!t.followed_strategy);
+  const onStrat    = myTrades.filter(t=>t.followed_strategy);
+  if(offStrat.length>=2 && onStrat.length>=2){
+    const onWR  = Math.round(onStrat.filter(t=>t.result==='win').length/onStrat.length*100);
+    const offWR = Math.round(offStrat.filter(t=>t.result==='win').length/offStrat.length*100);
+    const onPnl  = onStrat.reduce((s,t)=>s+(t.pnl||0),0)/onStrat.length;
+    const offPnl = offStrat.reduce((s,t)=>s+(t.pnl||0),0)/offStrat.length;
+    const type   = offWR < onWR ? 'danger' : 'positive';
+    insights.push({
+      type, icon:'📊',
+      title:'Strategy Deviation Impact',
+      body:`On-strategy trades: <span class="insight-stat" style="color:var(--neon)">${onWR}% WR</span> · avg <span class="insight-stat" style="color:var(--neon)">${fmt$(onPnl)}</span> per trade.<br>Off-strategy trades: <span class="insight-stat" style="color:var(--red3)">${offWR}% WR</span> · avg <span class="insight-stat" style="color:var(--red3)">${fmt$(offPnl)}</span> per trade.<br>${offWR<onWR?`Your discipline is worth <span class="insight-stat" style="color:var(--amber2)">${fmt$(onPnl-offPnl)}</span> per trade on average.`:'Interesting — deviations have not hurt your win rate yet. Monitor over more trades.'}`
+    });
+  }
+
+  // ── 4. Stop loss movement penalty ──
+  const movedStop  = myTrades.filter(t=>t.moved_stop);
+  const heldStop   = myTrades.filter(t=>!t.moved_stop && t.result!==undefined);
+  if(movedStop.length>=2){
+    const msWR  = Math.round(movedStop.filter(t=>t.result==='win').length/movedStop.length*100);
+    const hWR   = heldStop.length?Math.round(heldStop.filter(t=>t.result==='win').length/heldStop.length*100):0;
+    const msPnl = movedStop.reduce((s,t)=>s+(t.pnl||0),0);
+    insights.push({
+      type:'danger',icon:'🛑',
+      title:'Stop Loss Movement',
+      body:`You have moved your stop loss on ${movedStop.length} trade${movedStop.length>1?'s':''}. Net P&L from those trades: <span class="insight-stat" style="color:${msPnl>=0?'var(--neon)':'var(--red3)'}">${fmt$(msPnl)}</span>. Win rate with moved stops: <span class="insight-stat" style="color:var(--amber2)">${msWR}%</span> vs <span class="insight-stat" style="color:var(--neon)">${hWR}%</span> when you held your plan. Every moved stop is a discipline penalty.`
+    });
+  }
+
+  // ── 5. MAE/MFE efficiency ──
+  const maeTrades = myTrades.filter(t=>t.mae>0&&t.mfe>0&&t.rr_actual>0);
+  if(maeTrades.length>=3){
+    const avgMFE = maeTrades.reduce((s,t)=>s+t.mfe,0)/maeTrades.length;
+    const avgAct = maeTrades.reduce((s,t)=>s+t.rr_actual,0)/maeTrades.length;
+    const avgEff = Math.round(avgAct/avgMFE*100);
+    const leftOn = avgMFE-avgAct;
+    insights.push({
+      type: avgEff>=75?'positive':avgEff>=50?'info':'warning',
+      icon:'🎯',
+      title:'Exit Efficiency',
+      body:`On ${maeTrades.length} trades with MAE/MFE data, your average exit efficiency is <span class="insight-stat" style="color:${avgEff>=75?'var(--neon)':avgEff>=50?'var(--amber2)':'var(--red3)'}">${avgEff}%</span>. You are leaving an average of <span class="insight-stat" style="color:var(--amber2)">${leftOn.toFixed(2)}R</span> on the table per trade. ${avgEff<60?'Consider holding winners longer or using trailing stops.':'Your exits are reasonably efficient.'}`
+    });
+  }
+
+  // ── 6. Day-of-week pattern ──
+  const dow = {};
+  myTrades.forEach(t=>{
+    const d=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(t.trade_date+'T00:00:00').getDay()];
+    if(!dow[d]) dow[d]={wins:0,n:0,pnl:0};
+    dow[d].n++; dow[d].pnl+=(t.pnl||0);
+    if(t.result==='win') dow[d].wins++;
+  });
+  const dowArr=Object.entries(dow).filter(([d,v])=>v.n>=2&&d!=='Sat'&&d!=='Sun');
+  if(dowArr.length>=2){
+    const bestDay  = dowArr.sort((a,b)=>b[1].pnl-a[1].pnl)[0];
+    const worstDay = [...dowArr].sort((a,b)=>a[1].pnl-b[1].pnl)[0];
+    if(bestDay[0]!==worstDay[0]){
+      const wWR=Math.round(worstDay[1].wins/worstDay[1].n*100);
+      insights.push({
+        type: wWR<40?'warning':'info', icon:'📅',
+        title:'Day of Week Pattern',
+        body:`<span class="insight-stat" style="color:var(--neon)">${bestDay[0]}</span> is your most profitable day (${fmt$(bestDay[1].pnl)}). <span class="insight-stat" style="color:var(--amber2)">${worstDay[0]}</span> is your worst day with only ${wWR}% win rate. ${wWR<35?`Consider not trading on ${worstDay[0]}s — the data suggests you do not have an edge that day.`:''}`
+      });
+    }
+  }
+
+  // ── 7. Overtrading signal ──
+  const avgTradesPerDay = n / Math.max(Object.keys(dow).length,1);
+  const highTradeDays = Object.entries(dow).filter(([,v])=>v.n>avgTradesPerDay*1.5);
+  if(highTradeDays.length>=1 && avgTradesPerDay<3){
+    const hdWRs = highTradeDays.map(([d,v])=>({d,wr:Math.round(v.wins/v.n*100),n:v.n}));
+    const avgHdWR = Math.round(hdWRs.reduce((s,h)=>s+h.wr,0)/hdWRs.length);
+    if(avgHdWR < 45){
+      insights.push({
+        type:'warning',icon:'⚠',
+        title:'Overtrading Signal',
+        body:`On high-volume days (${highTradeDays.map(h=>h[0]).join(', ')}), your win rate drops to <span class="insight-stat" style="color:var(--red3)">${avgHdWR}%</span>. More trades does not mean more profit — it means more noise. Your edge appears in selective, high-conviction setups only.`
+      });
+    }
+  }
+
+  // ── 8. Consecutive loss behaviour ──
+  let maxL=0,curL=0,afterLossWR=0,afterLossCount=0;
+  const sorted=[...myTrades].sort((a,b)=>a.trade_date.localeCompare(b.trade_date));
+  sorted.forEach((t,i)=>{
+    if(t.result==='loss'){ curL++; maxL=Math.max(maxL,curL); }
+    else{ if(curL>=2&&i+1<sorted.length){ afterLossCount++; if(sorted[i].result==='win')afterLossWR++; } curL=0; }
+  });
+  if(afterLossCount>=3){
+    const alWR=Math.round(afterLossWR/afterLossCount*100);
+    insights.push({
+      type:alWR<40?'danger':'info',icon:'🔄',
+      title:'Post-Loss Behaviour',
+      body:`After 2+ consecutive losses, your next trade wins <span class="insight-stat" style="color:${alWR>=50?'var(--neon)':'var(--red3)'}">${alWR}%</span> of the time across ${afterLossCount} occurrences. ${alWR<40?'Your worst trades likely come right after a losing streak. Consider a mandatory cooldown rule: after 2 losses in a row, stop for the day.':'You appear to reset well after losses — this is a psychological strength.'}`
+    });
+  }
+
+  // ── RENDER ──
+  const emoCards = Object.entries(emoMap).map(([e,v])=>{
+    const tot=v.wins+v.losses;
+    const wr=tot?Math.round(v.wins/tot*100):0;
+    const wrCol=wr>=60?'var(--neon)':wr>=45?'var(--amber2)':'var(--red3)';
+    return `<div class="emo-card">
+      <div class="emo-name">${e}</div>
+      <div class="emo-wr" style="color:${wrCol}">${wr}%</div>
+      <div class="emo-sub">${tot} trade${tot!==1?'s':''} · ${fmt$(v.pnl)}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="insight-section-title">Automated Insights (${insights.length})</div>
+    ${insights.length ? insights.map(ins=>`
+      <div class="insight-card ${ins.type}">
+        <div class="insight-icon">${ins.icon}</div>
+        <div class="insight-title">${ins.title}</div>
+        <div class="insight-body">${ins.body}</div>
+      </div>`).join('')
+    : '<div style="font-family:\'Space Mono\',monospace;font-size:0.62rem;color:rgba(255,255,255,0.2);padding:10px 0;letter-spacing:1px">No significant patterns detected yet. Keep logging trades.</div>'}
+    <div class="insight-section-title" style="margin-top:20px">Emotional Performance Matrix</div>
+    <div class="emo-grid">${emoCards}</div>
+  `;
+}
+
+// ══════════════════════════════════════════════════
+// RISK DASHBOARD
+// ══════════════════════════════════════════════════
+function buildRiskDash(){
+  const el = document.getElementById('riskdash-content'); if(!el||!currentOp) return;
+  if(!myAccounts.length){
+    el.innerHTML=`<div style="text-align:center;padding:40px 0;font-family:'Space Mono',monospace;font-size:0.62rem;color:rgba(255,255,255,0.15);letter-spacing:2px">Add accounts in your profile to see risk analysis.</div>`;
+    return;
+  }
+
+  const activeAccs = myAccounts.filter(a=>['challenge','funded','live'].includes(a.account_type));
+
+  // Total capital at risk
+  const totalCapital   = activeAccs.reduce((s,a)=>s+(a.size||0),0);
+  const totalDrawdown  = activeAccs.reduce((s,a)=>s+Math.abs(a.current_pnl<0?a.current_pnl:0),0);
+  const totalDD_pct    = totalCapital>0?Math.round(totalDrawdown/totalCapital*1000)/10:0;
+
+  const cards = activeAccs.map(a=>{
+    const size    = a.size||0;
+    const pnl     = a.current_pnl||0;
+    const maxDD   = (a.max_drawdown||10)/100;         // % → decimal
+    const profTgt = (a.profit_target||8)/100;
+    const maxDDValue = size*maxDD;
+    const ddUsed  = pnl < 0 ? Math.abs(pnl) : 0;
+    const ddPct   = maxDDValue > 0 ? ddUsed/maxDDValue*100 : 0;
+    const profPct = pnl > 0 ? pnl/(size*profTgt)*100 : 0;
+
+    // Risk state
+    let riskClass, riskLabel, alert='', suggestion='';
+    if(ddPct >= 80){
+      riskClass='risk-red';
+      riskLabel='CRITICAL';
+      alert=`⚠ You are ${ddPct.toFixed(0)}% into max drawdown. Stop trading this account now.`;
+      suggestion='Recommended risk per trade: $0 — do not trade until next payout cycle.';
+    } else if(ddPct >= 60){
+      riskClass='risk-amber';
+      riskLabel='ELEVATED';
+      suggestion=`Reduce risk to 0.25% per trade until drawdown recovers. Avoid news events.`;
+    } else {
+      riskClass='risk-green';
+      riskLabel='HEALTHY';
+      const safeRisk = Math.round(size * 0.005);
+      suggestion=`Safe risk per trade: $${safeRisk.toLocaleString()} (0.5% of account)`;
+    }
+
+    return `<div class="risk-card ${riskClass}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div class="risk-card-name">${a.name}</div>
+          <div class="risk-card-type">${a.account_type.toUpperCase()} · $${size.toLocaleString()}</div>
+        </div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.44rem;letter-spacing:2px;padding:2px 7px;text-transform:uppercase;border:1px solid;${
+          riskClass==='risk-red'?'color:var(--red3);border-color:rgba(255,51,102,0.3);background:rgba(255,51,102,0.08)':
+          riskClass==='risk-amber'?'color:var(--amber2);border-color:rgba(255,184,0,0.3);background:rgba(255,184,0,0.06)':
+          'color:var(--neon);border-color:rgba(0,255,136,0.2);background:rgba(0,255,136,0.04)'
+        }">${riskLabel}</div>
+      </div>
+      <div class="risk-meter">
+        <div class="risk-meter-hdr">
+          <div class="risk-meter-lbl">Drawdown Used</div>
+          <div class="risk-meter-val" style="color:${ddPct>=80?'var(--red3)':ddPct>=60?'var(--amber2)':'var(--neon)'}">${ddPct.toFixed(0)}%</div>
+        </div>
+        <div class="risk-meter-track">
+          <div class="risk-meter-fill" style="width:${Math.min(ddPct,100)}%;background:${ddPct>=80?'var(--red3)':ddPct>=60?'var(--amber2)':'var(--neon)'}"></div>
+        </div>
+      </div>
+      <div class="risk-meter">
+        <div class="risk-meter-hdr">
+          <div class="risk-meter-lbl">Profit Target</div>
+          <div class="risk-meter-val" style="color:var(--neon)">${Math.min(profPct,100).toFixed(0)}%</div>
+        </div>
+        <div class="risk-meter-track">
+          <div class="risk-meter-fill" style="width:${Math.min(profPct,100)}%;background:var(--neon)"></div>
+        </div>
+      </div>
+      ${alert?`<div class="risk-alert">${alert}</div>`:''}
+      <div class="risk-suggestion">→ ${suggestion}</div>
+    </div>`;
+  }).join('');
+
+  // Cross-account summary
+  const summary = `
+    <div style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.06);padding:14px 16px;margin-bottom:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+      <div><div style="font-family:'Space Mono',monospace;font-size:0.9rem;font-weight:700;color:var(--white)">$${totalCapital.toLocaleString()}</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:3px">Total Capital</div></div>
+      <div><div style="font-family:'Space Mono',monospace;font-size:0.9rem;font-weight:700;color:${totalDD_pct>=8?'var(--red3)':totalDD_pct>=5?'var(--amber2)':'var(--neon)'}">${totalDD_pct}%</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:3px">Combined DD</div></div>
+      <div><div style="font-family:'Space Mono',monospace;font-size:0.9rem;font-weight:700;color:var(--cyan3)">${activeAccs.length}</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:3px">Active Accounts</div></div>
+      <div><div style="font-family:'Space Mono',monospace;font-size:0.9rem;font-weight:700;color:var(--amber2)">$${Math.round(totalCapital*0.005).toLocaleString()}</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:3px">Max Risk/Trade</div></div>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.44rem;letter-spacing:4px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px">Account Status <span style="flex:1;height:1px;background:rgba(255,255,255,0.05);display:block"></span></div>
+  `;
+
+  el.innerHTML = summary + `<div class="risk-dashboard">${cards}</div>`;
+}
+
+// ══════════════════════════════════════════════════
+// PRE-TRADE CHECKLIST GATE
+// ══════════════════════════════════════════════════
+const CHECKLIST_ITEMS = [
+  { id:'htf',    q:'HTF bias confirmed?',              hint:'Is the higher timeframe trend aligned with your direction?',  critical:true  },
+  { id:'poi',    q:'Point of Interest (POI) is valid?', hint:'Is the OB/FVG/level fresh and untested?',                   critical:true  },
+  { id:'conf',   q:'Entry confirmation received?',      hint:'Have you seen displacement, engulfing, or a candle close?', critical:true  },
+  { id:'rr',     q:'R:R meets minimum threshold?',      hint:'Is this trade at least 1:2 Risk:Reward?',                   critical:false },
+  { id:'dd',     q:"Today's drawdown limit intact?",    hint:'Are you within your prop firm daily loss limit?',            critical:true  },
+];
+
+let checklistState = {};
+let checklistPassScore = 0;
+
+function openChecklistGate(){
+  checklistState = {};
+  checklistPassScore = 0;
+  const gate = document.getElementById('checklist-gate');
+  const itemsEl = document.getElementById('cg-items');
+  if(!gate || !itemsEl) return;
+
+  itemsEl.innerHTML = CHECKLIST_ITEMS.map(item => `
+    <div class="cg-item" id="cgi-${item.id}" onclick="toggleChecklistItem('${item.id}')">
+      <div class="cg-cb" id="cgcb-${item.id}"></div>
+      <div class="cg-question">
+        <div class="cg-q">${item.q}</div>
+        <div class="cg-hint">${item.hint}</div>
+      </div>
+      ${item.critical ? `<div class="cg-flag crit">Required</div>` : ''}
+    </div>
+  `).join('');
+
+  updateChecklistScore();
+  gate.classList.add('open');
+}
+
+function toggleChecklistItem(id){
+  checklistState[id] = !checklistState[id];
+  const item = CHECKLIST_ITEMS.find(x => x.id === id);
+  const el   = document.getElementById(`cgi-${id}`);
+  const cb   = document.getElementById(`cgcb-${id}`);
+  if(!el || !cb) return;
+
+  if(checklistState[id]){
+    el.classList.add('checked');
+    el.classList.remove('failed');
+    cb.textContent = '✓';
+  } else {
+    el.classList.remove('checked');
+    cb.textContent = '';
+  }
+  updateChecklistScore();
+}
+
+function updateChecklistScore(){
+  const total   = CHECKLIST_ITEMS.length;
+  const checked = CHECKLIST_ITEMS.filter(i => checklistState[i.id]).length;
+  const critMet = CHECKLIST_ITEMS.filter(i => i.critical && !checklistState[i.id]).length === 0;
+  const pct     = Math.round(checked / total * 100);
+
+  const scoreEl  = document.getElementById('cg-score');
+  const fillEl   = document.getElementById('cg-score-fill');
+  const lblEl    = document.getElementById('cg-score-lbl');
+  const warnEl   = document.getElementById('cg-warning');
+  const procBtn  = document.getElementById('cg-proceed-btn');
+
+  if(scoreEl)  scoreEl.textContent  = `${checked}/${total}`;
+  if(fillEl)   fillEl.style.width   = pct + '%';
+
+  const labels = ['Not ready','Minimal','Borderline','Almost ready','Good to go','All clear'];
+  if(lblEl) lblEl.textContent = labels[Math.min(checked, labels.length-1)];
+
+  const canProceed = checked === total && critMet;
+  checklistPassScore = checked;
+
+  if(procBtn){
+    procBtn.disabled    = !canProceed;
+    procBtn.style.opacity = canProceed ? '1' : '0.4';
+  }
+
+  if(warnEl){
+    const missing = CHECKLIST_ITEMS.filter(i => i.critical && !checklistState[i.id]);
+    warnEl.textContent = missing.length
+      ? `${missing.length} required condition${missing.length > 1 ? 's' : ''} unmet`
+      : checked < total ? 'Optional conditions unchecked' : '';
+  }
+}
+
+function proceedAfterChecklist(){
+  // Score the checklist — partial completion penalises discipline
+  const scoreRatio = checklistPassScore / CHECKLIST_ITEMS.length;
+  if(scoreRatio < 1){
+    // Sub-optimal — will be reflected when trade is saved
+    window._checklistScore = scoreRatio;
+  } else {
+    window._checklistScore = 1;
+  }
+  closeChecklist();
+  toggleNewTradeForm(true);
+}
+
+function closeChecklist(){
+  const gate = document.getElementById('checklist-gate');
+  if(gate) gate.classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════
+// SESSION DEBRIEF
+// ══════════════════════════════════════════════════
+let debriefProcessRating = 0;
+let debriefEmotion = '';
+
+function openDebrief(){
+  const gate = document.getElementById('debrief-gate');
+  if(!gate) return;
+
+  // Populate today's session stats
+  const today  = fmtDate(new Date());
+  const todayT = myTrades.filter(t => t.trade_date === today);
+  const todayL = myLogs.find(l => l.log_date === today);
+  const wins   = todayT.filter(t => t.result === 'win').length;
+  const pnl    = todayT.reduce((s, t) => s + (t.pnl||0), 0);
+  const wr     = todayT.length ? Math.round(wins/todayT.length*100) : 0;
+  const avgRR  = todayT.filter(t=>t.rr_actual>0).length
+    ? (todayT.filter(t=>t.rr_actual>0).reduce((s,t)=>s+t.rr_actual,0)/todayT.filter(t=>t.rr_actual>0).length).toFixed(2)
+    : '—';
+
+  const statsEl = document.getElementById('db-session-stats');
+  if(statsEl) statsEl.innerHTML = `
+    <div class="db-stat"><div class="db-stat-v" style="color:${pnl>=0?'var(--neon)':'var(--red3)'}">${fmt$(pnl)}</div><div class="db-stat-l">P&L</div></div>
+    <div class="db-stat"><div class="db-stat-v" style="color:var(--neon)">${todayT.length}</div><div class="db-stat-l">Trades</div></div>
+    <div class="db-stat"><div class="db-stat-v" style="color:${wr>=50?'var(--neon)':'var(--amber2)'}">${wr}%</div><div class="db-stat-l">Win Rate</div></div>
+    <div class="db-stat"><div class="db-stat-v" style="color:var(--cyan3)">${avgRR}${avgRR!=='—'?'R':''}</div><div class="db-stat-l">Avg R:R</div></div>
+  `;
+
+  // Process rating buttons
+  const ratingEl = document.getElementById('db-process-rating');
+  if(ratingEl) ratingEl.innerHTML = [1,2,3,4,5,6,7,8,9,10].map(n => `
+    <button class="db-r-btn" onclick="setDebriefRating(${n},this)">${n}</button>
+  `).join('');
+
+  // Emotion buttons
+  const emoEl = document.getElementById('db-emotion-btns');
+  const emos = ['Focused','Calm','Patient','Confident','Anxious','FOMO','Revenge'];
+  if(emoEl) emoEl.innerHTML = emos.map(e => `
+    <button class="db-r-btn" onclick="setDebriefEmotion('${e.toLowerCase()}',this)">${e}</button>
+  `).join('');
+
+  // Pre-fill if log exists
+  if(todayL){
+    const wellEl    = document.getElementById('db-did-well');
+    const improveEl = document.getElementById('db-improve');
+    if(wellEl    && todayL.well_done)   wellEl.value    = todayL.well_done;
+    if(improveEl && todayL.improve)     improveEl.value = todayL.improve;
+  }
+
+  gate.classList.add('open');
+}
+
+function setDebriefRating(n, el){
+  debriefProcessRating = n;
+  document.querySelectorAll('#db-process-rating .db-r-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setDebriefEmotion(e, el){
+  debriefEmotion = e;
+  document.querySelectorAll('#db-emotion-btns .db-r-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function saveDebrief(){
+  const today    = fmtDate(new Date());
+  const didWell  = document.getElementById('db-did-well')?.value  || '';
+  const improve  = document.getElementById('db-improve')?.value   || '';
+  const tomorrow = document.getElementById('db-tomorrow')?.value  || '';
+
+  // Save as a mission log entry (upsert for today)
+  const existing = myLogs.find(l => l.log_date === today);
+  const payload  = {
+    operator_id:       currentOp.id,
+    squad_code:        SQUAD_CODE,
+    log_date:          today,
+    well_done:         didWell,
+    improve,
+    notes:             tomorrow,
+    discipline_rating: debriefProcessRating || undefined,
+    emotional_state:   debriefEmotion       || undefined,
+  };
+
+  if(existing){
+    await sb.from('mission_logs').update(payload).eq('id', existing.id);
+    Object.assign(existing, payload);
+  } else {
+    const { data } = await sb.from('mission_logs').insert(payload).select().single();
+    if(data) myLogs.unshift(data);
+  }
+
+  toast('DEBRIEF SAVED', 'Session reflection logged to your mission archive.');
+  closeDebrief();
+}
+
+function closeDebrief(){
+  const gate = document.getElementById('debrief-gate');
+  if(gate) gate.classList.remove('open');
+  debriefProcessRating = 0;
+  debriefEmotion = '';
+}
+
+// ══════════════════════════════════════════════════
+// WEEKLY REVIEW
+// ══════════════════════════════════════════════════
+async function saveWeeklyReview(){
+  const patterns   = document.getElementById('wr-patterns')?.value   || '';
+  const brokenRule = document.getElementById('wr-broken-rule')?.value || '';
+  const focus      = document.getElementById('wr-focus')?.value      || '';
+
+  if(!patterns && !brokenRule && !focus){
+    toast('EMPTY REVIEW', 'Fill in at least one field before saving.');
+    return;
+  }
+
+  // Store as a special mission log with week marker
+  const now  = new Date();
+  const week = `week-${now.getFullYear()}-W${String(Math.ceil(now.getDate()/7)).padStart(2,'0')}`;
+  await sb.from('mission_logs').insert({
+    operator_id: currentOp.id,
+    squad_code:  SQUAD_CODE,
+    log_date:    fmtDate(now),
+    notes:       `[WEEKLY REVIEW]\nPatterns: ${patterns}\nBroken rule: ${brokenRule}\nNext week focus: ${focus}`,
+    session_type: 'weekly_review',
+  });
+
+  // Clear fields
+  ['wr-patterns','wr-broken-rule','wr-focus'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+
+  toast('WEEKLY REVIEW SAVED', 'Reflection logged. See you next week.');
+  loadWeeklyReviews();
+}
+
+async function loadWeeklyReviews(){
+  const el = document.getElementById('weekly-reviews-list');
+  if(!el) return;
+  const reviews = myLogs.filter(l => l.session_type === 'weekly_review').slice(0, 5);
+  if(!reviews.length){ el.innerHTML = ''; return; }
+
+  el.innerHTML = `
+    <div style="font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:4px;color:rgba(255,255,255,0.15);text-transform:uppercase;margin:14px 0 8px">Past Reviews</div>
+    ${reviews.map(r => `
+      <div style="background:rgba(0,180,255,0.02);border:1px solid rgba(0,180,255,0.08);padding:10px 14px;margin-bottom:6px;">
+        <div style="font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:2px;color:rgba(0,180,255,0.5);text-transform:uppercase;margin-bottom:6px">${r.log_date}</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:rgba(255,255,255,0.35);line-height:1.8;white-space:pre-line">${(r.notes||'').replace('[WEEKLY REVIEW]\n','')}</div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ══════════════════════════════════════════════════
+// BEHAVIOUR LAB — pattern detection engine
+// ══════════════════════════════════════════════════
+function buildBehaviourLab(){
+  const el = document.getElementById('behaviour-content');
+  if(!el) return;
+
+  if(myTrades.length < 5){
+    el.innerHTML = `<div style="text-align:center;padding:50px 0;font-family:'Space Mono',monospace;font-size:0.65rem;color:rgba(255,255,255,0.15);letter-spacing:2px">Log at least 5 trades to unlock behavioural analysis.</div>`;
+    return;
+  }
+
+  const insights = [];
+
+  // ── EMOTIONAL STATE ANALYSIS ──────────────────────
+  const emoMap = {};
+  myTrades.forEach(t => {
+    const e = t.emotional_state || 'untagged';
+    if(!emoMap[e]) emoMap[e] = { wins:0, losses:0, pnl:0, rr:[] };
+    if(t.result==='win')  emoMap[e].wins++;
+    if(t.result==='loss') emoMap[e].losses++;
+    emoMap[e].pnl += (t.pnl||0);
+    if(t.rr_actual > 0) emoMap[e].rr.push(t.rr_actual);
+  });
+
+  const emoEntries = Object.entries(emoMap).map(([emo, v]) => ({
+    emo, ...v,
+    total: v.wins + v.losses,
+    wr:    v.wins + v.losses > 0 ? Math.round(v.wins/(v.wins+v.losses)*100) : 0,
+    avgRR: v.rr.length ? (v.rr.reduce((a,b)=>a+b,0)/v.rr.length) : 0,
+  })).filter(e => e.total >= 2).sort((a,b) => b.wr - a.wr);
+
+  const bestEmo  = emoEntries[0];
+  const worstEmo = emoEntries[emoEntries.length - 1];
+
+  if(bestEmo && worstEmo && bestEmo.emo !== worstEmo.emo){
+    const diff = bestEmo.wr - worstEmo.wr;
+    if(diff >= 15){
+      insights.push({
+        type: 'positive',
+        icon: '🧠',
+        title: 'Emotional Edge Detected',
+        body: `You win <span class="insight-stat" style="color:var(--neon)">${bestEmo.wr}%</span> of trades when feeling <strong>${bestEmo.emo}</strong> — but only <span class="insight-stat" style="color:var(--red3)">${worstEmo.wr}%</span> when <strong>${worstEmo.emo}</strong>. That's a <span class="insight-stat" style="color:var(--amber2)">${diff}pp gap</span>. Your emotional state is a significant predictor of outcome.`,
+      });
+    }
+  }
+
+  // Warn on dangerous emotions
+  const badEmos = ['fomo','revenge'];
+  badEmos.forEach(emo => {
+    const data = emoMap[emo];
+    if(data && (data.wins + data.losses) >= 3){
+      const wr = Math.round(data.wins/(data.wins+data.losses)*100);
+      if(wr < 50){
+        insights.push({
+          type: 'danger',
+          icon: '⚠',
+          title: `${emo.toUpperCase()} Trading Costing You`,
+          body: `${data.wins + data.losses} trades logged under <strong>${emo}</strong> — you win only <span class="insight-stat" style="color:var(--red3)">${wr}%</span> of them with net P&L of <span class="insight-stat" style="color:var(--red3)">${fmt$(data.pnl)}</span>. These trades are hurting your account.`,
+        });
+      }
+    }
+  });
+
+  // ── SESSION TIMING ANALYSIS ──────────────────────
+  const sessMap = {};
+  myTrades.forEach(t => {
+    const s = t.session || 'Other';
+    if(!sessMap[s]) sessMap[s] = { wins:0, total:0, pnl:0, rr:[] };
+    sessMap[s].total++;
+    if(t.result==='win') sessMap[s].wins++;
+    sessMap[s].pnl += (t.pnl||0);
+    if(t.rr_actual > 0) sessMap[s].rr.push(t.rr_actual);
+  });
+
+  const sessArr = Object.entries(sessMap).map(([sess, v]) => ({
+    sess, ...v,
+    wr:     v.total > 0 ? Math.round(v.wins/v.total*100) : 0,
+    avgRR:  v.rr.length ? (v.rr.reduce((a,b)=>a+b,0)/v.rr.length) : 0,
+    exp:    v.rr.length ? ((v.wins/v.total) * (v.rr.reduce((a,b)=>a+b,0)/v.rr.length) - (1 - v.wins/v.total)) : 0,
+  })).filter(s => s.total >= 3);
+
+  if(sessArr.length >= 2){
+    const bestSess  = sessArr.sort((a,b) => b.exp - a.exp)[0];
+    const worstSess = sessArr[sessArr.length - 1];
+    if(bestSess.exp > 0 && worstSess.exp < 0){
+      insights.push({
+        type: 'info',
+        icon: '⏱',
+        title: 'Session Timing Edge',
+        body: `Your highest expectancy session is <span class="insight-stat" style="color:var(--cyan3)">${bestSess.sess}</span> with <span class="insight-stat" style="color:var(--neon)">${bestSess.wr}% WR</span> and avg <span class="insight-stat" style="color:var(--neon)">${bestSess.avgRR.toFixed(1)}R</span>. Your <span class="insight-stat" style="color:var(--red3)">${worstSess.sess}</span> session has negative expectancy — consider sitting it out.`,
+      });
+    }
+  }
+
+  // ── SETUP PERFORMANCE ANALYSIS ──────────────────
+  const setupMap = {};
+  myTrades.forEach(t => {
+    const s = t.setup_type || 'Untagged';
+    if(!setupMap[s]) setupMap[s] = { wins:0, total:0, pnl:0, rr:[] };
+    setupMap[s].total++;
+    if(t.result==='win') setupMap[s].wins++;
+    setupMap[s].pnl += (t.pnl||0);
+    if(t.rr_actual > 0) setupMap[s].rr.push(t.rr_actual);
+  });
+
+  const setupArr = Object.entries(setupMap)
+    .map(([setup, v]) => ({ setup, ...v, wr: v.total > 0 ? Math.round(v.wins/v.total*100) : 0 }))
+    .filter(s => s.total >= 3)
+    .sort((a,b) => b.wr - a.wr);
+
+  if(setupArr.length >= 2){
+    const topSetup = setupArr[0];
+    const botSetup = setupArr[setupArr.length - 1];
+    if(topSetup.wr >= 60){
+      insights.push({
+        type: 'positive',
+        icon: '📐',
+        title: `Your A-Setup: ${topSetup.setup}`,
+        body: `${topSetup.setup} is your highest win-rate setup at <span class="insight-stat" style="color:var(--neon)">${topSetup.wr}%</span> over <span class="insight-stat" style="color:var(--neon)">${topSetup.total} trades</span> with net P&L of <span class="insight-stat" style="color:var(--neon3)">${fmt$(topSetup.pnl)}</span>. This is your edge. Trade it more.`,
+      });
+    }
+    if(botSetup.wr < 40 && botSetup.total >= 4){
+      insights.push({
+        type: 'warning',
+        icon: '🚫',
+        title: `Avoid: ${botSetup.setup}`,
+        body: `${botSetup.setup} has a <span class="insight-stat" style="color:var(--red3)">${botSetup.wr}% win rate</span> over ${botSetup.total} trades — net <span class="insight-stat" style="color:var(--red3)">${fmt$(botSetup.pnl)}</span>. This setup is costing you money. Consider removing it from your playbook until you've studied why it fails.`,
+      });
+    }
+  }
+
+  // ── STRATEGY ADHERENCE ────────────────────────────
+  const onStrat  = myTrades.filter(t => t.followed_strategy);
+  const offStrat = myTrades.filter(t => !t.followed_strategy);
+  if(onStrat.length >= 3 && offStrat.length >= 2){
+    const onWR  = Math.round(onStrat.filter(t=>t.result==='win').length / onStrat.length * 100);
+    const offWR = Math.round(offStrat.filter(t=>t.result==='win').length / offStrat.length * 100);
+    const onPnl  = onStrat.reduce((s,t)=>s+(t.pnl||0),0);
+    const offPnl = offStrat.reduce((s,t)=>s+(t.pnl||0),0);
+    if(onWR > offWR + 10){
+      insights.push({
+        type: offPnl < 0 ? 'danger' : 'warning',
+        icon: '📋',
+        title: 'Your System Works — Trust It',
+        body: `On-strategy trades: <span class="insight-stat" style="color:var(--neon)">${onWR}% WR</span>, net <span class="insight-stat" style="color:var(--neon3)">${fmt$(onPnl)}</span>. Off-strategy trades: <span class="insight-stat" style="color:var(--red3)">${offWR}% WR</span>, net <span class="insight-stat" style="color:var(--red3)">${fmt$(offPnl)}</span>. Deviations are costing you real money.`,
+      });
+    }
+  }
+
+  // ── MAE/MFE MANAGEMENT ANALYSIS ──────────────────
+  const maeTrades = myTrades.filter(t => t.mae > 0 && t.mfe > 0 && t.rr_actual > 0);
+  if(maeTrades.length >= 5){
+    const avgMFE    = maeTrades.reduce((s,t)=>s+t.mfe,0)/maeTrades.length;
+    const avgActual = maeTrades.reduce((s,t)=>s+t.rr_actual,0)/maeTrades.length;
+    const leftOnTable = avgMFE - avgActual;
+    if(leftOnTable > 0.5){
+      insights.push({
+        type: 'info',
+        icon: '💰',
+        title: 'You\'re Leaving Money on the Table',
+        body: `Your average MFE is <span class="insight-stat" style="color:var(--neon)">${avgMFE.toFixed(1)}R</span> but you exit at an average of <span class="insight-stat" style="color:var(--amber2)">${avgActual.toFixed(1)}R</span>. You're leaving <span class="insight-stat" style="color:var(--amber2)">${leftOnTable.toFixed(1)}R per trade</span> unrealised. Consider letting winners run — or at least taking partials at MFE before managing.`,
+      });
+    }
+  }
+
+  // ── CONSECUTIVE LOSS PATTERN ─────────────────────
+  const sorted = [...myTrades].sort((a,b) => a.trade_date.localeCompare(b.trade_date));
+  let curLoss = 0, maxLoss = 0;
+  sorted.forEach(t => { if(t.result==='loss'){curLoss++;maxLoss=Math.max(maxLoss,curLoss);}else curLoss=0; });
+  if(maxLoss >= 4){
+    insights.push({
+      type: 'danger',
+      icon: '🔴',
+      title: `Max ${maxLoss}-Loss Streak Detected`,
+      body: `You have a streak of <span class="insight-stat" style="color:var(--red3)">${maxLoss} consecutive losses</span> in your history. After 2 consecutive losses, consider stepping away for the session. Most accounts are damaged by trading through a drawdown rather than the drawdown itself.`,
+    });
+  }
+
+  // ── DIRECTION BIAS ────────────────────────────────
+  const longs  = myTrades.filter(t => t.direction === 'LONG');
+  const shorts = myTrades.filter(t => t.direction === 'SHORT');
+  if(longs.length >= 5 && shorts.length >= 5){
+    const longWR  = Math.round(longs.filter(t=>t.result==='win').length/longs.length*100);
+    const shortWR = Math.round(shorts.filter(t=>t.result==='win').length/shorts.length*100);
+    if(Math.abs(longWR - shortWR) >= 20){
+      const better  = longWR > shortWR ? 'LONG' : 'SHORT';
+      const betterWR = Math.max(longWR, shortWR);
+      const worse   = better === 'LONG' ? 'SHORT' : 'LONG';
+      const worseWR  = Math.min(longWR, shortWR);
+      insights.push({
+        type: 'info',
+        icon: '↕',
+        title: `Strong ${better} Bias`,
+        body: `${better} trades: <span class="insight-stat" style="color:var(--neon)">${betterWR}% WR</span>. ${worse} trades: <span class="insight-stat" style="color:var(--amber2)">${worseWR}% WR</span>. You may be better suited to trade primarily in one direction, or you need to review your ${worse.toLowerCase()} setup criteria.`,
+      });
+    }
+  }
+
+  // ── RENDER ────────────────────────────────────────
+  if(!insights.length){
+    insights.push({
+      type:'info', icon:'📊', title:'Analysing Your Data',
+      body:'Keep logging trades. Patterns will emerge once you have more data across sessions, setups, and emotional states. Aim for 20+ trades before trusting any single insight.',
+    });
+  }
+
+  // Emotion performance cards
+  const emoCardsHtml = emoEntries.length ? `
+    <div class="insight-section-title">Performance by Emotional State</div>
+    <div class="emo-grid">
+      ${emoEntries.map(e => `
+        <div class="emo-card">
+          <div class="emo-name">${e.emo}</div>
+          <div class="emo-wr" style="color:${e.wr>=60?'var(--neon)':e.wr>=45?'var(--amber2)':'var(--red3)'}">${e.wr}%</div>
+          <div class="emo-sub">${e.total} trades · ${fmt$(e.pnl)}</div>
+          ${e.avgRR > 0 ? `<div class="emo-sub">${e.avgRR.toFixed(2)}R avg</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+
+  // Session expectancy table
+  const sessTableHtml = sessArr.length ? `
+    <div class="insight-section-title">Session Expectancy</div>
+    <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.05);margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:100px 60px 60px 70px 1fr;gap:8px;padding:7px 12px;background:rgba(255,255,255,0.02);font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase">
+        <span>Session</span><span>WR</span><span>Trades</span><span>Net P&L</span><span>Expectancy</span>
+      </div>
+      ${sessArr.sort((a,b)=>b.exp-a.exp).map(s => `
+        <div style="display:grid;grid-template-columns:100px 60px 60px 70px 1fr;gap:8px;padding:8px 12px;border-top:1px solid rgba(255,255,255,0.04);align-items:center">
+          <span style="font-family:'Space Mono',monospace;font-size:0.62rem;color:rgba(255,255,255,0.7)">${s.sess}</span>
+          <span style="font-family:'Space Mono',monospace;font-size:0.62rem;color:${s.wr>=55?'var(--neon)':s.wr>=40?'var(--amber2)':'var(--red3)'};font-weight:700">${s.wr}%</span>
+          <span style="font-family:'Space Mono',monospace;font-size:0.58rem;color:rgba(255,255,255,0.3)">${s.total}</span>
+          <span style="font-family:'Space Mono',monospace;font-size:0.62rem;color:${s.pnl>=0?'var(--neon3)':'var(--red3)'}">${fmt$(s.pnl)}</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="flex:1;height:4px;background:rgba(255,255,255,0.05)">
+              <div style="height:100%;width:${Math.min(Math.abs(s.exp)*25,100)}%;background:${s.exp>0?'var(--neon)':'var(--red3)'}"></div>
+            </div>
+            <span style="font-family:'Space Mono',monospace;font-size:0.56rem;color:${s.exp>0?'var(--neon)':'var(--red3)'};font-weight:700">${s.exp>0?'+':''}${s.exp.toFixed(2)}R</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+
+  el.innerHTML = `
+    <div class="insight-section-title">Automated Insights — ${insights.length} pattern${insights.length!==1?'s':''} detected</div>
+    ${insights.map(ins => `
+      <div class="insight-card ${ins.type}">
+        <div class="insight-icon">${ins.icon}</div>
+        <div class="insight-title">${ins.title}</div>
+        <div class="insight-body">${ins.body}</div>
+      </div>
+    `).join('')}
+    ${emoCardsHtml}
+    ${sessTableHtml}
+  `;
+}
+
+// ══════════════════════════════════════════════════
+// RISK DASHBOARD — cross-account drawdown monitor
+// ══════════════════════════════════════════════════
+function buildRiskDash(){
+  const el = document.getElementById('riskdash-content');
+  if(!el) return;
+
+  if(!myAccounts.length){
+    el.innerHTML = `<div style="text-align:center;padding:50px 0;font-family:'Space Mono',monospace;font-size:0.65rem;color:rgba(255,255,255,0.15);letter-spacing:2px">Add accounts in your Profile to see risk analysis.</div>`;
+    return;
+  }
+
+  // Prop firm rule presets
+  const rulePresets = {
+    challenge:  { dailyLimit:5, maxDD:10, profitTarget:8,  label:'Challenge Rules' },
+    funded:     { dailyLimit:5, maxDD:10, profitTarget:null,label:'Funded Rules' },
+    live:       { dailyLimit:null, maxDD:null, profitTarget:null, label:'Live Account' },
+    demo:       { dailyLimit:null, maxDD:null, profitTarget:null, label:'Demo Account' },
+  };
+
+  // Calculate today's P&L per account
+  const today = fmtDate(new Date());
+  const todayTrades = myTrades.filter(t => t.trade_date === today);
+
+  const totalDDRisk = myAccounts.filter(a => ['challenge','funded'].includes(a.account_type))
+    .reduce((s, a) => s + (a.size||0) * ((a.max_drawdown||0)/100), 0);
+
+  const totalExposure = myAccounts.reduce((s, a) => s + (a.size||0), 0);
+
+  // Hero stats
+  const challenges = myAccounts.filter(a => a.account_type === 'challenge');
+  const funded     = myAccounts.filter(a => a.account_type === 'funded');
+  const atRisk     = myAccounts.filter(a => {
+    const rules = rulePresets[a.account_type] || {};
+    const ddUsed = a.max_drawdown || 0;
+    return rules.maxDD && ddUsed >= rules.maxDD * 0.8;
+  });
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;background:#000206;border:1px solid rgba(255,51,102,0.1);padding:14px;position:relative">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,51,102,0.4),transparent)"></div>
+      <div style="text-align:center"><div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--neon)">${myAccounts.length}</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:4px">Total Accounts</div></div>
+      <div style="text-align:center"><div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--amber2)">$${(totalExposure/1000).toFixed(0)}K</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:4px">Total Exposure</div></div>
+      <div style="text-align:center"><div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:${atRisk.length?'var(--red3)':'var(--neon)'}">${atRisk.length}</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:4px">At Risk (≥80% DD)</div></div>
+      <div style="text-align:center"><div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--cyan3)">${todayTrades.length}</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:4px">Trades Today</div></div>
+    </div>
+
+    <div class="risk-dashboard">
+      ${myAccounts.map(a => {
+        const rules     = rulePresets[a.account_type] || {};
+        const ddUsed    = a.max_drawdown || 0;
+        const ddAllowed = rules.maxDD || 10;
+        const ddPct     = Math.min(ddUsed / ddAllowed * 100, 100);
+        const profPct   = rules.profitTarget ? Math.min((a.current_pnl||0) / ((a.size||1) * rules.profitTarget/100) * 100, 100) : 0;
+
+        // Today's P&L for this account (approximate from session logs)
+        const todayPnl  = myTrades.filter(t=>t.trade_date===today).reduce((s,t)=>s+(t.pnl||0),0);
+        const dailyPct  = rules.dailyLimit ? Math.min(Math.abs(todayPnl) / ((a.size||1) * rules.dailyLimit/100) * 100, 100) : 0;
+
+        const riskLevel = ddPct >= 80 ? 'risk-red' : ddPct >= 50 ? 'risk-amber' : 'risk-green';
+        const ddCol     = ddPct >= 80 ? 'var(--red3)' : ddPct >= 50 ? 'var(--amber2)' : 'var(--neon)';
+
+        // Recommended risk per trade
+        const remainingDD  = (ddAllowed - ddUsed) / 100 * (a.size||0);
+        const recRisk      = remainingDD > 0 ? Math.min(1, remainingDD * 0.1) : 0;
+        const recRiskPct   = a.size ? (recRisk / a.size * 100).toFixed(2) : '—';
+
+        const alerts = [];
+        if(ddPct >= 90) alerts.push('CRITICAL: Near max drawdown limit');
+        else if(ddPct >= 75) alerts.push('WARNING: 75%+ of drawdown used');
+        if(rules.dailyLimit && dailyPct >= 80) alerts.push('Daily loss limit almost reached today');
+
+        return `<div class="risk-card ${riskLevel}">
+          <div class="risk-card-name">${a.name}</div>
+          <div class="risk-card-type">${rules.label||a.account_type} · $${(a.size||0).toLocaleString()}</div>
+          ${rules.maxDD ? `
+          <div class="risk-meter">
+            <div class="risk-meter-hdr">
+              <span class="risk-meter-lbl">Max Drawdown Used</span>
+              <span class="risk-meter-val" style="color:${ddCol}">${ddUsed.toFixed(1)}% / ${ddAllowed}%</span>
+            </div>
+            <div class="risk-meter-track">
+              <div class="risk-meter-fill" style="width:${ddPct}%;background:${ddCol}"></div>
+            </div>
+          </div>` : ''}
+          ${rules.profitTarget ? `
+          <div class="risk-meter">
+            <div class="risk-meter-hdr">
+              <span class="risk-meter-lbl">Profit Target Progress</span>
+              <span class="risk-meter-val" style="color:var(--neon)">${profPct.toFixed(0)}%</span>
+            </div>
+            <div class="risk-meter-track">
+              <div class="risk-meter-fill" style="width:${Math.max(0,profPct)}%;background:var(--neon)"></div>
+            </div>
+          </div>` : ''}
+          ${rules.dailyLimit ? `
+          <div class="risk-meter">
+            <div class="risk-meter-hdr">
+              <span class="risk-meter-lbl">Daily Limit Today</span>
+              <span class="risk-meter-val" style="color:${dailyPct>=80?'var(--red3)':'var(--muted2)'}">${dailyPct.toFixed(0)}%</span>
+            </div>
+            <div class="risk-meter-track">
+              <div class="risk-meter-fill" style="width:${dailyPct}%;background:${dailyPct>=80?'var(--red3)':'var(--cyan3)'}"></div>
+            </div>
+          </div>` : ''}
+          ${recRiskPct !== '—' ? `<div class="risk-suggestion">Rec. risk per trade: ${recRiskPct}% ($${recRisk.toFixed(0)})</div>` : ''}
+          ${alerts.map(a => `<div class="risk-alert">${a}</div>`).join('')}
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
 
 // ══════════════════════════════════════════════════
 // PARTICLES
@@ -3840,14 +5335,17 @@ function renderCustomTagDisplay(){
 
 function removeNewTag(i){ newCustomTags.splice(i,1); renderCustomTagDisplay(); }
 
-function toggleNewTradeForm(){
+function toggleNewTradeForm(forceOpen=false){
   const w=document.getElementById('new-trade-form-wrap');
-  w.style.display=w.style.display==='none'?'block':'none';
-  if(w.style.display==='block'){
+  const open = forceOpen ? true : w.style.display==='none';
+  w.style.display=open?'block':'none';
+  if(open){
     const today=new Date(); document.getElementById('t-date').value=fmtDate(today);
     newCustomTags=[]; renderCustomTagDisplay();
     document.querySelectorAll('#confluence-tags .tag').forEach(t=>{ if(t.classList.contains('selected')) t.classList.remove('selected'); });
     resetSSFields();
+    // Scroll form into view
+    w.scrollIntoView({behavior:'smooth',block:'start'});
   } else {
     resetSSFields();
   }
@@ -3985,50 +5483,163 @@ async function openTradeModal(tradeId){
   const col=t.result==='win'?'var(--green3)':t.result==='loss'?'var(--red3)':'var(--amber2)';
   const allTags=[...(t.confluences||[]),...(t.custom_tags||[])];
 
-  document.getElementById('m-title').textContent=`${t.pair} ${t.direction} — ${t.trade_date}`;
+  // Historical setup performance for this setup type
+  const sameSetup=myTrades.filter(x=>x.setup_type===t.setup_type&&x.id!==t.id);
+  const setupWins=sameSetup.filter(x=>x.result==='win').length;
+  const setupWR=sameSetup.length?Math.round(setupWins/sameSetup.length*100):null;
+
+  // Emotional state performance context
+  const sameEmo=myTrades.filter(x=>x.emotional_state===t.emotional_state&&x.id!==t.id);
+  const emoWins=sameEmo.filter(x=>x.result==='win').length;
+  const emoWR=sameEmo.length?Math.round(emoWins/sameEmo.length*100):null;
+
+  // MAE/MFE entry efficiency
+  const mae=t.mae||0, mfe=t.mfe||0, actual=t.rr_actual||0;
+  const entryEff=mfe>0?Math.round((actual/mfe)*100):null;
+  const exitEff=mae>0&&mfe>0?Math.round(((mfe-mae)/(actual||1))*10)/10:null;
+
+  // Violations on this trade
+  const violations=[];
+  if(t.moved_stop) violations.push({type:'warning',msg:'Stop loss was moved'});
+  if(t.daily_loss_breached) violations.push({type:'danger',msg:'Daily loss limit breached'});
+  if(!t.followed_strategy) violations.push({type:'warning',msg:'Strategy deviation logged'});
+  const badEmo=['fomo','revenge','anxious'];
+  if(badEmo.includes(t.emotional_state)) violations.push({type:'warning',msg:`Emotional flag: ${t.emotional_state}`});
+
+  document.getElementById('m-title').textContent=`${t.pair} ${t.direction} · ${t.trade_date}`;
   document.getElementById('m-body').innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px">
-      <div style="background:var(--bg3);padding:9px;text-align:center"><div style="font-size:0.5rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:3px">Result</div><div style="font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:800;color:${col}">${t.result.toUpperCase()}</div></div>
-      <div style="background:var(--bg3);padding:9px;text-align:center"><div style="font-size:0.5rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:3px">P&L</div><div style="font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:800;color:${(t.pnl||0)>=0?'var(--green3)':'var(--red3)'}">${fmt$(t.pnl||0)}</div></div>
-      <div style="background:var(--bg3);padding:9px;text-align:center"><div style="font-size:0.5rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:3px">R:R Actual</div><div style="font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:800;color:var(--neon)">${fmtRR(t.rr_actual)}</div></div>
-      <div style="background:var(--bg3);padding:9px;text-align:center"><div style="font-size:0.5rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:3px">Session</div><div style="font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:800;color:var(--slate3)">${t.session||'—'}</div></div>
+  <div class="trade-modal-grid">
+
+    <!-- LEFT col: core stats -->
+    <div>
+      <div class="tm-section">
+        <div class="tm-section-lbl">Trade Summary</div>
+        <div class="tm-stat-row"><span class="tm-stat-lbl">Result</span><span class="tm-stat-val" style="color:${col}">${t.result.toUpperCase()}</span></div>
+        <div class="tm-stat-row"><span class="tm-stat-lbl">P&L</span><span class="tm-stat-val" style="color:${(t.pnl||0)>=0?'var(--green3)':'var(--red3)'}">${fmt$(t.pnl||0)}</span></div>
+        <div class="tm-stat-row"><span class="tm-stat-lbl">Actual R:R</span><span class="tm-stat-val" style="color:var(--neon)">${fmtRR(t.rr_actual)}</span></div>
+        <div class="tm-stat-row"><span class="tm-stat-lbl">Planned R:R</span><span class="tm-stat-val" style="color:var(--muted2)">${fmtRR(t.rr_planned)}</span></div>
+        <div class="tm-stat-row"><span class="tm-stat-lbl">Session</span><span class="tm-stat-val">${t.session||'—'}</span></div>
+        <div class="tm-stat-row"><span class="tm-stat-lbl">Hold time</span><span class="tm-stat-val">${t.hold_time_minutes?t.hold_time_minutes+'min':'—'}</span></div>
+        <div class="tm-stat-row"><span class="tm-stat-lbl">Setup</span><span class="tm-stat-val" style="color:var(--neon)">${t.setup_type||'—'}</span></div>
+        <div class="tm-stat-row"><span class="tm-stat-lbl">Emotion</span><span class="tm-stat-val" style="color:${badEmo.includes(t.emotional_state)?'var(--amber2)':'var(--slate3)'}">${t.emotional_state||'—'}</span></div>
+        <div class="tm-stat-row"><span class="tm-stat-lbl">Strategy</span><span class="tm-stat-val" style="color:${t.followed_strategy?'var(--neon)':'var(--red3)'}">${t.followed_strategy?'✓ Followed':'✗ Deviated'}</span></div>
+      </div>
+
+      ${violations.length?`
+      <div class="tm-section">
+        <div class="tm-section-lbl">Violations / Flags</div>
+        ${violations.map(v=>`<div class="insight-card ${v.type}" style="padding:7px 10px;margin-bottom:4px">
+          <div class="insight-body">${v.msg}</div>
+        </div>`).join('')}
+      </div>`:''}
+
+      ${(mae||mfe)?`
+      <div class="tm-section">
+        <div class="tm-section-lbl">MAE / MFE Analysis</div>
+        <div class="maemfe-wrap">
+          <div class="maemfe-title">Excursion Diagram</div>
+          <div class="maemfe-bar-row">
+            <div class="maemfe-lbl">MAE</div>
+            <div class="maemfe-track">
+              <div class="maemfe-fill" style="width:${Math.min(mae/Math.max(mfe,mae,1)*100,100)}%;background:rgba(255,51,102,0.5)"></div>
+            </div>
+            <div class="maemfe-val" style="color:var(--red3)">${mae}R</div>
+          </div>
+          <div class="maemfe-bar-row">
+            <div class="maemfe-lbl">MFE</div>
+            <div class="maemfe-track">
+              <div class="maemfe-fill" style="width:100%;background:rgba(0,255,136,0.4)"></div>
+            </div>
+            <div class="maemfe-val" style="color:var(--neon)">${mfe}R</div>
+          </div>
+          <div class="maemfe-bar-row">
+            <div class="maemfe-lbl">Actual</div>
+            <div class="maemfe-track">
+              <div class="maemfe-fill" style="width:${Math.min(actual/Math.max(mfe,1)*100,100)}%;background:rgba(0,180,255,0.5)"></div>
+            </div>
+            <div class="maemfe-val" style="color:var(--cyan3)">${actual}R</div>
+          </div>
+          <div class="maemfe-efficiency">
+            <div class="maemfe-eff-item">
+              <div class="maemfe-eff-v" style="color:${(entryEff||0)>=70?'var(--neon)':'var(--amber2)'}">${entryEff!==null?entryEff+'%':'—'}</div>
+              <div class="maemfe-eff-l">Exit Efficiency</div>
+            </div>
+            <div class="maemfe-eff-item">
+              <div class="maemfe-eff-v" style="color:var(--cyan3)">${mfe>0?(mfe/Math.max(mae,0.1)).toFixed(1):'—'}:1</div>
+              <div class="maemfe-eff-l">MFE:MAE Ratio</div>
+            </div>
+            <div class="maemfe-eff-item">
+              <div class="maemfe-eff-v" style="color:var(--muted2)">${mfe>actual&&mfe>0?'Left '+(mfe-actual).toFixed(1)+'R':'Full exit'}</div>
+              <div class="maemfe-eff-l">Left on table</div>
+            </div>
+          </div>
+        </div>
+      </div>`:''}
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:0.8rem">
-      <div style="background:var(--bg3);padding:8px 10px"><div style="font-size:0.5rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:3px">Setup</div><div style="color:var(--neon)">${t.setup_type||'—'}</div></div>
-      <div style="background:var(--bg3);padding:8px 10px"><div style="font-size:0.5rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:3px">Outcome</div><div style="color:var(--slate3)">${(t.outcome_detail||'').replace('_',' ')}</div></div>
-      <div style="background:var(--bg3);padding:8px 10px"><div style="font-size:0.5rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:3px">Emotion</div><div style="color:var(--slate3)">${t.emotional_state||'—'}</div></div>
-      <div style="background:var(--bg3);padding:8px 10px"><div style="font-size:0.5rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:3px">Strategy</div><div style="color:${t.followed_strategy?'var(--green3)':'var(--red3)'}">${t.followed_strategy?'✓ Followed':'✗ Deviated'}</div></div>
+
+    <!-- RIGHT col: context + screenshots -->
+    <div>
+      ${setupWR!==null?`
+      <div class="tm-section">
+        <div class="tm-section-lbl">Setup History — ${t.setup_type}</div>
+        <div class="tm-setup-hist">
+          <div class="tm-setup-hist-title">${sameSetup.length} previous ${t.setup_type} trades</div>
+          <div style="display:flex;gap:12px;align-items:flex-end">
+            <div><div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:${setupWR>=55?'var(--neon)':setupWR>=40?'var(--amber2)':'var(--red3)'}">${setupWR}%</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase">Win Rate</div></div>
+            <div><div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--slate3)">${setupWins}W / ${sameSetup.length-setupWins}L</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase">Record</div></div>
+          </div>
+          <div style="height:3px;background:rgba(255,255,255,0.05);margin-top:8px">
+            <div style="height:100%;width:${setupWR}%;background:${setupWR>=55?'var(--neon)':setupWR>=40?'var(--amber2)':'var(--red3)'}"></div>
+          </div>
+        </div>
+      </div>`:''}
+
+      ${emoWR!==null?`
+      <div class="tm-section">
+        <div class="tm-section-lbl">When you feel ${t.emotional_state}</div>
+        <div class="tm-setup-hist">
+          <div class="tm-setup-hist-title">${sameEmo.length} trades with this emotion</div>
+          <div style="display:flex;gap:12px;align-items:flex-end">
+            <div><div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:${emoWR>=55?'var(--neon)':emoWR>=40?'var(--amber2)':'var(--red3)'}">${emoWR}%</div><div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase">Win Rate</div></div>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.48rem;color:rgba(255,255,255,0.2);margin-top:6px">${emoWR>=60?'This is one of your stronger emotional states.':emoWR>=45?'Mixed results in this state. Proceed carefully.':'Your edge drops significantly when you feel '+t.emotional_state+'.'}</div>
+        </div>
+      </div>`:''}
+
+      ${allTags.length?`
+      <div class="tm-section">
+        <div class="tm-section-lbl">Confluences & Tags</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${allTags.map(tag=>`<span class="tc-tag" style="color:var(--neon);border-color:rgba(0,255,136,0.2)">${tag}</span>`).join('')}</div>
+      </div>`:''}
     </div>
-    ${allTags.length?`<div style="margin-bottom:12px"><div class="m-sec-t">Tags & Confluences</div><div style="display:flex;flex-wrap:wrap;gap:4px">${allTags.map(tag=>`<span class="tc-tag" style="color:var(--neon);border-color:var(--neon2)">${tag}</span>`).join('')}</div></div>`:''}
+
+    <!-- SCREENSHOTS — full width -->
     ${(t.screenshot_url||t.screenshot_after)?`
-    <div style="margin-bottom:14px">
-      <div class="m-sec-t" style="margin-bottom:8px">Screenshots</div>
+    <div class="tmg-full tm-section">
+      <div class="tm-section-lbl">Screenshots</div>
       <div style="display:grid;grid-template-columns:${t.screenshot_url&&t.screenshot_after?'1fr 1fr':'1fr'};gap:8px">
         ${t.screenshot_url?`<div>
-          <div style="font-family:'Space Mono',monospace;font-size:0.5rem;letter-spacing:2px;color:var(--neon);text-transform:uppercase;margin-bottom:4px">📈 BEFORE — Setup / Entry</div>
-          <div style="position:relative;cursor:pointer" onclick="openSSLightbox('${t.screenshot_url.replace(/'/g,"\\'")}','Before — ${t.pair} ${t.direction}')">
-            <img src="${t.screenshot_url}" style="width:100%;border:1px solid var(--border2);display:block;max-height:200px;object-fit:cover" onerror="this.parentElement.style.display='none'">
-            <div style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;font-size:1.2rem" onmouseover="this.style.opacity=1;this.style.background='rgba(0,0,0,0.3)'" onmouseout="this.style.opacity=0;this.style.background='rgba(0,0,0,0)'">🔍</div>
-          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.44rem;letter-spacing:2px;color:var(--neon);margin-bottom:4px;text-transform:uppercase">📈 Before — Setup / Entry</div>
+          <img src="${t.screenshot_url}" style="width:100%;border:1px solid rgba(0,255,136,0.15);cursor:pointer;max-height:200px;object-fit:cover;display:block" onclick="openSSLightbox('${t.screenshot_url.replace(/'/g,"\\'")}','Before — ${t.pair}')" onerror="this.style.display='none'">
         </div>`:''}
         ${t.screenshot_after?`<div>
-          <div style="font-family:'Space Mono',monospace;font-size:0.5rem;letter-spacing:2px;color:${t.result==='win'?'var(--green3)':t.result==='loss'?'var(--red3)':'var(--muted2)'};text-transform:uppercase;margin-bottom:4px">🎯 AFTER — Result / Close</div>
-          <div style="position:relative;cursor:pointer" onclick="openSSLightbox('${t.screenshot_after.replace(/'/g,"\\'")}','After — ${t.pair} ${t.direction}')">
-            <img src="${t.screenshot_after}" style="width:100%;border:1px solid ${t.result==='win'?'var(--green3)':t.result==='loss'?'var(--red3)':'var(--border2)'};display:block;max-height:200px;object-fit:cover" onerror="this.parentElement.style.display='none'">
-            <div style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;font-size:1.2rem" onmouseover="this.style.opacity=1;this.style.background='rgba(0,0,0,0.3)'" onmouseout="this.style.opacity=0;this.style.background='rgba(0,0,0,0)'">🔍</div>
-          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.44rem;letter-spacing:2px;color:${col};margin-bottom:4px;text-transform:uppercase">🎯 After — Result / Close</div>
+          <img src="${t.screenshot_after}" style="width:100%;border:1px solid ${col}44;cursor:pointer;max-height:200px;object-fit:cover;display:block" onclick="openSSLightbox('${t.screenshot_after.replace(/'/g,"\\'")}','After — ${t.pair}')" onerror="this.style.display='none'">
         </div>`:''}
       </div>
     </div>`:''}
-    ${t.notes?`<div style="margin-bottom:14px"><div class="m-sec-t">Trade Notes</div><div class="m-text">${t.notes}</div></div>`:''}
-    <div>
+
+    <!-- NOTES + COMMENTS — full width -->
+    ${t.notes?`<div class="tmg-full tm-section"><div class="tm-section-lbl">Trade Notes</div><div class="m-text" style="font-size:0.78rem;line-height:1.7">${t.notes}</div></div>`:''}
+    <div class="tmg-full">
       <div class="m-sec-t">Squad Comments (${(comments||[]).length})</div>
-      <div id="trade-comments-list" style="margin-bottom:8px">${(comments||[]).map(c=>`<div style="background:var(--bg3);border:1px solid var(--border);padding:8px 10px;margin-bottom:3px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:3px"><span style="font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--neon)">${c.operators?.callsign||'—'}</span><span style="font-family:'Space Mono',monospace;font-size:0.52rem;color:var(--muted2)">${new Date(c.created_at).toLocaleDateString()}</span></div><div style="font-size:0.8rem;color:var(--slate3)">${c.comment}</div></div>`).join('') || '<div style="color:var(--muted2);font-size:0.8rem">No comments yet. Be first to comment.</div>'}</div>
+      <div id="trade-comments-list" style="margin-bottom:8px">${(comments||[]).map(c=>`<div style="background:rgba(0,255,136,0.02);border:1px solid rgba(0,255,136,0.08);padding:8px 10px;margin-bottom:3px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:3px"><span style="font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--neon)">${c.operators?.callsign||'—'}</span><span style="font-family:'Space Mono',monospace;font-size:0.52rem;color:rgba(255,255,255,0.2)">${new Date(c.created_at).toLocaleDateString()}</span></div><div style="font-size:0.78rem;color:rgba(255,255,255,0.55)">${c.comment}</div></div>`).join('') || '<div style="color:rgba(255,255,255,0.2);font-size:0.78rem;padding:5px 0">No comments yet.</div>'}</div>
       <div style="display:flex;gap:6px">
-        <input class="form-input" id="trade-comment-input" placeholder="Add a comment..." style="flex:1;font-size:0.8rem;padding:6px 9px">
-        <button class="btn-save" onclick="submitTradeComment('${tradeId}')" style="padding:6px 14px;font-size:0.7rem">POST</button>
+        <input class="form-input" id="trade-comment-input" placeholder="Add a comment..." style="flex:1;font-size:0.78rem;padding:6px 9px">
+        <button class="btn-save" onclick="submitTradeComment('${tradeId}')" style="padding:6px 14px;font-size:0.65rem">POST</button>
       </div>
-    </div>`;
+    </div>
+  </div>`;
   document.getElementById('modal').classList.add('open');
 }
 
@@ -5122,6 +6733,9 @@ function showSec(name,navEl){
   if(name==='squad') buildSquadProfiles();
   if(name==='compare') buildRankings();
   if(name==='playbook') buildPlaybook();
+  if(name==='behaviour') buildBehaviourLab();
+  if(name==='riskdash') buildRiskDash();
+  if(name==='log'){ buildDiscRating(); loadWeeklyReviews(); }
   if(name==='import'){
     importedTrades=[];
     const w=document.getElementById('import-preview-wrap');
@@ -5564,6 +7178,9 @@ function buildUI(){
     const stats=[['e',currentOp?.stat_edge_iq||0],['d',currentOp?.stat_discipline||0],['p',currentOp?.stat_patience||0],['r',currentOp?.stat_risk_control||0]];
     stats.forEach(([id,v])=>{ const el=document.getElementById(`af-${id}`); if(el) el.style.width=v+'%'; });
   },500);
+
+  // Load weekly reviews if log section visible
+  loadWeeklyReviews();
 }
 
 // ══════════════════════════════════════════════════
