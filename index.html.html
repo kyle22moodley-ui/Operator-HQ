@@ -1414,8 +1414,13 @@ body::after{
 .radar-canvas-wrap{
   display:flex;align-items:center;justify-content:center;
   position:relative;
+  perspective:600px;
 }
-#radar-cv{display:block;}
+#radar-cv{
+  display:block;
+  transition:transform 0.05s linear;
+  will-change:transform;
+}
 
 /* Radar legend */
 .radar-legend{
@@ -1790,7 +1795,7 @@ body::after{
           <div class="radar-title">Operator Radar</div>
           <div class="radar-subtitle">Tactical performance profile // live data</div>
           <div class="radar-canvas-wrap">
-            <canvas id="radar-cv" width="240" height="240"></canvas>
+            <canvas id="radar-cv" width="260" height="270"></canvas>
           </div>
           <div class="radar-legend" id="radar-legend"></div>
           <div class="radar-ghost-note">Squad average overlay</div>
@@ -2992,134 +2997,314 @@ function buildRadar(){
   const ctx=canvas.getContext('2d');
   const op=currentOp;
 
-  // The 5 axes
+  const W=260, H=270;
+  canvas.width=W; canvas.height=H;
+
   const axes=[
-    {code:'DCP',label:'Discipline',val:op.stat_discipline||0,col:'rgba(0,255,136,1)',glowCol:'rgba(0,255,136,0.4)'},
-    {code:'RSK',label:'Risk Ctrl', val:op.stat_risk_control||0,col:'rgba(0,200,255,1)',glowCol:'rgba(0,200,255,0.4)'},
-    {code:'CON',label:'Consistency',val:calcConsistency(),col:'rgba(180,140,255,1)',glowCol:'rgba(180,140,255,0.4)'},
-    {code:'PAT',label:'Patience',  val:op.stat_patience||0,col:'rgba(255,184,0,1)',glowCol:'rgba(255,184,0,0.4)'},
-    {code:'EDG',label:'Edge',      val:op.stat_edge_iq||0,col:'rgba(0,255,200,1)',glowCol:'rgba(0,255,200,0.4)'},
+    {code:'DCP',label:'Discipline', val:op.stat_discipline||0,   col:'rgba(0,255,136,1)',  glowCol:'rgba(0,255,136,0.5)',  rgb:[0,255,136]},
+    {code:'RSK',label:'Risk Ctrl',  val:op.stat_risk_control||0, col:'rgba(0,200,255,1)',  glowCol:'rgba(0,200,255,0.5)',  rgb:[0,200,255]},
+    {code:'CON',label:'Consistency',val:calcConsistency(),       col:'rgba(180,140,255,1)',glowCol:'rgba(180,140,255,0.5)',rgb:[180,140,255]},
+    {code:'PAT',label:'Patience',   val:op.stat_patience||0,     col:'rgba(255,184,0,1)',  glowCol:'rgba(255,184,0,0.5)',  rgb:[255,184,0]},
+    {code:'EDG',label:'Edge',       val:op.stat_edge_iq||0,      col:'rgba(0,255,200,1)',  glowCol:'rgba(0,255,200,0.5)',  rgb:[0,255,200]},
   ];
 
-  // Squad average per axis
   const squadAvg=axes.map((a,i)=>{
-    const vals=allOps.map(op2=>{
-      const v=[op2.stat_discipline,op2.stat_risk_control,calcConsistency(),op2.stat_patience,op2.stat_edge_iq][i]||0;
-      return v;
-    });
-    return vals.length?vals.reduce((s,v)=>s+v,0)/vals.length:0;
+    if(allOps.length<2) return 0;
+    const vals=allOps.map(o=>[o.stat_discipline,o.stat_risk_control,calcConsistency(),o.stat_patience,o.stat_edge_iq][i]||0);
+    return vals.reduce((s,v)=>s+v,0)/vals.length;
   });
 
-  const cx=120, cy=120, R=90, sides=5;
+  // ── 3D ISOMETRIC PROJECTION ──────────────────────────────────
+  // The radar sits on a tilted plane. We project each 2D point
+  // through an isometric transform: compress Y, add depth shadow.
+  const cx=W/2, cy=H/2-10;
+  const R=88, sides=5;
+  const TILT=0.52;   // Y compression for isometric feel (0=flat, 1=side-on)
+  const DEPTH=18;    // extrusion depth for the 3D side walls
   const angleOffset=-Math.PI/2;
 
-  function pentPoint(r,i){
-    const a=angleOffset+(2*Math.PI/sides)*i;
-    return {x:cx+r*Math.cos(a), y:cy+r*Math.sin(a)};
+  // Auto-rotation angle
+  let rotAngle=0;
+  let mouseRX=0, mouseRY=0; // mouse-based extra tilt
+  let animRunning=true;
+
+  // Mouse tilt handler
+  const card=document.querySelector('.radar-card');
+  function onMouseMove(e){
+    if(!card) return;
+    const rect=card.getBoundingClientRect();
+    const mx=((e.clientX-rect.left)/rect.width-0.5)*2;  // -1 to 1
+    const my=((e.clientY-rect.top)/rect.height-0.5)*2;
+    mouseRX=my*0.12;
+    mouseRY=mx*0.08;
+  }
+  function onMouseLeave(){ mouseRX=0; mouseRY=0; }
+  if(card){
+    card.addEventListener('mousemove',onMouseMove);
+    card.addEventListener('mouseleave',onMouseLeave);
   }
 
-  // Animate draw
-  let progress=0;
-  const duration=900;
+  // Project a flat 2D polar point into isometric 3D canvas coords
+  function project(r, angleIndex, extraAngle=0, yOffset=0){
+    const a=angleOffset+(2*Math.PI/sides)*angleIndex+extraAngle+rotAngle;
+    const flatX=r*Math.cos(a);
+    const flatY=r*Math.sin(a);
+    // Apply mouse tilt on top of base isometric
+    const tiltY=TILT+mouseRX;
+    const skewX=mouseRY;
+    return {
+      x: cx + flatX + flatY*skewX,
+      y: cy + flatY*tiltY + yOffset
+    };
+  }
+
+  // For continuous lines using fractional index (for animation)
+  function projectRaw(flatX, flatY, yOffset=0){
+    const tiltY=TILT+mouseRX;
+    const skewX=mouseRY;
+    return {
+      x: cx + flatX + flatY*skewX,
+      y: cy + flatY*tiltY + yOffset
+    };
+  }
+
   let startTime=null;
+  const BUILD_DUR=1100;
 
-  function draw(ts){
+  function drawFrame(ts){
     if(!startTime) startTime=ts;
-    progress=Math.min((ts-startTime)/duration,1);
-    const ease=1-Math.pow(1-progress,3);
+    const elapsed=ts-startTime;
+    const buildEase=Math.min(elapsed/BUILD_DUR,1);
+    const ease=1-Math.pow(1-buildEase,3);
 
-    ctx.clearRect(0,0,240,240);
+    // Slow continuous rotation
+    rotAngle+=0.004;
 
-    // ── Concentric pentagon grids ──
-    [0.2,0.4,0.6,0.8,1.0].forEach((t,gi)=>{
-      ctx.beginPath();
+    ctx.clearRect(0,0,W,H);
+
+    // ── FLOOR SHADOW — elliptical glow under the chart ──
+    const shadowGrad=ctx.createRadialGradient(cx,cy+DEPTH*TILT*0.8,0,cx,cy+DEPTH*TILT*0.8,R*0.9);
+    shadowGrad.addColorStop(0,'rgba(100,80,255,0.12)');
+    shadowGrad.addColorStop(0.5,'rgba(80,60,200,0.06)');
+    shadowGrad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.ellipse(cx, cy+DEPTH*TILT*0.8, R*0.88, R*TILT*0.65, 0, 0, Math.PI*2);
+    ctx.fillStyle=shadowGrad; ctx.fill();
+
+    // ── GRID RING SIDE WALLS (extrusion depth) ──
+    // Draw from outermost ring inward so inner rings paint over correctly
+    [1.0,0.8,0.6,0.4,0.2].forEach(t=>{
+      const gridR=R*t;
+      // Draw each face of the extruded pentagon wall
       for(let i=0;i<sides;i++){
-        const p=pentPoint(R*t,i);
-        i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
-      }
-      ctx.closePath();
-      ctx.strokeStyle=`rgba(100,200,255,${0.08+(gi===4?0.06:0)})`;
-      ctx.lineWidth=gi===4?0.8:0.5;
-      ctx.stroke();
-      // Grid labels at outermost ring
-      if(gi===4){
-        for(let i=0;i<sides;i++){
-          const p=pentPoint(R*1.18,i);
-          ctx.fillStyle='rgba(100,200,255,0.55)';
-          ctx.font='700 8px Space Mono';
-          ctx.textAlign='center';ctx.textBaseline='middle';
-          ctx.fillText(axes[i].code,p.x,p.y);
+        const next=(i+1)%sides;
+        const pTop=project(gridR,i);
+        const qTop=project(gridR,next);
+        const pBot={x:pTop.x,y:pTop.y+DEPTH*TILT*t};
+        const qBot={x:qTop.x,y:qTop.y+DEPTH*TILT*t};
+
+        // Only draw "visible" faces (facing toward viewer = lower half of pentagon)
+        const midAngle=angleOffset+(2*Math.PI/sides)*(i+0.5)+rotAngle;
+        const facing=Math.cos(midAngle)>-0.2; // rough visibility test
+
+        if(facing){
+          ctx.beginPath();
+          ctx.moveTo(pTop.x,pTop.y);
+          ctx.lineTo(qTop.x,qTop.y);
+          ctx.lineTo(qBot.x,qBot.y);
+          ctx.lineTo(pBot.x,pBot.y);
+          ctx.closePath();
+          // Shading: faces angled toward viewer are brighter
+          const brightness=0.03+facing*0.05;
+          ctx.fillStyle=`rgba(80,120,200,${brightness*t})`;
+          ctx.fill();
+          ctx.strokeStyle=`rgba(100,200,255,${0.04+t*0.04})`;
+          ctx.lineWidth=0.4;
+          ctx.stroke();
         }
       }
     });
 
-    // ── Axis spokes ──
+    // ── CONCENTRIC GRID RINGS (top face) ──
+    [0.2,0.4,0.6,0.8,1.0].forEach((t,gi)=>{
+      ctx.beginPath();
+      for(let i=0;i<sides;i++){
+        const p=project(R*t,i);
+        i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+      }
+      ctx.closePath();
+      const alpha=gi===4?0.18:0.08;
+      ctx.strokeStyle=`rgba(100,200,255,${alpha})`;
+      ctx.lineWidth=gi===4?0.9:0.5;
+      ctx.stroke();
+
+      // Value labels at 20/40/60/80/100 on top ring axis
+      if(gi===4){
+        for(let j=0;j<5;j++){
+          const pTop=project(R*t,j);
+          const labelPt=project(R*1.22,j);
+          ctx.fillStyle='rgba(100,200,255,0.6)';
+          ctx.font='700 7.5px Space Mono';
+          ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText(axes[j].code,labelPt.x,labelPt.y);
+        }
+      }
+      // Subtle percentage labels on one spoke
+      if(gi<4 && gi>0){
+        const labelPt=project(R*t,0);
+        ctx.fillStyle='rgba(100,200,255,0.22)';
+        ctx.font='5px Space Mono';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText((t*100).toFixed(0),labelPt.x,labelPt.y-3);
+      }
+    });
+
+    // ── AXIS SPOKES ──
     for(let i=0;i<sides;i++){
-      const p=pentPoint(R,i);
+      const p=project(R,i);
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(p.x,p.y);
-      ctx.strokeStyle='rgba(100,200,255,0.06)'; ctx.lineWidth=0.5; ctx.stroke();
+      ctx.strokeStyle='rgba(100,200,255,0.07)'; ctx.lineWidth=0.5; ctx.stroke();
     }
 
-    // ── Ghost overlay — squad average ──
+    // ── GHOST OVERLAY — squad average ──
     if(allOps.length>1){
       ctx.beginPath();
       for(let i=0;i<sides;i++){
         const r=R*(squadAvg[i]/100)*ease;
-        const p=pentPoint(r,i);
+        const p=project(r,i);
         i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
       }
       ctx.closePath();
-      ctx.fillStyle='rgba(120,120,160,0.08)';
-      ctx.fill();
-      ctx.strokeStyle='rgba(180,180,220,0.18)';
-      ctx.setLineDash([3,4]); ctx.lineWidth=0.8; ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='rgba(120,120,180,0.07)'; ctx.fill();
+      ctx.setLineDash([3,5]);
+      ctx.strokeStyle='rgba(180,180,220,0.2)'; ctx.lineWidth=0.8; ctx.stroke();
+      ctx.setLineDash([]);
     }
 
-    // ── Main operator fill ──
+    // ── DATA SHAPE EXTRUSION (3D volume of the operator shape) ──
+    // Bottom face first (darker, depth shadow)
     ctx.beginPath();
     for(let i=0;i<sides;i++){
       const r=R*(axes[i].val/100)*ease;
-      const p=pentPoint(r,i);
+      const a=angleOffset+(2*Math.PI/sides)*i+rotAngle;
+      const flatX=r*Math.cos(a), flatY=r*Math.sin(a);
+      const p=projectRaw(flatX,flatY,DEPTH*TILT*0.6);
       i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
     }
     ctx.closePath();
-    // Purple/electric blue gradient fill
-    const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
-    grad.addColorStop(0,'rgba(140,80,255,0.35)');
-    grad.addColorStop(0.5,'rgba(80,80,255,0.20)');
-    grad.addColorStop(1,'rgba(0,180,255,0.10)');
-    ctx.fillStyle=grad;
-    ctx.fill();
-    // Bright stroke
-    ctx.strokeStyle='rgba(140,100,255,0.7)';
-    ctx.lineWidth=1.2; ctx.stroke();
+    const bottomGrad=ctx.createRadialGradient(cx,cy+DEPTH*0.5,0,cx,cy+DEPTH*0.5,R);
+    bottomGrad.addColorStop(0,'rgba(100,60,200,0.15)');
+    bottomGrad.addColorStop(1,'rgba(40,20,120,0.05)');
+    ctx.fillStyle=bottomGrad; ctx.fill();
 
-    // ── Vertex dots with glow ──
+    // Side walls of data shape
     for(let i=0;i<sides;i++){
-      const r=R*(axes[i].val/100)*ease;
-      const p=pentPoint(r,i);
-      // Outer glow
-      const radGrad=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,8);
-      radGrad.addColorStop(0,axes[i].glowCol);
-      radGrad.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.beginPath(); ctx.arc(p.x,p.y,8,0,Math.PI*2);
-      ctx.fillStyle=radGrad; ctx.fill();
-      // Core dot
-      ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2);
-      ctx.fillStyle=axes[i].col; ctx.fill();
+      const next=(i+1)%sides;
+      const rA=R*(axes[i].val/100)*ease;
+      const rB=R*(axes[next].val/100)*ease;
+      const aA=angleOffset+(2*Math.PI/sides)*i+rotAngle;
+      const aB=angleOffset+(2*Math.PI/sides)*next+rotAngle;
+      const fxA=rA*Math.cos(aA), fyA=rA*Math.sin(aA);
+      const fxB=rB*Math.cos(aB), fyB=rB*Math.sin(aB);
+      const pA=projectRaw(fxA,fyA);
+      const pB=projectRaw(fxB,fyB);
+      const pAb=projectRaw(fxA,fyA,DEPTH*TILT*0.6);
+      const pBb=projectRaw(fxB,fyB,DEPTH*TILT*0.6);
+
+      // Interpolate colour between the two axis colours
+      const [r1,g1,b1]=axes[i].rgb;
+      const [r2,g2,b2]=axes[next].rgb;
+      const faceCol=`rgba(${Math.round((r1+r2)/2)},${Math.round((g1+g2)/2)},${Math.round((b1+b2)/2)},0.12)`;
+
+      ctx.beginPath();
+      ctx.moveTo(pA.x,pA.y); ctx.lineTo(pB.x,pB.y);
+      ctx.lineTo(pBb.x,pBb.y); ctx.lineTo(pAb.x,pAb.y);
+      ctx.closePath();
+      ctx.fillStyle=faceCol; ctx.fill();
     }
 
-    // ── Centre point ──
-    ctx.beginPath(); ctx.arc(cx,cy,2,0,Math.PI*2);
-    ctx.fillStyle='rgba(100,200,255,0.4)'; ctx.fill();
+    // ── MAIN DATA SHAPE — top face ──
+    ctx.beginPath();
+    for(let i=0;i<sides;i++){
+      const r=R*(axes[i].val/100)*ease;
+      const p=project(r,i);
+      i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath();
 
-    if(progress<1) requestAnimationFrame(draw);
+    // Translucent purple/blue radial gradient
+    const topGrad=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+    topGrad.addColorStop(0,'rgba(160,80,255,0.45)');
+    topGrad.addColorStop(0.45,'rgba(80,100,255,0.28)');
+    topGrad.addColorStop(1,'rgba(0,180,255,0.12)');
+    ctx.fillStyle=topGrad; ctx.fill();
+
+    // Bright border with glow
+    ctx.shadowColor='rgba(140,80,255,0.6)';
+    ctx.shadowBlur=8;
+    ctx.strokeStyle='rgba(160,100,255,0.85)'; ctx.lineWidth=1.4; ctx.stroke();
+    ctx.shadowBlur=0;
+
+    // ── VERTEX DOTS & GLOW ──
+    for(let i=0;i<sides;i++){
+      const r=R*(axes[i].val/100)*ease;
+      const p=project(r,i);
+      const [rv,gv,bv]=axes[i].rgb;
+
+      // Glow halo
+      const radGrad=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,10);
+      radGrad.addColorStop(0,`rgba(${rv},${gv},${bv},0.5)`);
+      radGrad.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.arc(p.x,p.y,10,0,Math.PI*2);
+      ctx.fillStyle=radGrad; ctx.fill();
+
+      // Vertical connection line down to bottom face
+      const pb=projectRaw(r*Math.cos(angleOffset+(2*Math.PI/sides)*i+rotAngle),
+                           r*Math.sin(angleOffset+(2*Math.PI/sides)*i+rotAngle),
+                           DEPTH*TILT*0.6);
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(pb.x,pb.y);
+      ctx.strokeStyle=`rgba(${rv},${gv},${bv},0.25)`; ctx.lineWidth=0.8; ctx.stroke();
+
+      // Core dot
+      ctx.shadowColor=`rgba(${rv},${gv},${bv},0.8)`;
+      ctx.shadowBlur=6;
+      ctx.beginPath(); ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+      ctx.fillStyle=axes[i].col; ctx.fill();
+      ctx.shadowBlur=0;
+
+      // Value label near dot
+      if(axes[i].val>0){
+        ctx.fillStyle=`rgba(${rv},${gv},${bv},0.85)`;
+        ctx.font='700 7px Space Mono';
+        const labelR=r+14;
+        const lp=project(labelR,i);
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(axes[i].val,lp.x,lp.y);
+      }
+    }
+
+    // ── CENTRE CORE ──
+    ctx.shadowColor='rgba(100,200,255,0.8)';
+    ctx.shadowBlur=12;
+    ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2);
+    ctx.fillStyle='rgba(100,200,255,0.9)'; ctx.fill();
+    ctx.shadowBlur=0;
+
+    if(animRunning) requestAnimationFrame(drawFrame);
   }
-  requestAnimationFrame(draw);
+  requestAnimationFrame(drawFrame);
+
+  // Stop rotation when section is hidden, resume when shown
+  const obs=new MutationObserver(()=>{
+    const sec=document.getElementById('sec-home');
+    animRunning=sec&&sec.classList.contains('active');
+  });
+  const sec=document.getElementById('sec-home');
+  if(sec) obs.observe(sec,{attributes:true,attributeFilter:['class']});
 
   // Build legend
   const legend=document.getElementById('radar-legend'); if(!legend) return;
-  legend.innerHTML=axes.map((a,i)=>`
+  legend.innerHTML=axes.map(a=>`
     <div class="radar-leg-row">
       <div class="radar-leg-dot" style="background:${a.col};box-shadow:0 0 5px ${a.glowCol}"></div>
       <div class="radar-leg-label">${a.label}</div>
@@ -3136,25 +3321,25 @@ function buildRadar(){
   // Build stat detail cards
   const panel=document.getElementById('radar-stats-panel'); if(!panel) return;
   const statDefs=[
-    {code:'DCP // 01',name:'Discipline',val:axes[0].val,col:axes[0].col,bg:'rgba(0,255,136,0.04)',border:'rgba(0,255,136,0.15)',desc:'Strategy adherence rate'},
-    {code:'RSK // 02',name:'Risk Control',val:axes[1].val,col:axes[1].col,bg:'rgba(0,200,255,0.04)',border:'rgba(0,200,255,0.15)',desc:'Drawdown vs target ratio'},
-    {code:'CON // 03',name:'Consistency',val:axes[2].val,col:axes[2].col,bg:'rgba(180,140,255,0.04)',border:'rgba(180,140,255,0.15)',desc:'Equity curve smoothness'},
-    {code:'PAT // 04',name:'Patience',val:axes[3].val,col:axes[3].col,bg:'rgba(255,184,0,0.04)',border:'rgba(255,184,0,0.15)',desc:'Entry quality vs idle time'},
-    {code:'EDG // 05',name:'Edge',val:axes[4].val,col:axes[4].col,bg:'rgba(0,255,200,0.04)',border:'rgba(0,255,200,0.15)',desc:'Execution power & win rate'},
+    {code:'DCP // 01',name:'Discipline',  val:axes[0].val,col:axes[0].col,bg:'rgba(0,255,136,0.04)',  border:'rgba(0,255,136,0.15)',  desc:'Strategy adherence rate'},
+    {code:'RSK // 02',name:'Risk Control',val:axes[1].val,col:axes[1].col,bg:'rgba(0,200,255,0.04)',  border:'rgba(0,200,255,0.15)',  desc:'Drawdown vs target ratio'},
+    {code:'CON // 03',name:'Consistency', val:axes[2].val,col:axes[2].col,bg:'rgba(180,140,255,0.04)',border:'rgba(180,140,255,0.15)',desc:'Equity curve smoothness'},
+    {code:'PAT // 04',name:'Patience',    val:axes[3].val,col:axes[3].col,bg:'rgba(255,184,0,0.04)',  border:'rgba(255,184,0,0.15)',  desc:'Entry quality vs idle time'},
+    {code:'EDG // 05',name:'Edge',        val:axes[4].val,col:axes[4].col,bg:'rgba(0,255,200,0.04)',  border:'rgba(0,255,200,0.15)',  desc:'Execution power & win rate'},
   ];
-  panel.innerHTML=statDefs.map(s=>{
-    const prev=0; // future: track deltas
-    return `<div class="rstat-card" style="background:${s.bg};border-color:${s.border}" onmouseenter="this.style.borderColor='${s.col.replace('1)','0.4)')}'" onmouseleave="this.style.borderColor='${s.border}'">
-      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${s.col},transparent);opacity:0.5"></div>
+  panel.innerHTML=statDefs.map(s=>`
+    <div class="rstat-card" style="background:${s.bg};border-color:${s.border}"
+      onmouseenter="this.style.borderColor='${s.col.replace('1)','0.35)')}';this.querySelector('.rstat-bar-fill').style.boxShadow='0 0 10px ${s.col.replace('1)','0.6)')}'"
+      onmouseleave="this.style.borderColor='${s.border}';this.querySelector('.rstat-bar-fill').style.boxShadow='0 0 6px ${s.col.replace('1)','0.3)')}'">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${s.col},transparent);opacity:0.45"></div>
       <div class="rstat-code">${s.code}</div>
-      <div class="rstat-val" style="color:${s.col};text-shadow:0 0 15px ${s.col.replace('1)','0.4)')}">${s.val}<span style="font-size:0.7rem;color:rgba(255,255,255,0.2)">/100</span></div>
+      <div class="rstat-val" style="color:${s.col};text-shadow:0 0 15px ${s.col.replace('1)','0.35)')}">${s.val}<span style="font-size:0.6rem;color:rgba(255,255,255,0.18)">/100</span></div>
       <div class="rstat-name">${s.name}</div>
       <div class="rstat-bar-track">
-        <div class="rstat-bar-fill" style="width:0%;background:${s.col};box-shadow:0 0 6px ${s.col.replace('1)','0.4)')}" data-w="${s.val}"></div>
+        <div class="rstat-bar-fill" style="width:0%;background:${s.col};box-shadow:0 0 6px ${s.col.replace('1)','0.3)')}" data-w="${s.val}"></div>
       </div>
       <div class="rstat-delta flat">${s.desc}</div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
   setTimeout(()=>panel.querySelectorAll('.rstat-bar-fill[data-w]').forEach(el=>{
     el.style.transition='width 1.4s cubic-bezier(0.4,0,0.2,1)';
     el.style.width=el.dataset.w+'%';
