@@ -2586,10 +2586,11 @@ body::after{
             <div class="import-zone-title">Drop your statement here</div>
             <div class="import-zone-sub">or click to browse</div>
             <div class="import-formats">
-              <span class="import-fmt-tag">MT4 HTML</span>
-              <span class="import-fmt-tag">MT5 HTML</span>
-              <span class="import-fmt-tag">CSV</span>
-              <span class="import-fmt-tag">cTrader CSV</span>
+              <span class="import-fmt-tag">MT4</span>
+              <span class="import-fmt-tag">MT5</span>
+              <span class="import-fmt-tag">cTrader</span>
+              <span class="import-fmt-tag">DXtrade</span>
+              <span class="import-fmt-tag">MatchTrader</span>
             </div>
           </div>
           <div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.2);letter-spacing:1px;line-height:1.8">
@@ -2598,19 +2599,24 @@ body::after{
             ▸ Any CSV with columns: date, pair, direction, lots, open, close, P&L
           </div>
         </div>
-        <!-- How to export guide -->
-        <div style="background:rgba(0,255,136,0.02);border:1px solid rgba(0,255,136,0.08);padding:16px;">
+          <div style="background:rgba(0,255,136,0.02);border:1px solid rgba(0,255,136,0.08);padding:16px;">
           <div style="font-family:'Orbitron',monospace;font-size:0.56rem;font-weight:700;letter-spacing:3px;color:var(--neon);text-transform:uppercase;margin-bottom:12px;text-shadow:0 0 8px rgba(0,255,136,0.3)">Export Guide</div>
-          <div style="font-family:'Space Mono',monospace;font-size:0.52rem;color:rgba(255,255,255,0.35);line-height:2;letter-spacing:0.5px">
-            <div style="color:rgba(0,255,136,0.6);margin-bottom:6px">MT4 / MT5</div>
-            1. Open terminal → Account History tab<br>
-            2. Right-click → All History<br>
-            3. Right-click → Save as Report (.htm)<br>
-            4. Drop file above<br><br>
-            <div style="color:rgba(0,180,255,0.6);margin-bottom:6px">cTrader</div>
-            1. History → select date range<br>
-            2. Export → CSV<br>
-            3. Drop file above
+          <div style="font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.35);line-height:2;letter-spacing:0.5px">
+            <div style="color:rgba(0,255,136,0.7);margin-bottom:4px;font-size:0.46rem;letter-spacing:2px;text-transform:uppercase">MT4</div>
+            Terminal → Account History → All History<br>
+            Right-click → Save as Report (.htm)<br><br>
+            <div style="color:rgba(0,255,136,0.7);margin-bottom:4px;font-size:0.46rem;letter-spacing:2px;text-transform:uppercase">MT5</div>
+            Toolbox → History tab → Right-click<br>
+            Report → HTML or Open XML<br><br>
+            <div style="color:rgba(0,180,255,0.7);margin-bottom:4px;font-size:0.46rem;letter-spacing:2px;text-transform:uppercase">cTrader</div>
+            History tab → Right-click → Export to CSV<br>
+            OR Statement → Save as Excel<br><br>
+            <div style="color:rgba(255,184,0,0.7);margin-bottom:4px;font-size:0.46rem;letter-spacing:2px;text-transform:uppercase">DXtrade</div>
+            Trade History widget → Download icon<br>
+            Select CSV format<br><br>
+            <div style="color:rgba(180,140,255,0.7);margin-bottom:4px;font-size:0.46rem;letter-spacing:2px;text-transform:uppercase">MatchTrader</div>
+            Closed positions tab → Download icon<br>
+            Select HTML format
           </div>
         </div>
       </div>
@@ -6087,93 +6093,426 @@ function parseImportFile(file){
   reader.onload = e => {
     const raw = e.target.result;
     const ext = file.name.split('.').pop().toLowerCase();
+    const name = file.name.toLowerCase();
+
     if(ext==='htm'||ext==='html'){
-      importedTrades = parseMT4HTML(raw);
+      // Auto-detect platform from HTML content
+      const platform = detectHTMLPlatform(raw);
+      if(platform==='matchtrader') importedTrades = parseMatchTraderHTML(raw);
+      else importedTrades = parseMT4HTML(raw); // MT4 + MT5 share the same parser
     } else {
-      importedTrades = parseCSV(raw);
+      // CSV/XML — detect platform from headers
+      const platform = detectCSVPlatform(raw);
+      if(platform==='ctrader')   importedTrades = parseCTraderCSV(raw);
+      else if(platform==='dxtrade') importedTrades = parseDXTradeCSV(raw);
+      else importedTrades = parseGenericCSV(raw);
     }
     renderImportPreview();
   };
   reader.readAsText(file);
 }
 
+// ── PLATFORM AUTO-DETECTION ──────────────────────────
+function detectHTMLPlatform(html){
+  const lower = html.toLowerCase();
+  if(lower.includes('match-trade')||lower.includes('matchtrader')||lower.includes('match trader')) return 'matchtrader';
+  if(lower.includes('metatrader 5')||lower.includes('mt5')) return 'mt5';
+  return 'mt4'; // default
+}
+
+function detectCSVPlatform(text){
+  const first = text.split('\n')[0].toLowerCase();
+  // cTrader: "opening direction","closing direction","entry price","closing price"
+  if(first.includes('opening direction')||first.includes('closing direction')||first.includes('closing time')) return 'ctrader';
+  // DXtrade: "side","realized p&l","open time","close time"
+  if(first.includes('realized p')||first.includes('side')||first.includes('open time')) return 'dxtrade';
+  return 'generic';
+}
+
+// ── MT4 / MT5 HTML PARSER ────────────────────────────
+// Handles: MT4 Save as Report, MT5 HTML export
+// Columns: Ticket, Open Time, Type, Size, Item/Symbol, Open Price, S/L, T/P, Close Time, Close Price, Commission, Swap, Profit
 function parseMT4HTML(html){
-  // MT4/MT5 statement HTML parser
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html,'text/html');
-  const rows = Array.from(doc.querySelectorAll('tr'));
+  const doc = parser.parseFromString(html, 'text/html');
   const trades = [];
-  rows.forEach(row=>{
-    const cells = Array.from(row.querySelectorAll('td')).map(td=>td.textContent.trim());
-    if(cells.length < 8) return;
-    // MT4 format: ticket, opentime, type, size, item, openprice, sl, tp, closetime, closeprice, commission, swap, profit
-    const type = (cells[2]||'').toLowerCase();
-    if(type!=='buy'&&type!=='sell') return; // skip deposits, balance rows
-    const pnl = parseFloat((cells[15]||cells[12]||'0').replace(/[,$\s]/g,''))||0;
-    const pair = (cells[4]||'UNKNOWN').toUpperCase().replace(/[^A-Z0-9]/g,'');
-    const openTime = cells[1]||'';
-    const dateRaw = openTime.split(' ')[0]||'';
-    const date = dateRaw.length>=10 ? dateRaw.substring(0,10) : new Date().toISOString().substring(0,10);
+
+  Array.from(doc.querySelectorAll('tr')).forEach(row=>{
+    const cells = Array.from(row.querySelectorAll('td')).map(td=>td.textContent.trim().replace(/\u00a0/g,' ').replace(/\s+/g,' '));
+    if(cells.length < 7) return;
+
+    // Find type field (buy/sell anywhere in first 6 cells)
+    let typeVal = '';
+    for(let i=0;i<Math.min(cells.length,7);i++){
+      const v = cells[i].toLowerCase().trim();
+      if(['buy','sell','buy limit','sell limit','buy stop','sell stop'].includes(v)){
+        typeVal = v; break;
+      }
+    }
+    if(!typeVal) return;
+
+    // Find date (first cell matching date pattern)
+    let dateStr = '';
+    for(let i=0;i<Math.min(cells.length,4);i++){
+      if(/\d{4}[.\-/]\d{2}[.\-/]\d{2}/.test(cells[i])){
+        dateStr = cells[i]; break;
+      }
+    }
+
+    // Find symbol (3-10 uppercase alphanumeric, not a number, not type keywords)
+    const skipWords = new Set(['buy','sell','balance','deposit','withdrawal','credit','bonus','correction']);
+    let symbol = '';
+    for(let i=0;i<cells.length;i++){
+      const v = cells[i].toUpperCase().replace(/[^A-Z0-9]/g,'');
+      if(v.length>=3&&v.length<=10&&!/^\d+$/.test(v)&&!skipWords.has(v.toLowerCase())){
+        symbol = v; break;
+      }
+    }
+
+    // Find P&L — last numeric cell, handles negative with minus or parens
+    let pnl = 0;
+    for(let i=cells.length-1;i>=0;i--){
+      const raw = cells[i].replace(/\s/g,'').replace(/,/g,'.');
+      const cleaned = raw.replace(/[()]/g,m=>m==='('?'-':'');
+      if(/^-?\d{1,8}(\.\d{1,5})?$/.test(cleaned)){
+        const val = parseFloat(cleaned);
+        // Sanity check — P&L shouldn't be a ticket number (> 1 million unrealistic)
+        if(Math.abs(val)<500000){ pnl=val; break; }
+      }
+    }
+
+    if(!symbol) return;
+
     trades.push({
-      trade_date: date,
-      pair,
-      direction: type==='buy'?'LONG':'SHORT',
+      trade_date: parseDateFlexible(dateStr) || new Date().toISOString().slice(0,10),
+      pair: symbol,
+      direction: typeVal.includes('buy')?'LONG':'SHORT',
       result: pnl>0?'win':pnl<0?'loss':'be',
       pnl,
-      rr_actual: 0,
-      rr_planned: 0,
-      session: guessSession(openTime),
-      setup_type: 'Imported',
-      followed_strategy: true,
-      notes: `Imported from MT4/MT5 statement`,
+      rr_actual:0, rr_planned:0,
+      session: guessSession(dateStr),
+      setup_type:'Imported',
+      followed_strategy:true,
+      moved_stop:false,
+      daily_loss_breached:false,
+      notes:'Imported from MT4/MT5',
     });
   });
   return trades;
 }
 
-function parseCSV(text){
-  const lines = text.trim().split('\n').filter(l=>l.trim());
-  if(lines.length < 2) return [];
-  const hdr = lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/['"]/g,''));
-  const find = keys=>{ for(const k of keys){ const i=hdr.indexOf(k); if(i>=0) return i; } return -1; };
-  const cols = {
-    date:   find(['date','open time','opentime','time','close time']),
-    pair:   find(['symbol','pair','instrument','ticket','item']),
-    dir:    find(['type','direction','side']),
-    pnl:    find(['profit','p&l','pnl','net p/l','net profit']),
-    rr:     find(['r:r','rr','risk reward','actual rr']),
-    lots:   find(['lots','volume','size']),
+// ── MATCH TRADER HTML PARSER ─────────────────────────
+// MatchTrader HTML export: Position, Symbol, Type (buy/sell), Volume,
+// Open Time, Open Price, Close Time, Close Price, Commission, Profit
+function parseMatchTraderHTML(html){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const trades = [];
+
+  // MatchTrader uses thead/tbody structure
+  let headers = [];
+  const thead = doc.querySelector('thead tr');
+  if(thead){
+    headers = Array.from(thead.querySelectorAll('th,td')).map(th=>th.textContent.trim().toLowerCase());
+  }
+
+  const getIdx = (...keys)=>{
+    for(const k of keys){
+      const i = headers.findIndex(h=>h.includes(k));
+      if(i>=0) return i;
+    }
+    return -1;
   };
-  return lines.slice(1).map(line=>{
-    const cells = line.split(',').map(c=>c.trim().replace(/['"]/g,''));
-    const g = i => i>=0?(cells[i]||''):'';
-    const pnl = parseFloat(g(cols.pnl).replace(/[$,\s]/g,''))||0;
-    const dir = (g(cols.dir)||'buy').toLowerCase();
-    const dateRaw = g(cols.date).substring(0,10)||new Date().toISOString().substring(0,10);
-    return {
-      trade_date: dateRaw,
-      pair: (g(cols.pair)||'UNKNOWN').toUpperCase().substring(0,10),
-      direction: (dir.includes('buy')||dir.includes('long'))?'LONG':'SHORT',
+
+  const iType   = getIdx('type','direction','side');
+  const iSymbol = getIdx('symbol','instrument');
+  const iOpen   = getIdx('open time','opentime','open date');
+  const iProfit = getIdx('profit','p&l','pnl','net');
+  const iVol    = getIdx('volume','lots','size','qty');
+
+  // If no headers found, fall back to MT4 parser logic
+  if(headers.length===0){ return parseMT4HTML(html); }
+
+  Array.from(doc.querySelectorAll('tbody tr')).forEach(row=>{
+    const cells = Array.from(row.querySelectorAll('td')).map(td=>td.textContent.trim().replace(/\u00a0/g,' '));
+    if(cells.length < 4) return;
+
+    const g = i => (i>=0&&i<cells.length)?cells[i]:'';
+    const typeRaw = g(iType).toLowerCase();
+    if(!typeRaw.includes('buy')&&!typeRaw.includes('sell')) return;
+
+    const symbolRaw = g(iSymbol).toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(!symbolRaw||symbolRaw.length<2) return;
+
+    const dateStr = g(iOpen);
+    const pnlRaw = g(iProfit).replace(/[,\s]/g,'').replace(/[()]/g,m=>m==='('?'-':'');
+    const pnl = parseFloat(pnlRaw)||0;
+
+    trades.push({
+      trade_date: parseDateFlexible(dateStr)||new Date().toISOString().slice(0,10),
+      pair: symbolRaw,
+      direction: typeRaw.includes('buy')?'LONG':'SHORT',
       result: pnl>0?'win':pnl<0?'loss':'be',
       pnl,
-      rr_actual: parseFloat(g(cols.rr))||0,
-      rr_planned: 0,
-      session: 'Other',
-      setup_type: 'Imported',
-      followed_strategy: true,
-      notes: 'Imported via CSV',
+      rr_actual:0, rr_planned:0,
+      session: guessSession(dateStr),
+      setup_type:'Imported',
+      followed_strategy:true,
+      moved_stop:false,
+      daily_loss_breached:false,
+      notes:'Imported from MatchTrader',
+    });
+  });
+
+  // Fallback to MT4 parser if nothing found
+  return trades.length>0 ? trades : parseMT4HTML(html);
+}
+
+// ── CTRADER CSV PARSER ───────────────────────────────
+// cTrader exports: Symbol, Opening direction, Closing direction,
+// Opening time, Closing time, Entry price, Closing price, Quantity, Profit
+// Delimiter can be comma or semicolon, thousands sep = space
+function parseCTraderCSV(text){
+  const lines = text.trim().split('\n').filter(l=>l.trim());
+  if(lines.length<2) return [];
+
+  // cTrader uses semicolons or commas
+  const delim = (lines[0].match(/;/g)||[]).length > (lines[0].match(/,/g)||[]).length ? ';' : ',';
+  const headers = lines[0].split(delim).map(h=>h.trim().replace(/['"]/g,'').toLowerCase());
+
+  const find = (...keys)=>{
+    for(const k of keys){
+      const i=headers.findIndex(h=>h.includes(k));
+      if(i>=0) return i;
+    }
+    return -1;
+  };
+
+  const iSymbol = find('symbol','instrument');
+  const iDir    = find('opening direction','direction','side','type');
+  const iOpen   = find('opening time','open time','time','date');
+  const iProfit = find('profit','net profit','p&l','pnl','gain');
+  const iQty    = find('quantity','volume','lots','size');
+
+  return lines.slice(1).map(line=>{
+    const cells = splitCSVLine(line,delim);
+    const g = i=>(i>=0&&i<cells.length)?cells[i].trim().replace(/['"]/g,''):'';
+
+    // cTrader uses space as thousands separator — remove it
+    const pnlRaw = g(iProfit).replace(/\s/g,'').replace(/,/g,'.').replace(/[()]/g,m=>m==='('?'-':'');
+    const pnl = parseFloat(pnlRaw)||0;
+
+    const symbol = g(iSymbol).toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,12);
+    if(!symbol||symbol.length<2) return null;
+
+    const dirRaw = g(iDir).toLowerCase();
+    const dateStr = g(iOpen);
+
+    return {
+      trade_date: parseDateFlexible(dateStr)||new Date().toISOString().slice(0,10),
+      pair: symbol,
+      direction: dirRaw.includes('sell')?'SHORT':'LONG',
+      result: pnl>0?'win':pnl<0?'loss':'be',
+      pnl,
+      rr_actual:0, rr_planned:0,
+      session: guessSession(dateStr),
+      setup_type:'Imported',
+      followed_strategy:true,
+      moved_stop:false,
+      daily_loss_breached:false,
+      notes:'Imported from cTrader',
     };
-  }).filter(t=>t.pair&&t.pair!=='UNKNOWN');
+  }).filter(t=>t&&t.pair);
+}
+
+// ── DXTRADE CSV PARSER ───────────────────────────────
+// DXtrade columns: Symbol, Side (BUY/SELL), Open Time, Close Time,
+// Open Price, Close Price, Volume, Realized P&L, Commission, Swap
+// Used by: Apex Trader, FTUK, Goat Funded, many others
+function parseDXTradeCSV(text){
+  const lines = text.trim().split('\n').filter(l=>l.trim());
+  if(lines.length<2) return [];
+
+  const delim = (lines[0].match(/\t/g)||[]).length>3?'\t':',';
+  const headers = lines[0].split(delim).map(h=>h.trim().replace(/['"]/g,'').toLowerCase());
+
+  const find = (...keys)=>{
+    for(const k of keys){
+      const i=headers.findIndex(h=>h.includes(k));
+      if(i>=0) return i;
+    }
+    return -1;
+  };
+
+  const iSymbol = find('symbol','instrument');
+  const iSide   = find('side','type','direction');
+  const iOpen   = find('open time','open date','entry time','opentime');
+  const iProfit = find('realized p','net p','pnl','profit','gain/loss','closed p');
+  const iComm   = find('commission','comm');
+  const iSwap   = find('swap','rollover');
+
+  return lines.slice(1).map(line=>{
+    const cells = splitCSVLine(line,delim);
+    const g = i=>(i>=0&&i<cells.length)?cells[i].trim().replace(/['"]/g,''):'';
+
+    const symbol = g(iSymbol).toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,12);
+    if(!symbol||symbol.length<2) return null;
+
+    const sideRaw = g(iSide).toLowerCase();
+    if(!sideRaw.includes('buy')&&!sideRaw.includes('sell')&&!sideRaw.includes('long')&&!sideRaw.includes('short')) return null;
+
+    const pnlRaw = g(iProfit).replace(/[,\s$]/g,'').replace(/[()]/g,m=>m==='('?'-':'');
+    const commRaw = g(iComm).replace(/[,\s$]/g,'')||'0';
+    const swapRaw = g(iSwap).replace(/[,\s$]/g,'')||'0';
+    const pnl = (parseFloat(pnlRaw)||0)+(parseFloat(commRaw)||0)+(parseFloat(swapRaw)||0);
+
+    const dateStr = g(iOpen);
+
+    return {
+      trade_date: parseDateFlexible(dateStr)||new Date().toISOString().slice(0,10),
+      pair: symbol,
+      direction: (sideRaw.includes('buy')||sideRaw.includes('long'))?'LONG':'SHORT',
+      result: pnl>0?'win':pnl<0?'loss':'be',
+      pnl,
+      rr_actual:0, rr_planned:0,
+      session: guessSession(dateStr),
+      setup_type:'Imported',
+      followed_strategy:true,
+      moved_stop:false,
+      daily_loss_breached:false,
+      notes:'Imported from DXtrade',
+    };
+  }).filter(t=>t&&t.pair);
+}
+
+// ── GENERIC CSV PARSER ───────────────────────────────
+// Fallback for any CSV format — maximum flexibility
+function parseGenericCSV(text){
+  if(!text||!text.trim()) return [];
+
+  const firstLine = text.split('\n')[0];
+  let delim = ',';
+  if((firstLine.match(/\t/g)||[]).length>(firstLine.match(/,/g)||[]).length) delim='\t';
+  else if((firstLine.match(/;/g)||[]).length>(firstLine.match(/,/g)||[]).length) delim=';';
+
+  const lines = text.trim().split('\n').filter(l=>l.trim());
+  if(lines.length<2) return [];
+
+  const rawHdr = lines[0].split(delim).map(h=>h.trim().replace(/['"]/g,'').toLowerCase());
+
+  const find = (...keys)=>{
+    for(const k of keys){
+      const exact = rawHdr.indexOf(k);
+      if(exact>=0) return exact;
+      const partial = rawHdr.findIndex(h=>h.includes(k));
+      if(partial>=0) return partial;
+    }
+    return -1;
+  };
+
+  const cols = {
+    date:   find('open time','opentime','close time','closetime','date','time','datetime','ticket date'),
+    pair:   find('symbol','instrument','pair','item','currency','market','asset'),
+    dir:    find('type','direction','side','action','order type'),
+    pnl:    find('profit','net p/l','pnl','p&l','net profit','realized','gain/loss','pl','closed'),
+    rr:     find('r:r','risk reward','rr','risk/reward','r multiple'),
+    result: find('result','outcome','win/loss','status'),
+  };
+
+  return lines.slice(1).map(line=>{
+    if(!line.trim()) return null;
+    const cells = splitCSVLine(line,delim);
+    const g = i=>(i>=0&&i<cells.length)?cells[i].trim().replace(/^["']|["']$/g,''):'';
+
+    const pairRaw = g(cols.pair).toUpperCase().replace(/[^A-Z0-9._\-]/g,'').substring(0,12);
+    if(!pairRaw||pairRaw.length<2) return null;
+
+    const dirRaw = g(cols.dir).toLowerCase();
+    const pnlRaw = g(cols.pnl).replace(/[$,\s]/g,'').replace(/[()]/g,m=>m==='('?'-':'');
+    const pnl = parseFloat(pnlRaw)||0;
+    const dateRaw = g(cols.date);
+    const date = parseDateFlexible(dateRaw)||new Date().toISOString().slice(0,10);
+
+    const isBuy = dirRaw.includes('buy')||dirRaw.includes('long')||dirRaw==='b';
+    const isSell = dirRaw.includes('sell')||dirRaw.includes('short')||dirRaw==='s';
+
+    // Skip rows that are clearly not trades (deposits, withdrawals, etc.)
+    const skipKeywords = ['deposit','withdrawal','balance','credit','swap','dividend','commission only'];
+    if(skipKeywords.some(k=>dirRaw.includes(k)||pairRaw.toLowerCase().includes(k))) return null;
+
+    let result = pnl>0?'win':pnl<0?'loss':'be';
+    const resultRaw = g(cols.result).toLowerCase();
+    if(resultRaw==='win'||resultRaw==='won'||resultRaw==='profit') result='win';
+    else if(resultRaw==='loss'||resultRaw==='lose'||resultRaw==='lost') result='loss';
+
+    return {
+      trade_date: date,
+      pair: pairRaw,
+      direction: isSell?'SHORT':'LONG',
+      result,
+      pnl,
+      rr_actual: parseFloat(g(cols.rr).replace(/[^0-9.\-]/g,''))||0,
+      rr_planned: 0,
+      session: guessSession(g(cols.date)),
+      setup_type:'Imported',
+      followed_strategy:true,
+      moved_stop:false,
+      daily_loss_breached:false,
+      notes:'Imported via CSV',
+    };
+  }).filter(t=>t&&t.pair);
+}
+
+// ── SHARED UTILITIES ─────────────────────────────────
+
+function parseDateFlexible(str){
+  if(!str) return null;
+  // Strip time portion, handle multiple formats
+  const s = str.trim().replace(/[Tt]\d{2}:\d{2}.*$/,'');
+  const datePart = s.split(' ')[0];
+
+  // 2024.01.15 or 2024-01-15 or 2024/01/15
+  if(/^\d{4}[.\-/]\d{2}[.\-/]\d{2}$/.test(datePart)){
+    return datePart.replace(/[./]/g,'-');
+  }
+  // 15.01.2024 or 15/01/2024 or 15-01-2024
+  if(/^\d{2}[.\-/]\d{2}[.\-/]\d{4}$/.test(datePart)){
+    const p = datePart.split(/[.\-/]/);
+    return `${p[2]}-${p[1]}-${p[0]}`;
+  }
+  // 2024.01.15 12:30 (with time, take date part already split above)
+  if(/^\d{4}[.\-/]\d{2}[.\-/]\d{2}$/.test(s.split(' ')[0].replace(/[.]/g,'-').replace(/\//g,'-'))){
+    return s.split(' ')[0].replace(/\./g,'-').replace(/\//g,'-');
+  }
+  // ISO or browser-parseable
+  const d = new Date(str);
+  if(!isNaN(d.getTime())) return d.toISOString().slice(0,10);
+  return null;
+}
+
+function splitCSVLine(line, delim=','){
+  const result = [];
+  let cur = '';
+  let inQ = false;
+  for(let i=0;i<line.length;i++){
+    const ch = line[i];
+    if((ch==='"'||ch==="'")&&(i===0||line[i-1]===delim)) inQ=!inQ;
+    else if(ch==='"'&&inQ) inQ=false;
+    else if(ch===delim&&!inQ){ result.push(cur); cur=''; continue; }
+    else cur+=ch;
+  }
+  result.push(cur);
+  return result;
 }
 
 function guessSession(timeStr){
   if(!timeStr) return 'Other';
-  const parts = timeStr.split(' ');
-  const timePart = parts[1]||parts[0]||'';
+  const timePart = (timeStr.includes(' ')?timeStr.split(' ')[1]:timeStr).trim();
   const h = parseInt(timePart.split(':')[0])||0;
-  if(h>=8&&h<12) return 'London';
+  if(h>=7&&h<12)  return 'London';
   if(h>=12&&h<17) return 'NY';
-  if(h>=0&&h<5) return 'Asian';
+  if(h>=17&&h<20) return 'NY Overlap';
+  if(h>=0&&h<6)   return 'Asian';
   return 'Other';
 }
 
@@ -6185,7 +6524,9 @@ function renderImportPreview(){
   if(!wrap||!rowsEl||!sumEl) return;
 
   if(!importedTrades.length){
-    toast('IMPORT ERROR','No valid trades found in file. Check format.');
+    const wrap2 = document.getElementById('import-preview-wrap');
+    if(wrap2) wrap2.style.display='none';
+    toast('IMPORT ERROR','No valid trades detected. Check the guide on the right for the correct export format.');
     return;
   }
 
@@ -6390,10 +6731,40 @@ async function saveProfile(){
 }
 
 async function addAccount(){
-  const n=document.getElementById('acc-n')?.value; if(!n) return;
-  const a={operator_id:currentOp.id,name:n,size:parseFloat(document.getElementById('acc-s')?.value)||0,account_type:document.getElementById('acc-t')?.value,profit_target:parseFloat(document.getElementById('acc-tg')?.value)||8};
-  const{data}=await sb.from('accounts').insert(a).select().single();
-  if(data){myAccounts.push(data);renderAccounts();['acc-n','acc-s','acc-tg'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
+  const nameEl = document.getElementById('acc-n');
+  const sizeEl = document.getElementById('acc-s');
+  const typeEl = document.getElementById('acc-t');
+  const tgtEl  = document.getElementById('acc-tg');
+
+  const n = nameEl?.value?.trim();
+  if(!n){ toast('ERROR','Please enter an account name.'); return; }
+  if(!currentOp){ toast('ERROR','Not logged in.'); return; }
+
+  const a = {
+    operator_id:   currentOp.id,
+    name:          n,
+    size:          parseFloat(sizeEl?.value)||0,
+    account_type:  typeEl?.value||'challenge',
+    profit_target: parseFloat(tgtEl?.value)||8,
+    current_pnl:   0,
+    max_drawdown:  10,
+    status:        typeEl?.value||'challenge',
+  };
+
+  const{data, error} = await sb.from('accounts').insert(a).select().single();
+
+  if(error){
+    console.error('addAccount error:', error);
+    toast('ERROR', error.message||'Could not save account. Check Supabase table permissions.');
+    return;
+  }
+
+  if(data){
+    myAccounts.push(data);
+    renderAccounts();
+    [nameEl, sizeEl, tgtEl].forEach(el=>{ if(el) el.value=''; });
+    toast('ACCOUNT ADDED', `${n} linked to your profile.`);
+  }
 }
 async function removeAccount(id){ await sb.from('accounts').delete().eq('id',id); myAccounts=myAccounts.filter(a=>a.id!==id); renderAccounts(); }
 
