@@ -1589,6 +1589,131 @@ body::after{
 @media(max-width:900px){.kpi-row{grid-template-columns:repeat(3,1fr);}.home-grid{grid-template-columns:1fr;}.charts-2col{grid-template-columns:1fr;}.stat-grid{grid-template-columns:1fr 1fr;}.ops-grid{grid-template-columns:1fr;}.squad-grid{grid-template-columns:1fr;}.month-sum-grid{grid-template-columns:1fr 1fr;}.acc-stat-row{grid-template-columns:1fr 1fr;}.cap-grid{grid-template-columns:1fr 1fr;}.fin-row{grid-template-columns:1fr 1fr;}.acct-mini-grid{grid-template-columns:1fr 1fr;}.bar-row{grid-template-columns:60px 1fr 60px;}.cmp-r{grid-template-columns:60px 1fr 50px;}}
 @media(max-width:700px){.app-layout{grid-template-columns:1fr;}.sidebar{display:none;}.kpi-row{grid-template-columns:1fr 1fr;}}
 
+/* ═══════════════════════════════════════════════════
+   RANKINGS / COMPARE — v11
+═══════════════════════════════════════════════════ */
+.rank-page{display:flex;flex-direction:column;gap:14px;}
+.rank-hero{
+  background:#000206;border:1px solid rgba(0,255,136,0.12);
+  padding:18px 20px;position:relative;overflow:hidden;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+}
+.rank-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,136,0.6),rgba(0,180,255,0.4),transparent);}
+.rank-hero-stat{text-align:center;}
+.rhs-v{font-family:'Space Mono',monospace;font-size:1.4rem;font-weight:700;line-height:1;}
+.rhs-l{font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:3px;color:rgba(255,255,255,0.25);text-transform:uppercase;margin-top:4px;}
+
+/* Sort tabs */
+.rank-sort-bar{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+.rank-sort-lbl{font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-right:4px;}
+.rsort-btn{background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.07);color:rgba(255,255,255,0.3);font-family:'Space Mono',monospace;font-size:0.44rem;letter-spacing:1.5px;padding:4px 10px;cursor:pointer;text-transform:uppercase;transition:all 0.15s ease;}
+.rsort-btn:hover{border-color:rgba(0,255,136,0.3);color:rgba(0,255,136,0.8);}
+.rsort-btn.active{border-color:rgba(0,255,136,0.6);color:var(--neon);background:rgba(0,255,136,0.06);text-shadow:0 0 8px rgba(0,255,136,0.4);}
+
+/* Operator rank cards */
+.rank-list{display:flex;flex-direction:column;gap:6px;}
+.rank-card{
+  background:#000206;border:1px solid rgba(255,255,255,0.06);
+  padding:14px 16px;display:grid;align-items:center;gap:12px;
+  grid-template-columns:36px 42px 1fr auto auto auto auto auto;
+  transition:border-color 0.2s,box-shadow 0.2s;position:relative;overflow:hidden;
+  cursor:default;
+}
+.rank-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;transition:background 0.2s;}
+.rank-card.rank-1::before{background:linear-gradient(180deg,#FFD700,#FFA500);box-shadow:0 0 8px rgba(255,215,0,0.4);}
+.rank-card.rank-2::before{background:linear-gradient(180deg,#C0C0C0,#A0A0A0);box-shadow:0 0 8px rgba(192,192,192,0.3);}
+.rank-card.rank-3::before{background:linear-gradient(180deg,#CD7F32,#A0522D);box-shadow:0 0 8px rgba(205,127,50,0.3);}
+.rank-card.rank-me::before{background:var(--neon);box-shadow:0 0 10px var(--neon-glow);}
+.rank-card:hover{border-color:rgba(255,255,255,0.12);box-shadow:0 0 20px rgba(0,0,0,0.4);}
+.rank-card.rank-me{background:rgba(0,255,136,0.025);}
+.rank-pos{font-family:'Space Mono',monospace;font-size:0.7rem;font-weight:700;color:rgba(255,255,255,0.2);text-align:center;}
+.rank-pos.gold{color:#FFD700;text-shadow:0 0 8px rgba(255,215,0,0.5);}
+.rank-pos.silver{color:#C0C0C0;}
+.rank-pos.bronze{color:#CD7F32;}
+.rank-av{width:34px;height:34px;border-radius:2px;border:1px solid;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:0.65rem;font-weight:700;flex-shrink:0;}
+.rank-identity{min-width:0;}
+.rank-cs{font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:800;color:rgba(255,255,255,0.9);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rank-title{font-family:'Space Mono',monospace;font-size:0.4rem;color:rgba(255,255,255,0.2);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+.rank-you{font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:var(--neon);background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);padding:1px 5px;text-transform:uppercase;margin-left:6px;}
+.rank-stat{text-align:right;}
+.rank-stat-v{font-family:'Space Mono',monospace;font-size:0.78rem;font-weight:700;line-height:1;}
+.rank-stat-l{font-family:'Space Mono',monospace;font-size:0.36rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:2px;}
+.rank-bar-col{width:80px;}
+.rank-bar-track{height:3px;background:rgba(255,255,255,0.05);margin-top:3px;}
+.rank-bar-fill{height:100%;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);}
+
+/* ═══════════════════════════════════════════════════
+   CSV IMPORT — v11
+═══════════════════════════════════════════════════ */
+.import-zone{
+  border:1px dashed rgba(0,255,136,0.2);background:rgba(0,255,136,0.02);
+  padding:28px;text-align:center;cursor:pointer;
+  transition:all 0.2s ease;position:relative;
+}
+.import-zone:hover,.import-zone.drag-over{border-color:rgba(0,255,136,0.5);background:rgba(0,255,136,0.05);}
+.import-zone-icon{font-size:2rem;margin-bottom:8px;}
+.import-zone-title{font-family:'Orbitron',monospace;font-size:0.6rem;font-weight:700;letter-spacing:3px;color:var(--neon);text-transform:uppercase;margin-bottom:4px;}
+.import-zone-sub{font-family:'Space Mono',monospace;font-size:0.52rem;color:rgba(255,255,255,0.2);letter-spacing:1px;}
+.import-formats{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
+.import-fmt-tag{font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:2px;padding:2px 8px;border:1px solid rgba(0,255,136,0.2);color:rgba(0,255,136,0.6);text-transform:uppercase;}
+.import-preview{margin-top:12px;}
+.import-row{display:grid;grid-template-columns:80px 50px 60px 70px 70px 70px 1fr;gap:8px;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:'Space Mono',monospace;font-size:0.52rem;align-items:center;}
+.import-row.hdr{color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.02);font-size:0.4rem;letter-spacing:2px;text-transform:uppercase;}
+.import-row.win-r{border-left:2px solid rgba(0,255,136,0.4);}
+.import-row.loss-r{border-left:2px solid rgba(255,51,102,0.4);}
+.import-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
+.import-sum-card{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.06);padding:10px;text-align:center;}
+.import-sum-v{font-family:'Space Mono',monospace;font-size:1rem;font-weight:700;}
+.import-sum-l{font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:3px;}
+
+/* ═══════════════════════════════════════════════════
+   SETUP PLAYBOOK — v11
+═══════════════════════════════════════════════════ */
+.playbook-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
+.playbook-card{
+  background:#000206;border:1px solid rgba(255,255,255,0.06);
+  padding:16px;position:relative;overflow:hidden;
+  transition:border-color 0.2s,transform 0.2s;cursor:default;
+}
+.playbook-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,136,0.4),transparent);opacity:0;transition:opacity 0.2s;}
+.playbook-card:hover{border-color:rgba(0,255,136,0.2);transform:translateY(-2px);}
+.playbook-card:hover::before{opacity:1;}
+.pb-setup{font-family:'Orbitron',monospace;font-size:0.68rem;font-weight:800;color:rgba(255,255,255,0.9);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.pb-wr{font-family:'Space Mono',monospace;font-size:1.6rem;font-weight:700;line-height:1;margin-bottom:3px;}
+.pb-trades{font-family:'Space Mono',monospace;font-size:0.44rem;letter-spacing:2px;color:rgba(255,255,255,0.25);text-transform:uppercase;margin-bottom:10px;}
+.pb-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.pb-stat{background:rgba(255,255,255,0.03);padding:6px 8px;}
+.pb-stat-v{font-family:'Space Mono',monospace;font-size:0.72rem;font-weight:700;}
+.pb-stat-l{font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:2px;}
+.pb-bar-track{height:3px;background:rgba(255,255,255,0.05);}
+.pb-bar-fill{height:100%;background:linear-gradient(90deg,rgba(0,255,136,0.5),var(--neon));transition:width 1.2s ease;}
+.pb-best-tag{font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:1px;color:rgba(0,255,136,0.5);margin-top:6px;text-transform:uppercase;}
+
+/* ═══════════════════════════════════════════════════
+   JOURNAL FILTER STATS BAR — v11
+═══════════════════════════════════════════════════ */
+.filter-stats-bar{
+  background:rgba(0,255,136,0.03);border:1px solid rgba(0,255,136,0.1);
+  padding:10px 14px;margin-bottom:10px;
+  display:grid;grid-template-columns:repeat(6,1fr);gap:8px;
+  position:relative;overflow:hidden;
+}
+.filter-stats-bar::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,136,0.4),transparent);}
+.fsb-item{text-align:center;}
+.fsb-v{font-family:'Space Mono',monospace;font-size:0.85rem;font-weight:700;line-height:1;}
+.fsb-l{font-family:'Space Mono',monospace;font-size:0.36rem;letter-spacing:2px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:3px;}
+
+/* MAE/MFE fields */
+.mae-mfe-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
+.mae-badge{font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:2px;padding:1px 5px;border-radius:2px;text-transform:uppercase;}
+.mae-badge.adverse{color:rgba(255,51,102,0.8);background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.2);}
+.mae-badge.favorable{color:rgba(0,255,136,0.8);background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);}
+
+
+
 </style>
 </head>
 <body>
@@ -1760,12 +1885,14 @@ body::after{
       <span class="nav-group-label">Squad</span>
       <div class="nav-i" onclick="showSec('leaderboard',this)"><div class="n-i">◉</div><div class="n-l">Leaderboard</div><div class="n-t s">SQUAD</div></div>
       <div class="nav-i" onclick="showSec('squad',this)"><div class="n-i">◻</div><div class="n-l">Squad Profiles</div><div class="n-t s">SQUAD</div></div>
-      <div class="nav-i" onclick="showSec('compare',this)"><div class="n-i">≡</div><div class="n-l">Compare</div><div class="n-t s">SQUAD</div></div>
+      <div class="nav-i" onclick="showSec('compare',this)"><div class="n-i">◈</div><div class="n-l">Rankings</div><div class="n-t s">SQUAD</div></div>
 
       <div class="nav-sep"></div>
 
       <!-- GROUP: ROADMAP -->
       <span class="nav-group-label">Roadmap</span>
+      <div class="nav-i" onclick="showSec('playbook',this)"><div class="n-i">📋</div><div class="n-l">Playbook</div></div>
+      <div class="nav-i" onclick="showSec('import',this)"><div class="n-i">⬆</div><div class="n-l">Import Trades</div></div>
       <div class="nav-i" onclick="showSec('deployment',this)"><div class="n-i">◈</div><div class="n-l">Deployment Map</div></div>
       <div class="nav-i" onclick="showSec('capabilities',this)"><div class="n-i">⊕</div><div class="n-l">Capabilities</div></div>
       <div class="nav-i" onclick="showSec('assets',this)"><div class="n-i">◻</div><div class="n-l">Asset Targets</div></div>
@@ -1867,6 +1994,8 @@ body::after{
             <div class="form-group"><div class="form-label">Planned R:R</div><input type="number" class="form-input" id="t-rr-p" placeholder="e.g. 3" step="0.1"></div>
             <div class="form-group"><div class="form-label">Actual R:R</div><input type="number" class="form-input" id="t-rr-a" placeholder="e.g. 2.4" step="0.1"></div>
             <div class="form-group"><div class="form-label">Hold Time (min)</div><input type="number" class="form-input" id="t-hold" placeholder="e.g. 45"></div>
+            <div class="form-group"><div class="form-label">MAE (R against) <span class="mae-badge adverse">adverse</span></div><input type="number" class="form-input" id="t-mae" placeholder="e.g. 0.8" step="0.1" title="Max Adverse Excursion — how far against you before reversing"></div>
+            <div class="form-group"><div class="form-label">MFE (R in favour) <span class="mae-badge favorable">favorable</span></div><input type="number" class="form-input" id="t-mfe" placeholder="e.g. 3.2" step="0.1" title="Max Favorable Excursion — how far in your favour before closing"></div>
             <div class="form-group"><div class="form-label">Emotional State</div><select class="form-select" id="t-emo"><option value="focused">Focused</option><option value="calm">Calm</option><option value="patient">Patient</option><option value="anxious">Anxious</option><option value="confident">Confident</option><option value="fomo">⚠ FOMO</option><option value="revenge">⚠ Revenge mode</option></select></div>
             <div class="form-group"><div class="form-label">Market Condition</div><select class="form-select" id="t-mkt"><option value="trending">Trending</option><option value="ranging">Ranging</option><option value="news">News-driven</option><option value="choppy">Choppy</option></select></div>
             <div class="form-group"><div class="form-label">Setup Type</div><select class="form-select" id="t-setup">
@@ -1969,11 +2098,17 @@ body::after{
           <option value="loss">Losses</option>
           <option value="be">Break Even</option>
         </select>
+        <select class="filter-select" id="j-dir" onchange="filterTrades()">
+          <option value="">Long &amp; Short</option>
+          <option value="LONG">Long only</option>
+          <option value="SHORT">Short only</option>
+        </select>
         <select class="filter-select" id="j-session" onchange="filterTrades()">
           <option value="">All Sessions</option>
           <option value="London">London</option>
           <option value="NY">NY Open</option>
           <option value="Asian">Asian</option>
+          <option value="NY Overlap">NY Overlap</option>
         </select>
         <select class="filter-select" id="j-setup" onchange="filterTrades()">
           <option value="">All Setups</option>
@@ -1982,6 +2117,13 @@ body::after{
           <option value="Liquidity Sweep">Liquidity Sweep</option>
           <option value="BOS">BOS</option>
           <option value="MSS">MSS</option>
+          <option value="CHOCH">CHOCH</option>
+          <option value="Breaker Block">Breaker Block</option>
+        </select>
+        <select class="filter-select" id="j-strat" onchange="filterTrades()">
+          <option value="">All Trades</option>
+          <option value="yes">On Strategy</option>
+          <option value="no">Off Strategy</option>
         </select>
         <select class="filter-select" id="j-sort" onchange="filterTrades()">
           <option value="newest">Newest First</option>
@@ -1991,6 +2133,16 @@ body::after{
           <option value="rr">Best R:R</option>
         </select>
         <div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--muted2);margin-left:auto" id="trade-count">0 trades</div>
+      </div>
+
+      <!-- FILTER AGGREGATE STATS BAR -->
+      <div class="filter-stats-bar" id="filter-stats-bar" style="display:none">
+        <div class="fsb-item"><div class="fsb-v" id="fsb-trades">—</div><div class="fsb-l">Trades</div></div>
+        <div class="fsb-item"><div class="fsb-v" id="fsb-wr" style="color:var(--neon)">—</div><div class="fsb-l">Win Rate</div></div>
+        <div class="fsb-item"><div class="fsb-v" id="fsb-pnl">—</div><div class="fsb-l">Total P&L</div></div>
+        <div class="fsb-item"><div class="fsb-v" id="fsb-rr" style="color:var(--cyan3)">—</div><div class="fsb-l">Avg R:R</div></div>
+        <div class="fsb-item"><div class="fsb-v" id="fsb-pf" style="color:var(--amber2)">—</div><div class="fsb-l">Prof. Factor</div></div>
+        <div class="fsb-item"><div class="fsb-v" id="fsb-avg-win" style="color:var(--neon3)">—</div><div class="fsb-l">Avg Win</div></div>
       </div>
 
       <div class="trade-grid" id="trade-grid"></div>
@@ -2059,10 +2211,20 @@ body::after{
       <div class="squad-grid" id="squad-grid"></div>
     </div>
 
-    <!-- COMPARE -->
+    <!-- RANKINGS / COMPARE -->
     <div class="sec" id="sec-compare">
-      <div class="sh"><div><div class="sc">SQUAD-03 // COMPARE</div><div class="st">Head-to-Head</div><div class="ss">All operators side by side</div></div></div>
-      <div id="compare-grid"></div>
+      <div class="sh">
+        <div><div class="sc">SQUAD-03 // RANKINGS</div><div class="st">Operator Rankings</div><div class="ss">Live squad standings across all performance metrics</div></div>
+      </div>
+      <!-- Hero stat row -->
+      <div class="rank-hero" id="rank-hero"></div>
+      <!-- Sort tabs -->
+      <div style="display:flex;align-items:center;gap:8px;margin:12px 0 8px;flex-wrap:wrap">
+        <span class="rank-sort-lbl">Sort by:</span>
+        <div id="rank-sort-tabs" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+      </div>
+      <!-- Ranked list -->
+      <div class="rank-list" id="rank-list"></div>
     </div>
 
     <!-- ACCOUNTS DASHBOARD -->
@@ -2087,6 +2249,78 @@ body::after{
         <button class="ach-tab" onclick="setAchTab('discipline',this)">Discipline</button>
       </div>
       <div class="ach-grid" id="ach-grid"></div>
+    </div>
+
+    <!-- SETUP PLAYBOOK -->
+    <div class="sec" id="sec-playbook">
+      <div class="sh">
+        <div><div class="sc">OP-11 // PLAYBOOK</div><div class="st">Setup Library</div><div class="ss">Auto-generated from your trade tags — win rate and stats per setup</div></div>
+      </div>
+      <div id="playbook-empty" style="display:none;text-align:center;padding:40px 0;font-family:'Space Mono',monospace;font-size:0.68rem;color:rgba(255,255,255,0.2);letter-spacing:2px;text-transform:uppercase">Log trades with setup tags to build your playbook</div>
+      <div class="playbook-grid" id="playbook-grid"></div>
+    </div>
+
+    <!-- IMPORT TRADES -->
+    <div class="sec" id="sec-import">
+      <div class="sh">
+        <div><div class="sc">OP-12 // IMPORT</div><div class="st">Trade Import</div><div class="ss">MT4 · MT5 · cTrader · CSV — auto-parse and log your history</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <!-- Drop zone -->
+        <div>
+          <div class="import-zone" id="import-zone"
+            ondragover="event.preventDefault();this.classList.add('drag-over')"
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="handleImportDrop(event)"
+            onclick="document.getElementById('import-file').click()">
+            <input type="file" id="import-file" accept=".csv,.htm,.html,.txt" style="display:none" onchange="handleImportFile(this)">
+            <div class="import-zone-icon">⬆</div>
+            <div class="import-zone-title">Drop your statement here</div>
+            <div class="import-zone-sub">or click to browse</div>
+            <div class="import-formats">
+              <span class="import-fmt-tag">MT4 HTML</span>
+              <span class="import-fmt-tag">MT5 HTML</span>
+              <span class="import-fmt-tag">CSV</span>
+              <span class="import-fmt-tag">cTrader CSV</span>
+            </div>
+          </div>
+          <div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.2);letter-spacing:1px;line-height:1.8">
+            ▸ Export your trade history from MT4: Account History → All History → right-click → Save as Report<br>
+            ▸ Export from MT5: same path, save as HTM file<br>
+            ▸ Any CSV with columns: date, pair, direction, lots, open, close, P&L
+          </div>
+        </div>
+        <!-- How to export guide -->
+        <div style="background:rgba(0,255,136,0.02);border:1px solid rgba(0,255,136,0.08);padding:16px;">
+          <div style="font-family:'Orbitron',monospace;font-size:0.56rem;font-weight:700;letter-spacing:3px;color:var(--neon);text-transform:uppercase;margin-bottom:12px;text-shadow:0 0 8px rgba(0,255,136,0.3)">Export Guide</div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.52rem;color:rgba(255,255,255,0.35);line-height:2;letter-spacing:0.5px">
+            <div style="color:rgba(0,255,136,0.6);margin-bottom:6px">MT4 / MT5</div>
+            1. Open terminal → Account History tab<br>
+            2. Right-click → All History<br>
+            3. Right-click → Save as Report (.htm)<br>
+            4. Drop file above<br><br>
+            <div style="color:rgba(0,180,255,0.6);margin-bottom:6px">cTrader</div>
+            1. History → select date range<br>
+            2. Export → CSV<br>
+            3. Drop file above
+          </div>
+        </div>
+      </div>
+      <!-- Preview table -->
+      <div id="import-preview-wrap" style="display:none">
+        <div style="font-family:'Orbitron',monospace;font-size:0.52rem;font-weight:700;letter-spacing:3px;color:var(--neon);text-transform:uppercase;margin-bottom:8px">Preview — <span id="import-count">0</span> trades detected</div>
+        <div class="import-summary" id="import-summary"></div>
+        <div style="overflow-x:auto;margin-top:10px">
+          <div class="import-row hdr">
+            <span>Date</span><span>Pair</span><span>Dir</span><span>P&L</span><span>R:R</span><span>Result</span><span>Session</span>
+          </div>
+          <div id="import-preview-rows"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn-save" onclick="confirmImport()" id="import-confirm-btn">⬡ IMPORT ALL TRADES</button>
+          <button class="btn-outline" onclick="cancelImport()">Cancel</button>
+        </div>
+      </div>
     </div>
 
     <!-- DEPLOYMENT MAP -->
@@ -3637,6 +3871,8 @@ async function saveTrade(){
     rr_planned:parseFloat(document.getElementById('t-rr-p').value)||0,
     rr_actual:parseFloat(document.getElementById('t-rr-a').value)||0,
     hold_time_minutes:parseInt(document.getElementById('t-hold').value)||0,
+    mae:parseFloat(document.getElementById('t-mae')?.value)||0,
+    mfe:parseFloat(document.getElementById('t-mfe')?.value)||0,
     emotional_state:document.getElementById('t-emo').value,
     market_condition:document.getElementById('t-mkt').value,
     setup_type:document.getElementById('t-setup').value,
@@ -3672,33 +3908,40 @@ async function saveTrade(){
 }
 
 function filterTrades(){
-  const search=document.getElementById('j-search')?.value.toLowerCase()||'';
-  const result=document.getElementById('j-result')?.value||'';
-  const session=document.getElementById('j-session')?.value||'';
-  const setup=document.getElementById('j-setup')?.value||'';
-  const sort=document.getElementById('j-sort')?.value||'newest';
+  const search = document.getElementById('j-search')?.value.toLowerCase()||'';
+  const result = document.getElementById('j-result')?.value||'';
+  const dir    = document.getElementById('j-dir')?.value||'';
+  const session= document.getElementById('j-session')?.value||'';
+  const setup  = document.getElementById('j-setup')?.value||'';
+  const strat  = document.getElementById('j-strat')?.value||'';
+  const sort   = document.getElementById('j-sort')?.value||'newest';
 
-  let filtered=[...myTrades].filter(t=>{
-    if(result&&t.result!==result) return false;
-    if(session&&t.session!==session) return false;
-    if(setup&&t.setup_type!==setup) return false;
+  let filtered = [...myTrades].filter(t=>{
+    if(result  && t.result!==result)           return false;
+    if(dir     && t.direction!==dir)           return false;
+    if(session && t.session!==session)         return false;
+    if(setup   && t.setup_type!==setup)        return false;
+    if(strat   && String(t.followed_strategy?'yes':'no')!==strat) return false;
     if(search){
-      const haystack=`${t.pair} ${t.notes} ${(t.custom_tags||[]).join(' ')} ${(t.confluences||[]).join(' ')} ${t.setup_type}`.toLowerCase();
-      if(!haystack.includes(search)) return false;
+      const hay=`${t.pair} ${t.notes||''} ${(t.custom_tags||[]).join(' ')} ${(t.confluences||[]).join(' ')} ${t.setup_type||''}`.toLowerCase();
+      if(!hay.includes(search)) return false;
     }
     return true;
   });
 
   filtered.sort((a,b)=>{
-    if(sort==='newest') return b.trade_date.localeCompare(a.trade_date);
-    if(sort==='oldest') return a.trade_date.localeCompare(b.trade_date);
+    if(sort==='newest')   return b.trade_date.localeCompare(a.trade_date);
+    if(sort==='oldest')   return a.trade_date.localeCompare(b.trade_date);
     if(sort==='pnl-high') return (b.pnl||0)-(a.pnl||0);
-    if(sort==='pnl-low') return (a.pnl||0)-(b.pnl||0);
-    if(sort==='rr') return (b.rr_actual||0)-(a.rr_actual||0);
+    if(sort==='pnl-low')  return (a.pnl||0)-(b.pnl||0);
+    if(sort==='rr')       return (b.rr_actual||0)-(a.rr_actual||0);
     return 0;
   });
 
-  const el=document.getElementById('trade-count'); if(el) el.textContent=`${filtered.length} trade${filtered.length!==1?'s':''}`;
+  const countEl = document.getElementById('trade-count');
+  if(countEl) countEl.textContent=`${filtered.length} trade${filtered.length!==1?'s':''}`;
+
+  updateFilterStatsBar(filtered);
   renderTradeGrid(filtered);
 }
 
@@ -4225,31 +4468,425 @@ async function viewOpProfile(opId){
 // ══════════════════════════════════════════════════
 // COMPARE
 // ══════════════════════════════════════════════════
-function buildCompare(){
-  const metrics=[
-    {l:'Readiness XP',fn:op=>op.xp||0,fmt:v=>v.toLocaleString(),max:null},
-    {l:'Win Rate %',fn:calcWR,fmt:v=>v+'%',max:100},
-    {l:'Edge IQ',fn:op=>op.stat_edge_iq||0,fmt:v=>v+'/100',max:100},
-    {l:'Discipline',fn:op=>op.stat_discipline||0,fmt:v=>v+'/100',max:100},
-    {l:'Patience',fn:op=>op.stat_patience||0,fmt:v=>v+'/100',max:100},
-    {l:'Risk Control',fn:op=>op.stat_risk_control||0,fmt:v=>v+'/100',max:100},
-    {l:'Total P&L',fn:op=>Math.max(0,op.total_pnl||0),fmt:v=>'$'+v.toLocaleString(),max:null},
-    {l:'Day Streak',fn:op=>op.streak||0,fmt:v=>v+' days',max:null},
-  ];
-  const sorted=[...allOps].sort((a,b)=>(b.xp||0)-(a.xp||0));
-  let html='';
-  metrics.forEach(m=>{
-    const vals=sorted.map(m.fn), maxVal=m.max||Math.max(...vals,1);
-    html+=`<div class="cmp-m"><div class="cmp-l">${m.l}</div>`;
-    sorted.forEach((op,i)=>{
-      const col=OP_COLORS[allOps.findIndex(o=>o.id===op.id)%OP_COLORS.length];
-      const val=vals[i], pct=Math.min(val/maxVal*100,100);
-      html+=`<div class="cmp-r"><div class="cmp-n" style="color:${op.id===currentOp?.id?col:'var(--muted2)'}">${op.callsign.substring(0,8)}</div><div class="cmp-t"><div class="cmp-f" style="width:0%;background:${col}" data-p="${pct}"></div></div><div class="cmp-v" style="color:${op.id===currentOp?.id?col:'var(--slate3)'}">${m.fmt(val)}</div></div>`;
+// ══════════════════════════════════════════════════
+// RANKINGS (was: compare)
+// ══════════════════════════════════════════════════
+let rankSortKey = 'xp';
+const RANK_SORTS = [
+  { key:'xp',      label:'XP',         fn:op=>(op.xp||0) },
+  { key:'wr',      label:'Win Rate',    fn:op=>calcWR(op) },
+  { key:'disc',    label:'Discipline',  fn:op=>(op.stat_discipline||0) },
+  { key:'edge',    label:'Edge IQ',     fn:op=>(op.stat_edge_iq||0) },
+  { key:'risk',    label:'Risk Ctrl',   fn:op=>(op.stat_risk_control||0) },
+  { key:'pat',     label:'Patience',    fn:op=>(op.stat_patience||0) },
+  { key:'pnl',     label:'P&L',         fn:op=>(op.total_pnl||0) },
+  { key:'streak',  label:'Streak',      fn:op=>(op.streak||0) },
+];
+
+function buildRankings(){
+  if(!allOps.length) return;
+
+  // --- Sort tabs ---
+  const tabsEl = document.getElementById('rank-sort-tabs');
+  if(tabsEl){
+    tabsEl.innerHTML = RANK_SORTS.map(s=>`
+      <button class="rsort-btn${s.key===rankSortKey?' active':''}" onclick="rankSortKey='${s.key}';buildRankings()">${s.label}</button>
+    `).join('');
+  }
+
+  // --- Sort ops ---
+  const sortDef = RANK_SORTS.find(s=>s.key===rankSortKey) || RANK_SORTS[0];
+  const sorted = [...allOps].sort((a,b)=>sortDef.fn(b)-sortDef.fn(a));
+  const maxVal = Math.max(...sorted.map(sortDef.fn), 1);
+
+  // --- Hero squad stats ---
+  const hero = document.getElementById('rank-hero');
+  if(hero){
+    const totalTrades = allOps.reduce((s,o)=>{
+      const n = myTrades.filter(t=>t.operator_id===o.id).length;
+      // fall back to squad-level if we only have current op's trades
+      return s + (o.id===currentOp?.id ? myTrades.length : (n||0));
+    },0);
+    const avgWR = allOps.length ? Math.round(allOps.reduce((s,o)=>s+calcWR(o),0)/allOps.length) : 0;
+    const topPnl = Math.max(...allOps.map(o=>o.total_pnl||0));
+    hero.innerHTML = `
+      <div class="rank-hero-stat"><div class="rhs-v" style="color:var(--neon)">${allOps.length}</div><div class="rhs-l">Operators</div></div>
+      <div class="rank-hero-stat"><div class="rhs-v" style="color:var(--amber2)">${avgWR}%</div><div class="rhs-l">Squad Avg WR</div></div>
+      <div class="rank-hero-stat"><div class="rhs-v" style="color:var(--cyan3)">${totalTrades}</div><div class="rhs-l">Total Trades</div></div>
+      <div class="rank-hero-stat"><div class="rhs-v" style="color:var(--neon3)">${fmt$(topPnl)}</div><div class="rhs-l">Top P&L</div></div>
+    `;
+  }
+
+  // --- Rank list ---
+  const list = document.getElementById('rank-list');
+  if(!list) return;
+
+  const medals = ['🥇','🥈','🥉'];
+  const posCls = ['gold','silver','bronze'];
+
+  list.innerHTML = sorted.map((op, i)=>{
+    const col   = OP_COLORS[allOps.findIndex(o=>o.id===op.id) % OP_COLORS.length];
+    const isMe  = op.id === currentOp?.id;
+    const val   = sortDef.fn(op);
+    const pct   = Math.min(val/maxVal*100, 100);
+    const l     = lvl(op.xp||0);
+    const wr    = calcWR(op);
+    const pos   = i+1;
+
+    // Format the sort value nicely
+    let valDisplay = val;
+    if(rankSortKey==='wr')      valDisplay = wr+'%';
+    else if(rankSortKey==='pnl') valDisplay = fmt$(op.total_pnl||0);
+    else if(rankSortKey==='xp')  valDisplay = (op.xp||0).toLocaleString()+' XP';
+    else if(['disc','edge','risk','pat'].includes(rankSortKey)) valDisplay = val+'/100';
+    else if(rankSortKey==='streak') valDisplay = val+'d 🔥';
+
+    const rankCls = pos<=3 ? `rank-${pos}` : isMe ? 'rank-me' : '';
+    const posDisplay = pos<=3 ? `<span class="${posCls[i]}">${medals[i]}</span>` : `<span>#${pos}</span>`;
+
+    return `<div class="rank-card ${rankCls}" style="animation:revealUp 0.3s ease ${i*0.05}s both">
+      <div class="rank-pos">${posDisplay}</div>
+      <div class="rank-av" style="border-color:${col};color:${col};background:${col}18">
+        ${(op.callsign||'?').substring(0,2).toUpperCase()}
+      </div>
+      <div class="rank-identity">
+        <div class="rank-cs">${op.callsign||'—'}${isMe?`<span class="rank-you">YOU</span>`:''}</div>
+        <div class="rank-title">LVL ${l} · ${title(l)}</div>
+      </div>
+      <div class="rank-stat">
+        <div class="rank-stat-v" style="color:var(--neon)">${wr}%</div>
+        <div class="rank-stat-l">Win Rate</div>
+      </div>
+      <div class="rank-stat">
+        <div class="rank-stat-v" style="color:${(op.total_pnl||0)>=0?'var(--neon3)':'var(--red3)'}">${fmt$(op.total_pnl||0)}</div>
+        <div class="rank-stat-l">P&L</div>
+      </div>
+      <div class="rank-stat">
+        <div class="rank-stat-v" style="color:var(--amber2)">${(op.streak||0)}d</div>
+        <div class="rank-stat-l">Streak</div>
+      </div>
+      <div class="rank-bar-col">
+        <div class="rank-stat-v" style="color:${col}">${valDisplay}</div>
+        <div class="rank-stat-l">${sortDef.label}</div>
+        <div class="rank-bar-track">
+          <div class="rank-bar-fill" style="width:0%;background:${col};box-shadow:0 0 6px ${col}55" data-p="${pct}"></div>
+        </div>
+      </div>
+      <div class="rank-stat" style="display:flex;align-items:center;justify-content:flex-end">
+        <div style="font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.18);letter-spacing:1px">
+          ${(op.xp||0).toLocaleString()} XP
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Animate bars in
+  setTimeout(()=>{
+    list.querySelectorAll('.rank-bar-fill[data-p]').forEach(el=>{
+      el.style.transition='width 1.1s cubic-bezier(0.4,0,0.2,1)';
+      el.style.width = el.dataset.p+'%';
     });
-    html+='</div>';
-  });
-  const el=document.getElementById('compare-grid'); if(el){ el.innerHTML=html; setTimeout(()=>el.querySelectorAll('.cmp-f[data-p]').forEach(b=>b.style.width=b.dataset.p+'%'),200); }
+  }, 200);
 }
+
+// Keep old name as alias so showSec wiring still works
+function buildCompare(){ buildRankings(); }
+
+// ══════════════════════════════════════════════════
+// SETUP PLAYBOOK
+// ══════════════════════════════════════════════════
+function buildPlaybook(){
+  const grid    = document.getElementById('playbook-grid');
+  const emptyEl = document.getElementById('playbook-empty');
+  if(!grid) return;
+
+  if(!myTrades.length){
+    if(emptyEl) emptyEl.style.display='block';
+    grid.innerHTML=''; return;
+  }
+  if(emptyEl) emptyEl.style.display='none';
+
+  // Aggregate by setup_type
+  const map = {};
+  myTrades.forEach(t=>{
+    const key = t.setup_type || 'Untagged';
+    if(!map[key]) map[key]={ setup:key, trades:[], wins:0, losses:0, pnl:0, rr:[] };
+    map[key].trades.push(t);
+    if(t.result==='win')  map[key].wins++;
+    if(t.result==='loss') map[key].losses++;
+    map[key].pnl += (t.pnl||0);
+    if(t.rr_actual>0) map[key].rr.push(t.rr_actual);
+  });
+
+  const setups = Object.values(map).sort((a,b)=>b.trades.length-a.trades.length);
+
+  grid.innerHTML = setups.map(s=>{
+    const total  = s.trades.length;
+    const wr     = total ? Math.round(s.wins/total*100) : 0;
+    const avgRR  = s.rr.length ? (s.rr.reduce((a,v)=>a+v,0)/s.rr.length).toFixed(2) : '—';
+    const wrCol  = wr>=60?'var(--neon)':wr>=45?'var(--amber2)':'var(--red3)';
+    const pnlCol = s.pnl>=0?'var(--neon3)':'var(--red3)';
+
+    // Best session
+    const sesMap={};
+    s.trades.forEach(t=>{ sesMap[t.session]=(sesMap[t.session]||0)+1; });
+    const bestSes = Object.entries(sesMap).sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
+
+    return `<div class="playbook-card">
+      <div class="pb-setup">${s.setup}</div>
+      <div class="pb-wr" style="color:${wrCol}">${wr}%</div>
+      <div class="pb-trades">${total} trade${total!==1?'s':''} logged</div>
+      <div class="pb-stats">
+        <div class="pb-stat">
+          <div class="pb-stat-v" style="color:${pnlCol}">${fmt$(s.pnl)}</div>
+          <div class="pb-stat-l">Net P&L</div>
+        </div>
+        <div class="pb-stat">
+          <div class="pb-stat-v" style="color:var(--cyan3)">${avgRR}${avgRR!=='—'?'R':''}</div>
+          <div class="pb-stat-l">Avg R:R</div>
+        </div>
+        <div class="pb-stat">
+          <div class="pb-stat-v" style="color:var(--neon)">${s.wins}</div>
+          <div class="pb-stat-l">Wins</div>
+        </div>
+        <div class="pb-stat">
+          <div class="pb-stat-v" style="color:var(--red3)">${s.losses}</div>
+          <div class="pb-stat-l">Losses</div>
+        </div>
+      </div>
+      <div class="pb-bar-track">
+        <div class="pb-bar-fill" style="width:${wr}%"></div>
+      </div>
+      ${bestSes?`<div class="pb-best-tag">Best session: ${bestSes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// CSV / MT4 / MT5 IMPORT
+// ══════════════════════════════════════════════════
+let importedTrades = [];
+
+function handleImportDrop(e){
+  e.preventDefault();
+  document.getElementById('import-zone').classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if(file) parseImportFile(file);
+}
+
+function handleImportFile(input){
+  const file = input?.files?.[0];
+  if(file) parseImportFile(file);
+}
+
+function parseImportFile(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    const raw = e.target.result;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if(ext==='htm'||ext==='html'){
+      importedTrades = parseMT4HTML(raw);
+    } else {
+      importedTrades = parseCSV(raw);
+    }
+    renderImportPreview();
+  };
+  reader.readAsText(file);
+}
+
+function parseMT4HTML(html){
+  // MT4/MT5 statement HTML parser
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html,'text/html');
+  const rows = Array.from(doc.querySelectorAll('tr'));
+  const trades = [];
+  rows.forEach(row=>{
+    const cells = Array.from(row.querySelectorAll('td')).map(td=>td.textContent.trim());
+    if(cells.length < 8) return;
+    // MT4 format: ticket, opentime, type, size, item, openprice, sl, tp, closetime, closeprice, commission, swap, profit
+    const type = (cells[2]||'').toLowerCase();
+    if(type!=='buy'&&type!=='sell') return; // skip deposits, balance rows
+    const pnl = parseFloat((cells[15]||cells[12]||'0').replace(/[,$\s]/g,''))||0;
+    const pair = (cells[4]||'UNKNOWN').toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const openTime = cells[1]||'';
+    const dateRaw = openTime.split(' ')[0]||'';
+    const date = dateRaw.length>=10 ? dateRaw.substring(0,10) : new Date().toISOString().substring(0,10);
+    trades.push({
+      trade_date: date,
+      pair,
+      direction: type==='buy'?'LONG':'SHORT',
+      result: pnl>0?'win':pnl<0?'loss':'be',
+      pnl,
+      rr_actual: 0,
+      rr_planned: 0,
+      session: guessSession(openTime),
+      setup_type: 'Imported',
+      followed_strategy: true,
+      notes: `Imported from MT4/MT5 statement`,
+    });
+  });
+  return trades;
+}
+
+function parseCSV(text){
+  const lines = text.trim().split('\n').filter(l=>l.trim());
+  if(lines.length < 2) return [];
+  const hdr = lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/['"]/g,''));
+  const find = keys=>{ for(const k of keys){ const i=hdr.indexOf(k); if(i>=0) return i; } return -1; };
+  const cols = {
+    date:   find(['date','open time','opentime','time','close time']),
+    pair:   find(['symbol','pair','instrument','ticket','item']),
+    dir:    find(['type','direction','side']),
+    pnl:    find(['profit','p&l','pnl','net p/l','net profit']),
+    rr:     find(['r:r','rr','risk reward','actual rr']),
+    lots:   find(['lots','volume','size']),
+  };
+  return lines.slice(1).map(line=>{
+    const cells = line.split(',').map(c=>c.trim().replace(/['"]/g,''));
+    const g = i => i>=0?(cells[i]||''):'';
+    const pnl = parseFloat(g(cols.pnl).replace(/[$,\s]/g,''))||0;
+    const dir = (g(cols.dir)||'buy').toLowerCase();
+    const dateRaw = g(cols.date).substring(0,10)||new Date().toISOString().substring(0,10);
+    return {
+      trade_date: dateRaw,
+      pair: (g(cols.pair)||'UNKNOWN').toUpperCase().substring(0,10),
+      direction: (dir.includes('buy')||dir.includes('long'))?'LONG':'SHORT',
+      result: pnl>0?'win':pnl<0?'loss':'be',
+      pnl,
+      rr_actual: parseFloat(g(cols.rr))||0,
+      rr_planned: 0,
+      session: 'Other',
+      setup_type: 'Imported',
+      followed_strategy: true,
+      notes: 'Imported via CSV',
+    };
+  }).filter(t=>t.pair&&t.pair!=='UNKNOWN');
+}
+
+function guessSession(timeStr){
+  if(!timeStr) return 'Other';
+  const parts = timeStr.split(' ');
+  const timePart = parts[1]||parts[0]||'';
+  const h = parseInt(timePart.split(':')[0])||0;
+  if(h>=8&&h<12) return 'London';
+  if(h>=12&&h<17) return 'NY';
+  if(h>=0&&h<5) return 'Asian';
+  return 'Other';
+}
+
+function renderImportPreview(){
+  const wrap = document.getElementById('import-preview-wrap');
+  const countEl = document.getElementById('import-count');
+  const rowsEl = document.getElementById('import-preview-rows');
+  const sumEl = document.getElementById('import-summary');
+  if(!wrap||!rowsEl||!sumEl) return;
+
+  if(!importedTrades.length){
+    toast('IMPORT ERROR','No valid trades found in file. Check format.');
+    return;
+  }
+
+  wrap.style.display='block';
+  if(countEl) countEl.textContent = importedTrades.length;
+
+  // Summary stats
+  const wins = importedTrades.filter(t=>t.result==='win').length;
+  const losses = importedTrades.filter(t=>t.result==='loss').length;
+  const totalPnl = importedTrades.reduce((s,t)=>s+(t.pnl||0),0);
+  const wr = importedTrades.length ? Math.round(wins/importedTrades.length*100) : 0;
+  sumEl.innerHTML = `
+    <div class="import-sum-card"><div class="import-sum-v" style="color:var(--neon)">${importedTrades.length}</div><div class="import-sum-l">Trades</div></div>
+    <div class="import-sum-card"><div class="import-sum-v" style="color:${wr>=50?'var(--neon)':'var(--red3)'}">${wr}%</div><div class="import-sum-l">Win Rate</div></div>
+    <div class="import-sum-card"><div class="import-sum-v" style="color:${totalPnl>=0?'var(--neon3)':'var(--red3)'}">${fmt$(totalPnl)}</div><div class="import-sum-l">Net P&L</div></div>
+    <div class="import-sum-card"><div class="import-sum-v" style="color:var(--amber2)">${wins}W / ${losses}L</div><div class="import-sum-l">Results</div></div>
+  `;
+
+  // Row preview (first 20)
+  rowsEl.innerHTML = importedTrades.slice(0,20).map(t=>`
+    <div class="import-row ${t.result==='win'?'win-r':'loss-r'}">
+      <span style="font-family:'Space Mono',monospace;color:rgba(255,255,255,0.35)">${t.trade_date}</span>
+      <span style="color:rgba(255,255,255,0.7);font-weight:700">${t.pair}</span>
+      <span style="color:${t.direction==='LONG'?'var(--neon)':'var(--red3)'}">${t.direction}</span>
+      <span style="color:${(t.pnl||0)>=0?'var(--neon3)':'var(--red3)'};font-weight:700">${fmt$(t.pnl||0)}</span>
+      <span style="color:rgba(255,255,255,0.4)">${t.rr_actual||'—'}</span>
+      <span style="color:${t.result==='win'?'var(--neon)':t.result==='loss'?'var(--red3)':'var(--cyan3)'}">${t.result.toUpperCase()}</span>
+      <span style="color:rgba(255,255,255,0.25)">${t.session}</span>
+    </div>
+  `).join('');
+  if(importedTrades.length>20){
+    rowsEl.innerHTML += `<div style="font-family:'Space Mono',monospace;font-size:0.46rem;color:rgba(255,255,255,0.2);letter-spacing:2px;padding:8px;text-align:center">... and ${importedTrades.length-20} more trades</div>`;
+  }
+}
+
+async function confirmImport(){
+  if(!importedTrades.length||!currentOp) return;
+  const btn = document.getElementById('import-confirm-btn');
+  if(btn){ btn.textContent='IMPORTING...'; btn.disabled=true; }
+
+  let ok=0, fail=0;
+  for(const t of importedTrades){
+    try{
+      const{error} = await sb.from('trades').insert({
+        ...t,
+        operator_id: currentOp.id,
+        squad_code: SQUAD_CODE,
+      });
+      if(error) fail++; else ok++;
+    } catch(e){ fail++; }
+  }
+
+  // Reload trades
+  const{data:trades} = await sb.from('trades').select('*').eq('operator_id',currentOp.id).order('trade_date',{ascending:false});
+  if(trades) myTrades=trades;
+
+  computeStats(); syncUI();
+  toast('IMPORT COMPLETE',`${ok} trades imported${fail?`, ${fail} failed`:''}.`);
+  cancelImport();
+  if(btn){ btn.textContent='⬡ IMPORT ALL TRADES'; btn.disabled=false; }
+}
+
+function cancelImport(){
+  importedTrades=[];
+  const wrap=document.getElementById('import-preview-wrap');
+  if(wrap) wrap.style.display='none';
+  const fi=document.getElementById('import-file');
+  if(fi) fi.value='';
+}
+
+// ══════════════════════════════════════════════════
+// FILTER STATS BAR
+// ══════════════════════════════════════════════════
+function updateFilterStatsBar(trades){
+  const bar = document.getElementById('filter-stats-bar');
+  if(!bar) return;
+  const total = trades.length;
+  if(!total){ bar.style.display='none'; return; }
+  bar.style.display='grid';
+
+  const wins  = trades.filter(t=>t.result==='win').length;
+  const wr    = Math.round(wins/total*100);
+  const pnl   = trades.reduce((s,t)=>s+(t.pnl||0),0);
+  const rrArr = trades.filter(t=>t.rr_actual>0).map(t=>t.rr_actual);
+  const avgRR = rrArr.length?(rrArr.reduce((s,v)=>s+v,0)/rrArr.length).toFixed(2):'—';
+  const grossW = trades.filter(t=>t.pnl>0).reduce((s,t)=>s+t.pnl,0);
+  const grossL = Math.abs(trades.filter(t=>t.pnl<0).reduce((s,t)=>s+t.pnl,0));
+  const pf = grossL>0?(grossW/grossL).toFixed(2):'—';
+  const avgWin = wins>0?fmt$(grossW/wins):'—';
+
+  const s=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  s('fsb-trades',total);
+  s('fsb-wr',wr+'%');
+  s('fsb-pnl',fmt$(pnl));
+  s('fsb-rr',avgRR+(avgRR!=='—'?'R':''));
+  s('fsb-pf',pf);
+  s('fsb-avg-win',avgWin);
+
+  // Colour P&L
+  const pnlEl=document.getElementById('fsb-pnl');
+  if(pnlEl) pnlEl.style.color=pnl>=0?'var(--neon3)':'var(--red3)';
+}
+
+
 
 // ══════════════════════════════════════════════════
 // PROFILE
@@ -4483,7 +5120,13 @@ function showSec(name,navEl){
   if(name==='calendar') renderCal();
   if(name==='leaderboard') buildLeaderboard();
   if(name==='squad') buildSquadProfiles();
-  if(name==='compare') buildCompare();
+  if(name==='compare') buildRankings();
+  if(name==='playbook') buildPlaybook();
+  if(name==='import'){
+    importedTrades=[];
+    const w=document.getElementById('import-preview-wrap');
+    if(w) w.style.display='none';
+  }
   if(name==='acctdash') buildAcctDash();
   if(name==='achievements') buildAchievements();
   if(name==='assets') updateAssetBars();
