@@ -1661,43 +1661,180 @@ body::after{
   display:grid;grid-template-columns:1fr 1fr;
   gap:8px;
 }
+
+/* ══════════════════════════════════════════════════
+   RSTAT CARDS — HOLOGRAPHIC DATA PANELS
+══════════════════════════════════════════════════ */
 .rstat-card{
   background:#000206;
   border:1px solid rgba(255,255,255,0.06);
   padding:14px 16px;
   position:relative;overflow:hidden;
-  transition:border-color 0.2s,box-shadow 0.2s;
   cursor:default;
+  transition:border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.23,1,0.32,1);
 }
-.rstat-card::before{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  transform:scaleX(0);transition:transform 0.3s ease;
-  transform-origin:left;
+
+/* Animated corner brackets — draw in on load */
+.rstat-card::after{
+  content:'';position:absolute;
+  top:0;left:0;width:0;height:0;
+  border-top:1px solid var(--rstat-col, rgba(0,255,136,0.6));
+  border-left:1px solid var(--rstat-col, rgba(0,255,136,0.6));
+  transition:width 0.5s ease 0.2s, height 0.5s ease 0.2s;
+  opacity:0.7;
 }
-.rstat-card:hover{border-color:rgba(100,200,255,0.25);}
-.rstat-card:hover::before{transform:scaleX(1);}
-.rstat-card:hover{box-shadow:0 0 20px rgba(100,200,255,0.04),inset 0 0 20px rgba(100,200,255,0.02);}
+.rstat-card.loaded::after{ width:14px; height:14px; }
+
+.rstat-corner-br{
+  position:absolute;bottom:0;right:0;width:0;height:0;
+  border-bottom:1px solid var(--rstat-col, rgba(0,255,136,0.6));
+  border-right:1px solid var(--rstat-col, rgba(0,255,136,0.6));
+  transition:width 0.5s ease 0.3s, height 0.5s ease 0.3s;
+  opacity:0.7;
+}
+.rstat-card.loaded .rstat-corner-br{ width:14px; height:14px; }
+
+/* Top scan line — sweeps left to right on entry */
+.rstat-topline{
+  position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--rstat-col, rgba(0,255,136,0.6)),transparent);
+  opacity:0;animation:rstatTopLine 0.6s ease forwards;
+  animation-play-state:paused;
+}
+.rstat-card.loaded .rstat-topline{animation-play-state:running;}
+@keyframes rstatTopLine{
+  0%{opacity:0;transform:scaleX(0);transform-origin:left;}
+  60%{opacity:0.8;}
+  100%{opacity:0.35;transform:scaleX(1);}
+}
+
+/* Hex grid watermark — unique per card */
+.rstat-hex-bg{
+  position:absolute;inset:0;pointer-events:none;opacity:0.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='23'%3E%3Cpolygon points='10,1 19,6 19,17 10,22 1,17 1,6' fill='none' stroke='%23fff' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-size:20px 23px;
+  animation:hexDrift 20s linear infinite;
+}
+@keyframes hexDrift{
+  0%{background-position:0 0;}
+  100%{background-position:20px 46px;}
+}
+
+/* Scan sweep that periodically passes through the card */
+.rstat-scan{
+  position:absolute;left:0;right:0;height:40px;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,0.03),transparent);
+  top:-40px;pointer-events:none;
+  animation:rstatScanPass 6s ease-in-out infinite;
+  animation-play-state:paused;
+}
+.rstat-card.loaded .rstat-scan{animation-play-state:running;}
+@keyframes rstatScanPass{
+  0%,40%{top:-40px;opacity:0;}
+  41%{opacity:1;}
+  75%{top:110%;opacity:0.6;}
+  76%,100%{top:-40px;opacity:0;}
+}
+
+/* Signal waveform canvas at the bottom */
+.rstat-wave{
+  position:absolute;bottom:0;left:0;right:0;height:20px;
+  opacity:0.15;
+  transition:opacity 0.3s ease;
+}
+.rstat-card:hover .rstat-wave{opacity:0.35;}
+
+/* Code label */
 .rstat-code{
   font-family:'Space Mono',monospace;font-size:0.38rem;
   letter-spacing:3px;color:rgba(255,255,255,0.2);
   text-transform:uppercase;margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
 }
+.rstat-code-dot{
+  width:4px;height:4px;border-radius:50%;
+  animation:rstatDotPulse 2s ease-in-out infinite;
+}
+@keyframes rstatDotPulse{
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:0.3;transform:scale(0.6);}
+}
+
+/* Main value — animated countup already handled in JS */
 .rstat-val{
-  font-family:'Space Mono',monospace;font-size:1.8rem;
-  font-weight:700;line-height:1;margin-bottom:4px;
+  font-family:'Orbitron',monospace;font-size:1.8rem;
+  font-weight:900;line-height:1;margin-bottom:4px;
+  letter-spacing:2px;
 }
+.rstat-val .rstat-denom{
+  font-size:0.55rem;font-weight:400;
+  color:rgba(255,255,255,0.15);letter-spacing:1px;
+  vertical-align:super;margin-left:2px;
+}
+
+/* Classification label */
 .rstat-name{
   font-family:'Space Mono',monospace;font-size:0.44rem;
   letter-spacing:2px;color:rgba(255,255,255,0.3);
   text-transform:uppercase;margin-bottom:10px;
 }
+
+/* Status tier badge */
+.rstat-tier{
+  display:inline-block;
+  font-family:'Space Mono',monospace;font-size:0.36rem;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:1px 5px;border:1px solid;margin-bottom:8px;
+}
+
+/* Progress bar — segmented look */
 .rstat-bar-track{
-  height:3px;background:rgba(255,255,255,0.05);
-  position:relative;overflow:hidden;
+  height:4px;background:rgba(255,255,255,0.05);
+  position:relative;overflow:hidden;margin-bottom:6px;
 }
 .rstat-bar-fill{
   position:absolute;top:0;left:0;height:100%;
-  transition:width 1.4s cubic-bezier(0.4,0,0.2,1);
+  transition:width 1.6s cubic-bezier(0.25,1,0.5,1);
+}
+/* Shimmer that runs across the bar */
+.rstat-bar-fill::after{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent);
+  animation:barShimmer 2.5s ease-in-out infinite 1s;
+}
+@keyframes barShimmer{
+  0%,40%{left:-100%;}
+  100%{left:200%;}
+}
+
+/* Segmented ticks on bar */
+.rstat-bar-segs{
+  position:absolute;top:0;left:0;right:0;height:100%;
+  display:flex;pointer-events:none;
+}
+.rstat-bar-seg{flex:1;border-right:1px solid rgba(0,0,0,0.4);}
+.rstat-bar-seg:last-child{border-right:none;}
+
+/* Description line */
+.rstat-desc{
+  font-family:'Space Mono',monospace;font-size:0.4rem;
+  letter-spacing:1px;color:rgba(255,255,255,0.18);
+  line-height:1.6;
+}
+
+/* ── HOVER STATE ── */
+.rstat-card:hover{
+  transform:translateX(3px);
+  box-shadow:inset 3px 0 0 var(--rstat-col, rgba(0,255,136,0.4)),
+             0 0 20px rgba(0,0,0,0.4);
+}
+.rstat-card:hover .rstat-val{
+  text-shadow:0 0 20px var(--rstat-col, rgba(0,255,136,0.5));
+  transition:text-shadow 0.2s ease;
+}
+.rstat-card:hover .rstat-name{
+  color:rgba(255,255,255,0.5);
+  transition:color 0.2s ease;
 }
 .rstat-delta{
   font-family:'Space Mono',monospace;font-size:0.38rem;
@@ -2161,18 +2298,6 @@ body::after{
   box-shadow:0 0 10px rgba(0,255,136,0.2);
   z-index:1;
   border-color:rgba(0,255,136,0.4) !important;
-}
-
-/* Radar stat panel cards */
-.rstat-card{
-  transition:transform 0.25s cubic-bezier(0.23,1,0.32,1),
-             box-shadow 0.25s ease,
-             border-color 0.25s ease !important;
-}
-.rstat-card:hover{
-  transform:translateX(4px) !important;
-  border-color:rgba(100,200,255,0.3) !important;
-  box-shadow:0 0 20px rgba(100,200,255,0.06), inset 4px 0 0 rgba(100,200,255,0.1) !important;
 }
 
 /* Cursor-aware glow that follows mouse inside card */
@@ -5181,29 +5306,134 @@ function buildRadar(){
   // Build stat detail cards
   const panel=document.getElementById('radar-stats-panel'); if(!panel) return;
   const statDefs=[
-    {code:'DCP // 01',name:'Discipline',  val:axes[0].val,col:axes[0].col,bg:'rgba(0,255,136,0.04)',  border:'rgba(0,255,136,0.15)',  desc:'Strategy adherence rate'},
-    {code:'RSK // 02',name:'Risk Control',val:axes[1].val,col:axes[1].col,bg:'rgba(0,200,255,0.04)',  border:'rgba(0,200,255,0.15)',  desc:'Drawdown vs target ratio'},
-    {code:'CON // 03',name:'Consistency', val:axes[2].val,col:axes[2].col,bg:'rgba(180,140,255,0.04)',border:'rgba(180,140,255,0.15)',desc:'Equity curve smoothness'},
-    {code:'PAT // 04',name:'Patience',    val:axes[3].val,col:axes[3].col,bg:'rgba(255,184,0,0.04)',  border:'rgba(255,184,0,0.15)',  desc:'Entry quality vs idle time'},
-    {code:'EDG // 05',name:'Edge',        val:axes[4].val,col:axes[4].col,bg:'rgba(0,255,200,0.04)',  border:'rgba(0,255,200,0.15)',  desc:'Execution power & win rate'},
+    {code:'DCP',idx:'01',name:'Discipline',  val:axes[0].val,col:'rgba(0,255,136,1)',  rgb:'0,255,136',   desc:'Strategy adherence rate',   scanDelay:'0s'},
+    {code:'RSK',idx:'02',name:'Risk Control',val:axes[1].val,col:'rgba(0,200,255,1)',  rgb:'0,200,255',   desc:'Drawdown vs target ratio',  scanDelay:'1.2s'},
+    {code:'CON',idx:'03',name:'Consistency', val:axes[2].val,col:'rgba(180,140,255,1)',rgb:'180,140,255', desc:'Equity curve smoothness',   scanDelay:'2.4s'},
+    {code:'PAT',idx:'04',name:'Patience',    val:axes[3].val,col:'rgba(255,184,0,1)',  rgb:'255,184,0',   desc:'Entry quality vs idle time', scanDelay:'3.6s'},
+    {code:'EDG',idx:'05',name:'Edge',        val:axes[4].val,col:'rgba(0,255,200,1)',  rgb:'0,255,200',   desc:'Execution power & win rate', scanDelay:'4.8s'},
   ];
-  panel.innerHTML=statDefs.map(s=>`
-    <div class="rstat-card" style="background:${s.bg};border-color:${s.border}"
-      onmouseenter="this.style.borderColor='${s.col.replace('1)','0.35)')}';this.querySelector('.rstat-bar-fill').style.boxShadow='0 0 10px ${s.col.replace('1)','0.6)')}'"
-      onmouseleave="this.style.borderColor='${s.border}';this.querySelector('.rstat-bar-fill').style.boxShadow='0 0 6px ${s.col.replace('1)','0.3)')}'">
-      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${s.col},transparent);opacity:0.45"></div>
-      <div class="rstat-code">${s.code}</div>
-      <div class="rstat-val" style="color:${s.col};text-shadow:0 0 15px ${s.col.replace('1)','0.35)')}">${s.val}<span style="font-size:0.6rem;color:rgba(255,255,255,0.18)">/100</span></div>
-      <div class="rstat-name">${s.name}</div>
-      <div class="rstat-bar-track">
-        <div class="rstat-bar-fill" style="width:0%;background:${s.col};box-shadow:0 0 6px ${s.col.replace('1)','0.3)')}" data-w="${s.val}"></div>
+
+  // Tier labels based on score
+  const getTier = v => v>=85?['ELITE','rgba(0,255,136,0.6)']:v>=65?['OPERATIVE','rgba(0,200,255,0.5)']:v>=40?['ACTIVE','rgba(255,184,0,0.5)']:['RECRUIT','rgba(255,51,102,0.5)'];
+
+  panel.innerHTML=statDefs.map((s,i)=>{
+    const [tier, tierCol] = getTier(s.val);
+    const colAlpha = s.col.replace('1)','0.15)');
+    const colBorder = s.col.replace('1)','0.18)');
+    const colGlow   = s.col.replace('1)','0.35)');
+    const colScan   = s.col.replace('1)','0.06)');
+    // Build 10 segmented ticks
+    const segs = Array.from({length:10},(_,j)=>`<div class="rstat-bar-seg"></div>`).join('');
+    return `
+    <div class="rstat-card" id="rsc-${s.code}"
+      style="--rstat-col:${s.col.replace('1)','0.55)')};background:rgba(${s.rgb},0.03);border-color:${colBorder}"
+      onmouseenter="this.querySelector('.rstat-bar-fill').style.boxShadow='0 0 12px rgba(${s.rgb},0.7)'"
+      onmouseleave="this.querySelector('.rstat-bar-fill').style.boxShadow='0 0 6px rgba(${s.rgb},0.3)'">
+
+      <div class="rstat-hex-bg"></div>
+      <div class="rstat-scan" style="background:linear-gradient(180deg,transparent,rgba(${s.rgb},0.06),transparent);animation-delay:${s.scanDelay}"></div>
+      <div class="rstat-topline" style="background:linear-gradient(90deg,transparent,rgba(${s.rgb},0.8),transparent)"></div>
+      <div class="rstat-corner-br"></div>
+
+      <div class="rstat-code">
+        <div class="rstat-code-dot" style="background:rgba(${s.rgb},1);box-shadow:0 0 6px rgba(${s.rgb},0.8)"></div>
+        ${s.code} // ${s.idx}
       </div>
-      <div class="rstat-delta flat">${s.desc}</div>
-    </div>`).join('');
-  setTimeout(()=>panel.querySelectorAll('.rstat-bar-fill[data-w]').forEach(el=>{
-    el.style.transition='width 1.4s cubic-bezier(0.4,0,0.2,1)';
-    el.style.width=el.dataset.w+'%';
-  }),300);
+
+      <div class="rstat-val" style="color:rgba(${s.rgb},1);text-shadow:0 0 20px rgba(${s.rgb},0.4)" id="rsv-${s.code}">
+        0<span class="rstat-denom">/100</span>
+      </div>
+
+      <div class="rstat-name">${s.name}</div>
+
+      <div class="rstat-tier" style="color:rgba(${s.rgb},0.9);border-color:rgba(${s.rgb},0.25);background:rgba(${s.rgb},0.06)">${tier}</div>
+
+      <div class="rstat-bar-track">
+        <div class="rstat-bar-segs">${segs}</div>
+        <div class="rstat-bar-fill" style="width:0%;background:linear-gradient(90deg,rgba(${s.rgb},0.7),rgba(${s.rgb},1));box-shadow:0 0 6px rgba(${s.rgb},0.3)" data-w="${s.val}" data-rgb="${s.rgb}"></div>
+      </div>
+
+      <div class="rstat-desc">${s.desc}</div>
+
+      <canvas class="rstat-wave" id="rsw-${s.code}" height="20"></canvas>
+    </div>`;
+  }).join('');
+
+  // Animate values countup + bars + corner brackets + waveform
+  setTimeout(()=>{
+    statDefs.forEach(s=>{
+      // Corner brackets draw in
+      const card = document.getElementById(`rsc-${s.code}`);
+      if(card) card.classList.add('loaded');
+
+      // Animated number countup
+      const valEl = document.getElementById(`rsv-${s.code}`);
+      if(valEl){
+        let start=0; const target=s.val; const dur=1400;
+        const t0=performance.now();
+        const step=(ts)=>{
+          const prog=Math.min((ts-t0)/dur,1);
+          const ease=1-Math.pow(1-prog,3);
+          const cur=Math.round(target*ease);
+          valEl.innerHTML=`${cur}<span class="rstat-denom">/100</span>`;
+          if(prog<1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
+
+      // Bar fill
+      const bar = card?.querySelector('.rstat-bar-fill');
+      if(bar){
+        bar.style.transition='width 1.6s cubic-bezier(0.25,1,0.5,1)';
+        bar.style.width=s.val+'%';
+      }
+
+      // Signal waveform — unique noise pattern per metric
+      const canvas = document.getElementById(`rsw-${s.code}`);
+      if(canvas){
+        canvas.width = canvas.offsetWidth||200;
+        drawRstatWave(canvas, s.rgb, s.val);
+      }
+    });
+  },350);
+}
+
+function drawRstatWave(canvas, rgb, score){
+  const ctx=canvas.getContext('2d');
+  const w=canvas.width, h=canvas.height;
+  const pts=[];
+  // Generate a signal wave based on score — higher score = more stable wave
+  const stability = score/100;
+  const amp = h*0.3*(1.2-stability*0.8);
+  const freq = 0.04+stability*0.03;
+  for(let x=0;x<w;x++){
+    const noise = (Math.sin(x*freq)*amp) + (Math.sin(x*freq*2.3+1)*amp*0.4) + (Math.sin(x*freq*5.1+2)*amp*0.15);
+    pts.push({x, y: h/2+noise});
+  }
+  ctx.clearRect(0,0,w,h);
+  // Glow pass
+  ctx.shadowBlur=4; ctx.shadowColor=`rgba(${rgb},0.8)`;
+  ctx.strokeStyle=`rgba(${rgb},0.7)`; ctx.lineWidth=1;
+  ctx.beginPath();
+  pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.stroke();
+  ctx.shadowBlur=0;
+  // Animate the wave scrolling left
+  let offset=0;
+  function animate(){
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle=`rgba(${rgb},0.55)`; ctx.lineWidth=1;
+    ctx.beginPath();
+    pts.forEach((p,i)=>{
+      const nx = (p.x-offset+w)%w;
+      if(nx===0||i===0) ctx.moveTo(nx,p.y); else ctx.lineTo(nx,p.y);
+    });
+    ctx.stroke();
+    offset=(offset+0.4)%w;
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
 }
 
 function buildLBSnap(){
