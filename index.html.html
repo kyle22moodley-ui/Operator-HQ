@@ -6567,24 +6567,74 @@ async function confirmImport(){
   const btn = document.getElementById('import-confirm-btn');
   if(btn){ btn.textContent='IMPORTING...'; btn.disabled=true; }
 
-  let ok=0, fail=0;
-  for(const t of importedTrades){
-    try{
-      const{error} = await sb.from('trades').insert({
-        ...t,
-        operator_id: currentOp.id,
-        squad_code: SQUAD_CODE,
-      });
-      if(error) fail++; else ok++;
-    } catch(e){ fail++; }
+  // Build clean insert payload — only include columns that exist in the schema
+  const payload = importedTrades.map(t=>({
+    operator_id:          currentOp.id,
+    squad_code:           SQUAD_CODE,
+    trade_date:           t.trade_date||new Date().toISOString().slice(0,10),
+    pair:                 (t.pair||'UNKNOWN').substring(0,20),
+    direction:            t.direction==='SHORT'?'SHORT':'LONG',
+    result:               ['win','loss','be'].includes(t.result)?t.result:'be',
+    pnl:                  isFinite(t.pnl)?t.pnl:0,
+    rr_actual:            isFinite(t.rr_actual)?t.rr_actual:0,
+    rr_planned:           isFinite(t.rr_planned)?t.rr_planned:0,
+    session:              t.session||'Other',
+    setup_type:           t.setup_type||'Imported',
+    followed_strategy:    t.followed_strategy!==false,
+    moved_stop:           t.moved_stop===true,
+    daily_loss_breached:  t.daily_loss_breached===true,
+    hold_time_minutes:    isFinite(t.hold_time_minutes)?t.hold_time_minutes:0,
+    mae:                  isFinite(t.mae)?t.mae:0,
+    mfe:                  isFinite(t.mfe)?t.mfe:0,
+    notes:                t.notes||'',
+    emotional_state:      t.emotional_state||'',
+    outcome_detail:       t.outcome_detail||'',
+    confluences:          t.confluences||[],
+    custom_tags:          t.custom_tags||[],
+    market_condition:     t.market_condition||'',
+  }));
+
+  // Try batch insert first (much faster, one round trip)
+  const{data, error} = await sb.from('trades').insert(payload).select();
+
+  if(!error && data){
+    myTrades = [...data, ...myTrades];
+    computeStats(); syncUI();
+    toast('IMPORT COMPLETE', `${data.length} trades imported successfully.`);
+    cancelImport();
+    if(btn){ btn.textContent='⬡ IMPORT ALL TRADES'; btn.disabled=false; }
+    return;
   }
 
-  // Reload trades
-  const{data:trades} = await sb.from('trades').select('*').eq('operator_id',currentOp.id).order('trade_date',{ascending:false});
-  if(trades) myTrades=trades;
+  // Batch failed — log the exact error so we can debug it
+  console.error('Batch import error:', error);
+
+  // If batch failed, try one-by-one to find which fields are causing the issue
+  let ok=0, fail=0, lastError='';
+  for(const t of payload){
+    const{data:d, error:e} = await sb.from('trades').insert(t).select().single();
+    if(e){
+      fail++;
+      lastError = e.message||e.code||JSON.stringify(e);
+      console.error('Row insert error:', e, t);
+    } else {
+      ok++;
+      if(d) myTrades.unshift(d);
+    }
+  }
 
   computeStats(); syncUI();
-  toast('IMPORT COMPLETE',`${ok} trades imported${fail?`, ${fail} failed`:''}.`);
+
+  if(fail>0 && ok===0){
+    // Complete failure — show the actual error
+    toast('IMPORT FAILED', lastError.substring(0,120));
+    console.error('All inserts failed. Last error:', lastError);
+  } else if(fail>0){
+    toast('PARTIAL IMPORT', `${ok} imported, ${fail} failed. Check console for details.`);
+  } else {
+    toast('IMPORT COMPLETE', `${ok} trades imported.`);
+  }
+
   cancelImport();
   if(btn){ btn.textContent='⬡ IMPORT ALL TRADES'; btn.disabled=false; }
 }
