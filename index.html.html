@@ -4159,6 +4159,50 @@ async function bootApp(user){
 // ══════════════════════════════════════════════════
 // COMPUTE STATS FROM REAL DATA
 // ══════════════════════════════════════════════════
+function fullSync() {
+    if (!myTrades || myTrades.length === 0) return;
+
+    myTrades.sort((a, b) => new Date(a.trade_date).getTime() - new Date(b.trade_date).getTime());
+
+    let totalPnl = 0;
+    let wins = 0;
+    let losses = 0;
+    let currentStreak = 0;
+    let peakEquity = 0;
+    let maxDrawdown = 0;
+    let currentEquity = 0;
+
+    myTrades.forEach((trade) => {
+        let pnl = parseFloat(trade.pnl) || 0;
+        totalPnl += pnl;
+        currentEquity += pnl;
+
+        if (currentEquity > peakEquity) peakEquity = currentEquity;
+        let dd = peakEquity - currentEquity;
+        if (dd > maxDrawdown) maxDrawdown = dd;
+
+        if (trade.result === 'win') {
+            wins++;
+            currentStreak++;
+            if (!trade.rr_actual) trade.rr_actual = 2.0; 
+            if (!trade.rr_planned) trade.rr_planned = 2.0;
+        } else if (trade.result === 'loss') {
+            losses++;
+            currentStreak = 0;
+            if (!trade.rr_actual) trade.rr_actual = -1.0;
+            if (!trade.rr_planned) trade.rr_planned = 2.0;
+        }
+    });
+
+    currentOp.wins = wins;
+    currentOp.losses = losses;
+    currentOp.total_pnl = totalPnl;
+    currentOp.streak = currentStreak;
+
+    let ddPercent = peakEquity > 0 ? (maxDrawdown / peakEquity) * 100 : 0;
+    currentOp.stat_consistency = Math.max(0, Math.round(100 - ddPercent));
+}
+
 function computeStats(){
   if(!currentOp) return;
   const trades = myTrades;
@@ -4991,46 +5035,45 @@ async function buildHomeAccounts(){
 // ══════════════════════════════════════════════════
 // CHARTS (HOME)
 // ══════════════════════════════════════════════════
-function buildHomeCharts(){
-  const logs=[...myLogs].sort((a,b)=>a.log_date.localeCompare(b.log_date));
-  const col=opCol(currentOp);
-  if(!logs.length){
-    ['pnl-cv','wr-cv','disc-cv'].forEach(id=>{
-      const c=document.getElementById(id); if(!c) return;
-      c.width=c.offsetWidth||400;
-      const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
-      ctx.font='11px Space Mono'; ctx.fillStyle='rgba(157,196,212,0.35)'; ctx.textAlign='center';
-      ctx.fillText('No data yet',c.width/2,c.height/2);
+
+function buildHomeCharts() {
+    if (!myTrades || myTrades.length === 0) return;
+
+    let sortedTrades = [...myTrades].sort((a, b) => new Date(a.trade_date).getTime() - new Date(b.trade_date).getTime());
+    
+    let pnlPts = [];
+    let wrPts = [];
+    let discPts = [];
+    let labels = [];
+    
+    let cum = 0;
+    let wins = 0;
+
+    sortedTrades.forEach((trade, index) => {
+        let pnl = parseFloat(trade.pnl) || 0;
+        cum += pnl;
+        if (trade.result === 'win') wins++;
+
+        pnlPts.push(cum);
+        wrPts.push(Math.round((wins / (index + 1)) * 100));
+        discPts.push(parseFloat(trade.discipline) || 70);
+        
+        let dateStr = trade.trade_date || '';
+        labels.push(dateStr.length > 5 ? dateStr.slice(5) : dateStr);
     });
-    document.getElementById('pnl-lbl').textContent='—';
-    document.getElementById('wr-lbl').textContent='—';
-    document.getElementById('disc-lbl').textContent='—';
-    return;
-  }
 
-  // P&L curve
-  let cum=0;
-  const pnlPts=logs.map(l=>{cum+=(l.pnl||0);return cum;});
-  const pnlLbls=logs.map(l=>l.log_date.slice(5));
-  document.getElementById('pnl-lbl').textContent=`Total: ${fmt$(cum)}`;
-  drawAnimChart(document.getElementById('pnl-cv'),pnlPts,pnlLbls,col,'$',true);
+    let col = opCol(currentOp);
 
-  // Win rate trend
-  let w=0,tot=0;
-  const wrPts=logs.map(l=>{
-    if(l.session_result==='win')w++;
-    if(l.session_result==='win'||l.session_result==='loss')tot++;
-    return tot>0?Math.round(w/tot*100):0;
-  });
-  const lastWR=wrPts[wrPts.length-1]||0;
-  document.getElementById('wr-lbl').textContent=`${lastWR}%`;
-  drawAnimChart(document.getElementById('wr-cv'),wrPts,pnlLbls,col,'',false,0,100);
+    document.getElementById('pnl-lbl').textContent = `Total: $${cum.toLocaleString()}`;
+    drawAnimChart(document.getElementById('pnl-cv'), pnlPts, labels, col, '$', true);
 
-  // Discipline
-  const discPts=logs.map(l=>l.discipline_rating||0);
-  const avgD=logs.length?Math.round(logs.reduce((a,l)=>a+(l.discipline_rating||0),0)/logs.length):0;
-  document.getElementById('disc-lbl').textContent=`Avg: ${avgD}/10`;
-  drawAnimChart(document.getElementById('disc-cv'),discPts,pnlLbls,'var(--neon)','',false,0,10);
+    let lastWR = wrPts[wrPts.length - 1] || 0;
+    document.getElementById('wr-lbl').textContent = `${lastWR}%`;
+    drawAnimChart(document.getElementById('wr-cv'), wrPts, labels, col, '', false, 0, 100);
+
+    let avgD = discPts.reduce((a, b) => a + b, 0) / discPts.length;
+    document.getElementById('disc-lbl').textContent = `Avg: ${Math.round(avgD)}/10`;
+    drawAnimChart(document.getElementById('disc-cv'), discPts, labels, 'var(--neon)', '', false, 0, 100);
 }
 
 function drawAnimChart(canvas,data,labels,col,prefix,fillArea,yMin,yMax){
@@ -6811,7 +6854,13 @@ async function confirmImport(){
   }).eq('id', currentOp.id);
 
   // ── RECALCULATE ALL METRIC SCORES ───────────────────────────────
+fullSync();
   computeStats();
+
+  syncUI();
+  buildHome();
+  filterTrades();  
+computeStats();
 
   // ── REBUILD EVERYTHING VISIBLE ──────────────────────────────────
   syncUI();
