@@ -2571,7 +2571,8 @@ body::after{
     <!-- IMPORT TRADES -->
     <div class="sec" id="sec-import">
       <div class="sh">
-        <div><div class="sc">OP-12 // IMPORT</div><div class="st">Trade Import</div><div class="ss">MT4 · MT5 · cTrader · CSV — auto-parse and log your history</div></div>
+        <div><div class="sc">OP-12 // IMPORT</div><div class="st">Trade Import</div><div class="ss">MT4 · MT5 · cTrader · DXtrade · MatchTrader · CSV</div></div>
+        <button class="btn-danger" onclick="resetTradeData()" style="font-size:0.52rem;letter-spacing:1px">⚠ Reset All Trades</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
         <!-- Drop zone -->
@@ -2633,6 +2634,7 @@ body::after{
         <div style="display:flex;gap:8px;margin-top:14px">
           <button class="btn-save" onclick="confirmImport()" id="import-confirm-btn">⬡ IMPORT ALL TRADES</button>
           <button class="btn-outline" onclick="cancelImport()">Cancel</button>
+          <button class="btn-danger" onclick="resetTradeData()" style="margin-left:auto">⚠ Reset All Trade Data</button>
         </div>
       </div>
     </div>
@@ -2942,6 +2944,10 @@ body::after{
   <div class="modal-box">
     <div class="modal-h"><div class="modal-title" id="m-title">—</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="modal-body" id="m-body"></div>
+    <div id="m-footer" style="display:none;padding:12px 20px;border-top:1px solid rgba(0,255,136,0.08);display:flex;gap:8px;justify-content:flex-end">
+      <button id="m-edit-btn" class="btn-outline" style="font-size:0.58rem;letter-spacing:2px" onclick="editTradeFromModal()">✎ Edit Trade</button>
+      <button id="m-delete-btn" class="btn-danger" style="font-size:0.58rem;letter-spacing:2px" onclick="deleteTradeFromModal()">✕ Delete Trade</button>
+    </div>
   </div>
 </div>
 
@@ -2983,9 +2989,11 @@ let chatMessages=[], chatSub=null;
 let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
 let discRating=0, selectedCustomTags=[], chatRef=null;
 let reviewPeriod='daily';
+let currentModalTradeId=null;
+let editingTradeId=null;
 // Split XP tracking
 let disciplineXP=0, communityXP=0;
-const DISC_XP_MAX=300, COMM_XP_MAX=200; // per level
+const DISC_XP_MAX=300, COMM_XP_MAX=200;
 
 function lvl(xp){ return Math.min(Math.floor((xp||0)/XPL)+4,10); }
 function title(l){ return TITLES[l]||'LEGEND'; }
@@ -5138,14 +5146,17 @@ function toggleNewTradeForm(forceOpen=false){
   const open = forceOpen ? true : w.style.display==='none';
   w.style.display=open?'block':'none';
   if(open){
-    const today=new Date(); document.getElementById('t-date').value=fmtDate(today);
-    newCustomTags=[]; renderCustomTagDisplay();
-    document.querySelectorAll('#confluence-tags .tag').forEach(t=>{ if(t.classList.contains('selected')) t.classList.remove('selected'); });
-    resetSSFields();
-    // Scroll form into view
+    // Only reset date/tags if NOT in edit mode (edit mode pre-fills them)
+    if(!editingTradeId){
+      const today=new Date(); document.getElementById('t-date').value=fmtDate(today);
+      newCustomTags=[]; renderCustomTagDisplay();
+      document.querySelectorAll('#confluence-tags .tag').forEach(t=>{ if(t.classList.contains('selected')) t.classList.remove('selected'); });
+      resetSSFields();
+    }
     w.scrollIntoView({behavior:'smooth',block:'start'});
   } else {
     resetSSFields();
+    cancelEditMode(); // always clear edit mode when form closes
   }
 }
 
@@ -5157,7 +5168,6 @@ async function saveTrade(){
   const confluences=Array.from(document.querySelectorAll('#confluence-tags .tag.selected')).map(t=>t.dataset.tag);
 
   const tradeData={
-    operator_id:currentOp.id,
     trade_date:date, pair,
     direction:document.getElementById('t-dir').value,
     session:document.getElementById('t-sess').value,
@@ -5181,11 +5191,40 @@ async function saveTrade(){
     screenshot_after:ssData.after||'',
   };
 
-  const btn=document.getElementById('save-trade-btn'); btn.disabled=true; btn.textContent='Saving...';
-  const{data,error}=await sb.from('trades').insert(tradeData).select().single();
+  const btn=document.getElementById('save-trade-btn');
+  btn.disabled=true; btn.textContent='Saving...';
+
+  // ── EDIT MODE — update existing trade ──
+  if(editingTradeId){
+    const{data,error}=await sb.from('trades').update(tradeData).eq('id',editingTradeId).select().single();
+    if(!error&&data){
+      // Replace in local array
+      const idx = myTrades.findIndex(t=>t.id===editingTradeId);
+      if(idx>=0) myTrades[idx]=data;
+
+      // Recalculate operator totals from scratch
+      const wins   = myTrades.filter(t=>t.result==='win').length;
+      const losses = myTrades.filter(t=>t.result==='loss').length;
+      const totalPnl = myTrades.reduce((s,t)=>s+(t.pnl||0),0);
+      currentOp.wins=wins; currentOp.losses=losses; currentOp.total_pnl=totalPnl;
+      await sb.from('operators').update({wins,losses,total_pnl:totalPnl,total_trades:myTrades.length}).eq('id',currentOp.id);
+
+      computeStats(); syncUI();
+      cancelEditMode();
+      resetSSFields();
+      toast('TRADE UPDATED',`${pair} ${tradeData.direction} — saved.`);
+      toggleNewTradeForm(); filterTrades();
+    } else {
+      toast('ERROR', error?.message||'Update failed.');
+    }
+    btn.disabled=false; btn.textContent='⬡ SAVE TRADE';
+    return;
+  }
+
+  // ── NEW TRADE MODE — insert ──
+  const{data,error}=await sb.from('trades').insert({...tradeData,operator_id:currentOp.id}).select().single();
   if(!error&&data){
     myTrades.unshift(data);
-    // Update operator totals
     const pnl=tradeData.pnl, res=tradeData.result;
     let{wins,losses,total_pnl}=currentOp;
     if(res==='win') wins=(wins||0)+1;
@@ -5258,9 +5297,21 @@ function renderTradeGrid(trades){
           <div class="tc-pair">${t.pair}</div>
           <div class="tc-dir ${t.direction.toLowerCase()}">${t.direction}</div>
         </div>
-        <div style="text-align:right">
-          <div class="tc-pnl ${(t.pnl||0)>=0?'pos':'neg'}">${fmt$(t.pnl||0)}</div>
-          <div class="tc-result ${t.result}">${t.result.toUpperCase()}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="text-align:right">
+            <div class="tc-pnl ${(t.pnl||0)>=0?'pos':'neg'}">${fmt$(t.pnl||0)}</div>
+            <div class="tc-result ${t.result}">${t.result.toUpperCase()}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;margin-left:4px">
+            <button title="Edit trade" onclick="event.stopPropagation();editTrade('${t.id}')"
+              style="background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);color:var(--neon);cursor:pointer;width:22px;height:22px;font-size:0.6rem;display:flex;align-items:center;justify-content:center;transition:all 0.15s"
+              onmouseover="this.style.background='rgba(0,255,136,0.15)'"
+              onmouseout="this.style.background='rgba(0,255,136,0.06)'">✎</button>
+            <button title="Delete trade" onclick="event.stopPropagation();deleteTrade('${t.id}','${t.pair}')"
+              style="background:rgba(255,51,102,0.06);border:1px solid rgba(255,51,102,0.2);color:var(--red3);cursor:pointer;width:22px;height:22px;font-size:0.65rem;display:flex;align-items:center;justify-content:center;transition:all 0.15s"
+              onmouseover="this.style.background='rgba(255,51,102,0.18)'"
+              onmouseout="this.style.background='rgba(255,51,102,0.06)'">✕</button>
+          </div>
         </div>
       </div>
       <div class="tc-body">
@@ -5438,7 +5489,17 @@ async function openTradeModal(tradeId){
       </div>
     </div>
   </div>`;
+  currentModalTradeId = tradeId;
+  const footer = document.getElementById('m-footer');
+  if(footer) footer.style.display='flex';
   document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('modal')?.classList.remove('open');
+  const footer = document.getElementById('m-footer');
+  if(footer) footer.style.display='none';
+  currentModalTradeId = null;
 }
 
 async function submitTradeComment(tradeId){
@@ -5448,6 +5509,113 @@ async function submitTradeComment(tradeId){
   input.value='';
   const{data:comments}=await sb.from('trade_comments').select('*, operators(callsign)').eq('trade_id',tradeId).order('created_at');
   document.getElementById('trade-comments-list').innerHTML=(comments||[]).map(c=>`<div style="background:var(--bg3);border:1px solid var(--border);padding:8px 10px;margin-bottom:3px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:3px"><span style="font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--neon)">${c.operators?.callsign||'—'}</span><span style="font-family:'Space Mono',monospace;font-size:0.52rem;color:var(--muted2)">${new Date(c.created_at).toLocaleDateString()}</span></div><div style="font-size:0.8rem;color:var(--slate3)">${c.comment}</div></div>`).join('');
+}
+
+// ══════════════════════════════════════════════════
+// DELETE INDIVIDUAL TRADE
+// ══════════════════════════════════════════════════
+async function deleteTrade(tradeId, pairName){
+  const label = pairName||'this trade';
+  if(!confirm(`Delete ${label}? This cannot be undone.`)) return;
+
+  const{error} = await sb.from('trades').delete().eq('id', tradeId);
+  if(error){ toast('ERROR', 'Could not delete: '+error.message); return; }
+
+  // Remove from local array
+  myTrades = myTrades.filter(t => t.id !== tradeId);
+
+  // Recalculate counts on operator
+  const wins   = myTrades.filter(t=>t.result==='win').length;
+  const losses = myTrades.filter(t=>t.result==='loss').length;
+  const totalPnl = myTrades.reduce((s,t)=>s+(t.pnl||0),0);
+  currentOp.wins=wins; currentOp.losses=losses; currentOp.total_pnl=totalPnl;
+  await sb.from('operators').update({wins,losses,total_pnl:totalPnl,total_trades:myTrades.length}).eq('id',currentOp.id);
+
+  computeStats(); syncUI();
+  filterTrades();
+  toast('TRADE DELETED', `${label} removed from your journal.`);
+}
+
+function deleteTradeFromModal(){
+  if(!currentModalTradeId) return;
+  const t = myTrades.find(x=>x.id===currentModalTradeId);
+  closeModal();
+  deleteTrade(currentModalTradeId, t?.pair||'trade');
+}
+
+// ══════════════════════════════════════════════════
+// EDIT INDIVIDUAL TRADE
+// ══════════════════════════════════════════════════
+function editTrade(tradeId){
+  const t = myTrades.find(x=>x.id===tradeId);
+  if(!t) return;
+
+  // Store which trade we're editing
+  editingTradeId = tradeId;
+
+  // Scroll to and open the trade form
+  showSec('journal', document.querySelector('.nav-i[onclick*="journal"]'));
+
+  // Wait for section to render then pre-fill
+  setTimeout(()=>{
+    toggleNewTradeForm(true);
+
+    // Pre-fill every field
+    const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
+    set('t-date',   t.trade_date);
+    set('t-pair',   t.pair);
+    set('t-pnl',    t.pnl||0);
+    set('t-rr-p',   t.rr_planned||0);
+    set('t-rr-a',   t.rr_actual||0);
+    set('t-hold',   t.hold_time_minutes||0);
+    set('t-mae',    t.mae||0);
+    set('t-mfe',    t.mfe||0);
+    set('t-notes',  t.notes||'');
+
+    // Dropdowns
+    const setSelect = (id, val) => {
+      const el=document.getElementById(id);
+      if(!el||!val) return;
+      const opt = Array.from(el.options).find(o=>o.value===val||o.value.toLowerCase()===String(val).toLowerCase());
+      if(opt) el.value=opt.value;
+    };
+    setSelect('t-dir',        t.direction);
+    setSelect('t-sess',       t.session);
+    setSelect('t-res',        t.result);
+    setSelect('t-out',        t.outcome_detail||'');
+    setSelect('t-emo',        t.emotional_state||'focused');
+    setSelect('t-mkt',        t.market_condition||'');
+    setSelect('t-setup',      t.setup_type||'');
+    setSelect('t-strat',      t.followed_strategy?'yes':'no');
+    setSelect('t-moved-stop', t.moved_stop?'true':'false');
+    setSelect('t-daily-breach', t.daily_loss_breached?'true':'false');
+
+    // Update the save button to say UPDATE not SAVE
+    const btn = document.getElementById('save-trade-btn');
+    if(btn) btn.textContent='⬡ UPDATE TRADE';
+
+    // Show edit indicator in form title
+    const title = document.querySelector('.ntf-title');
+    if(title) title.textContent=`EDITING TRADE — ${t.pair} ${t.trade_date}`;
+
+    toast('EDIT MODE', `Editing ${t.pair} ${t.direction} — ${t.trade_date}. Make changes and click UPDATE TRADE.`);
+  }, 150);
+}
+
+function editTradeFromModal(){
+  if(!currentModalTradeId) return;
+  const id = currentModalTradeId;
+  closeModal();
+  editTrade(id);
+}
+
+// Cancel edit mode
+function cancelEditMode(){
+  editingTradeId = null;
+  const btn = document.getElementById('save-trade-btn');
+  if(btn) btn.textContent='⬡ SAVE TRADE';
+  const title = document.querySelector('.ntf-title');
+  if(title) title.textContent='LOG NEW TRADE';
 }
 
 // ══════════════════════════════════════════════════
@@ -6414,7 +6582,7 @@ function parseGenericCSV(text){
     date:   find('open time','opentime','close time','closetime','date','time','datetime','ticket date'),
     pair:   find('symbol','instrument','pair','item','currency','market','asset'),
     dir:    find('type','direction','side','action','order type'),
-    pnl:    find('profit','net p/l','pnl','p&l','net profit','realized','gain/loss','pl','closed'),
+    pnl:    find('pnl','profit','net p/l','p&l','net profit','realized','gain/loss','pl','closed'),
     rr:     find('r:r','risk reward','rr','risk/reward','r multiple'),
     result: find('result','outcome','win/loss','status'),
   };
@@ -6567,7 +6735,7 @@ async function confirmImport(){
   const btn = document.getElementById('import-confirm-btn');
   if(btn){ btn.textContent='IMPORTING...'; btn.disabled=true; }
 
-  // Build clean insert payload — only include columns that exist in the schema
+  // Build clean insert payload
   const payload = importedTrades.map(t=>({
     operator_id:          currentOp.id,
     squad_code:           SQUAD_CODE,
@@ -6594,49 +6762,119 @@ async function confirmImport(){
     market_condition:     t.market_condition||'',
   }));
 
-  // Try batch insert first (much faster, one round trip)
+  // Batch insert
   const{data, error} = await sb.from('trades').insert(payload).select();
 
+  let ok=0, fail=0, lastError='';
+
   if(!error && data){
-    myTrades = [...data, ...myTrades];
-    computeStats(); syncUI();
-    toast('IMPORT COMPLETE', `${data.length} trades imported successfully.`);
-    cancelImport();
+    ok = data.length;
+  } else {
+    console.error('Batch import error:', error);
+    // Fall back to one-by-one
+    for(const t of payload){
+      const{data:d, error:e} = await sb.from('trades').insert(t).select().single();
+      if(e){ fail++; lastError=e.message||e.code||JSON.stringify(e); console.error('Row error:',e); }
+      else { ok++; }
+    }
+  }
+
+  if(ok===0){
+    toast('IMPORT FAILED', lastError.substring(0,120));
     if(btn){ btn.textContent='⬡ IMPORT ALL TRADES'; btn.disabled=false; }
     return;
   }
 
-  // Batch failed — log the exact error so we can debug it
-  console.error('Batch import error:', error);
+  // ── FULL DATA RELOAD FROM DATABASE ──────────────────────────────
+  // Always reload from DB so local state exactly matches what was saved
+  const{data:freshTrades} = await sb.from('trades')
+    .select('*')
+    .eq('operator_id', currentOp.id)
+    .order('trade_date',{ascending:false});
 
-  // If batch failed, try one-by-one to find which fields are causing the issue
-  let ok=0, fail=0, lastError='';
-  for(const t of payload){
-    const{data:d, error:e} = await sb.from('trades').insert(t).select().single();
-    if(e){
-      fail++;
-      lastError = e.message||e.code||JSON.stringify(e);
-      console.error('Row insert error:', e, t);
-    } else {
-      ok++;
-      if(d) myTrades.unshift(d);
-    }
+  if(freshTrades) myTrades = freshTrades;
+
+  // ── RECALCULATE WINS / LOSSES / TOTAL PNL ON OPERATOR RECORD ────
+  // These are the fields that syncUI reads for the command bar stats
+  const wins   = myTrades.filter(t=>t.result==='win').length;
+  const losses = myTrades.filter(t=>t.result==='loss').length;
+  const totalPnl = myTrades.reduce((s,t)=>s+(t.pnl||0),0);
+
+  currentOp.wins      = wins;
+  currentOp.losses    = losses;
+  currentOp.total_pnl = totalPnl;
+
+  // Write updated counts back to operators table
+  await sb.from('operators').update({
+    wins, losses, total_pnl: totalPnl,
+    total_trades: myTrades.length
+  }).eq('id', currentOp.id);
+
+  // ── RECALCULATE ALL METRIC SCORES ───────────────────────────────
+  computeStats();
+
+  // ── REBUILD EVERYTHING VISIBLE ──────────────────────────────────
+  syncUI();
+  buildHome();
+  filterTrades();
+
+  // If profile page is open, update that too
+  if(document.getElementById('sec-profile')?.classList.contains('active')){
+    updateProfileCard();
   }
 
-  computeStats(); syncUI();
+  const msg = fail>0
+    ? `${ok} imported, ${fail} failed.`
+    : `${ok} trades imported. All stats updated.`;
 
-  if(fail>0 && ok===0){
-    // Complete failure — show the actual error
-    toast('IMPORT FAILED', lastError.substring(0,120));
-    console.error('All inserts failed. Last error:', lastError);
-  } else if(fail>0){
-    toast('PARTIAL IMPORT', `${ok} imported, ${fail} failed. Check console for details.`);
-  } else {
-    toast('IMPORT COMPLETE', `${ok} trades imported.`);
-  }
-
+  toast('IMPORT COMPLETE', msg);
   cancelImport();
   if(btn){ btn.textContent='⬡ IMPORT ALL TRADES'; btn.disabled=false; }
+}
+
+// ══════════════════════════════════════════════════
+// RESET TRADE DATA
+// ══════════════════════════════════════════════════
+async function resetTradeData(){
+  if(!currentOp) return;
+
+  const confirmed = window.confirm(
+    `This will permanently delete ALL ${myTrades.length} trades for ${currentOp.callsign}.\n\nThis cannot be undone. Are you absolutely sure?`
+  );
+  if(!confirmed) return;
+
+  // Double confirm for safety
+  const confirm2 = window.confirm('Final confirmation — delete all trade data?');
+  if(!confirm2) return;
+
+  const{error} = await sb.from('trades').delete().eq('operator_id', currentOp.id);
+
+  if(error){
+    toast('ERROR', 'Could not delete trades: '+error.message);
+    return;
+  }
+
+  // Reset local state
+  myTrades = [];
+  currentOp.wins      = 0;
+  currentOp.losses    = 0;
+  currentOp.total_pnl = 0;
+  currentOp.stat_edge_iq      = 0;
+  currentOp.stat_discipline   = 0;
+  currentOp.stat_patience     = 0;
+  currentOp.stat_risk_control = 0;
+
+  // Reset on operators table
+  await sb.from('operators').update({
+    wins:0, losses:0, total_pnl:0, total_trades:0,
+    stat_edge_iq:0, stat_discipline:0, stat_patience:0, stat_risk_control:0
+  }).eq('id', currentOp.id);
+
+  syncUI();
+  buildHome();
+  filterTrades();
+
+  toast('RESET COMPLETE', 'All trade data cleared. Ready for a fresh import.');
 }
 
 function cancelImport(){
