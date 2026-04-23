@@ -7794,7 +7794,6 @@ function buildAcctDash(){
     const ddUsedPct=Math.min(drawdownPct/drawdownAllowed*100,100);
 
     // Build mini equity data from trades for this account
-    const acctTrades=myTrades.filter(t=>t.account_id===a.id||(!t.account_id&&a.account_type!=='demo'));
     let cum=0;
     const eqPoints=acctTrades.slice(-20).map(t=>{ cum+=(t.pnl||0); return cum; });
     const eqLabels=acctTrades.slice(-20).map(t=>t.trade_date.slice(5));
