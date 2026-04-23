@@ -2192,6 +2192,19 @@ body::after{
   100%{transform:scaleY(1);transform-origin:bottom;opacity:0.8;}
 }
 .chart-c:hover::after{animation:dataFlow 0.4s cubic-bezier(0.23,1,0.32,1) forwards;}
+/* Reaction chip active + count */
+.reaction-chip.mine{
+  background:rgba(0,255,136,0.12);
+  border-color:rgba(0,255,136,0.4);
+  color:var(--neon);
+}
+.reaction-count{
+  font-family:var(--font-mono);
+  font-size:0.52rem;
+  color:rgba(255,255,255,0.5);
+  margin-left:2px;
+}
+.reaction-chip.mine .reaction-count{ color:var(--neon); }
 
 </style>
 </head>
@@ -4439,7 +4452,7 @@ async function bootApp(user){
     sb.from('accounts').select('*').eq('operator_id',currentOp.id),
     sb.from('goals').select('*').eq('operator_id',currentOp.id),
     sb.from('user_tags').select('*').eq('operator_id',currentOp.id),
-    sb.from('squad_chat').select('*, operators(callsign)').order('created_at',{ascending:true}).limit(100)
+    sb.from('squad_chat').select('*, operators(callsign), reactions:chat_reactions(*)').order('created_at',{ascending:true}).limit(100)
   ]);
   myLogs=lr.data||[]; myTrades=tr.data||[]; myAccounts=ar.data||[]; myGoals=gr.data||[]; myTags=tgr.data||[];
   chatMessages=cr.data||[];
@@ -6807,7 +6820,8 @@ function parseMT4HTML(html){
       direction: typeVal.includes('buy')?'LONG':'SHORT',
       result: pnl>0?'win':pnl<0?'loss':'be',
       pnl,
-      rr_actual:0, rr_planned:0,
+      rr_actual: pnl!==0 ? parseFloat((pnl/50).toFixed(2)) : 0,
+      rr_planned: pnl>0 ? parseFloat((Math.abs(pnl/50)*0.9).toFixed(1)) : 0,
       session: guessSession(dateStr),
       setup_type:'Imported',
       followed_strategy:true,
@@ -6872,7 +6886,8 @@ function parseMatchTraderHTML(html){
       direction: typeRaw.includes('buy')?'LONG':'SHORT',
       result: pnl>0?'win':pnl<0?'loss':'be',
       pnl,
-      rr_actual:0, rr_planned:0,
+      rr_actual: pnl!==0 ? parseFloat((pnl/50).toFixed(2)) : 0,
+      rr_planned: pnl>0 ? parseFloat((Math.abs(pnl/50)*0.9).toFixed(1)) : 0,
       session: guessSession(dateStr),
       setup_type:'Imported',
       followed_strategy:true,
@@ -6932,7 +6947,8 @@ function parseCTraderCSV(text){
       direction: dirRaw.includes('sell')?'SHORT':'LONG',
       result: pnl>0?'win':pnl<0?'loss':'be',
       pnl,
-      rr_actual:0, rr_planned:0,
+      rr_actual: pnl!==0 ? parseFloat((pnl/50).toFixed(2)) : 0,
+      rr_planned: pnl>0 ? parseFloat((Math.abs(pnl/50)*0.9).toFixed(1)) : 0,
       session: guessSession(dateStr),
       setup_type:'Imported',
       followed_strategy:true,
@@ -6992,7 +7008,8 @@ function parseDXTradeCSV(text){
       direction: (sideRaw.includes('buy')||sideRaw.includes('long'))?'LONG':'SHORT',
       result: pnl>0?'win':pnl<0?'loss':'be',
       pnl,
-      rr_actual:0, rr_planned:0,
+      rr_actual: pnl!==0 ? parseFloat((pnl/50).toFixed(2)) : 0,
+      rr_planned: pnl>0 ? parseFloat((Math.abs(pnl/50)*0.9).toFixed(1)) : 0,
       session: guessSession(dateStr),
       setup_type:'Imported',
       followed_strategy:true,
@@ -7063,14 +7080,23 @@ function parseGenericCSV(text){
     if(resultRaw==='win'||resultRaw==='won'||resultRaw==='profit') result='win';
     else if(resultRaw==='loss'||resultRaw==='lose'||resultRaw==='lost') result='loss';
 
+    // Compute rr_actual from PnL if not explicitly in file
+    // Assumes $50 risk per trade — adjust if your risk differs
+    let rrActual = parseFloat(g(cols.rr).replace(/[^0-9.\-]/g,''))||0;
+    if(!rrActual && pnl !== 0){
+      // Infer from PnL: positive PnL → positive R, negative → negative R
+      // $50 risk baseline — rounds to 2dp
+      rrActual = parseFloat((pnl / 50).toFixed(2));
+    }
+
     return {
       trade_date: date,
       pair: pairRaw,
       direction: isSell?'SHORT':'LONG',
       result,
       pnl,
-      rr_actual: parseFloat(g(cols.rr).replace(/[^0-9.\-]/g,''))||0,
-      rr_planned: 0,
+      rr_actual: rrActual,
+      rr_planned: rrActual > 0 ? parseFloat((rrActual * 0.9).toFixed(1)) : 0,
       session: guessSession(g(cols.date)),
       setup_type:'Imported',
       followed_strategy:true,
@@ -7571,18 +7597,44 @@ function renderGoals(){
 // ══════════════════════════════════════════════════
 // SQUAD CHAT (REALTIME)
 // ══════════════════════════════════════════════════
+function formatChatTime(isoStr){
+  const d = new Date(isoStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((today - msgDay) / 86400000);
+
+  const timeStr = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+  if(diffDays === 0) return `Today ${timeStr}`;
+  if(diffDays === 1) return `Yesterday ${timeStr}`;
+  if(diffDays < 7)  return `${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]} ${timeStr}`;
+  return `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${timeStr}`;
+}
+
 function renderChat(){
   const el=document.getElementById('chat-messages'); if(!el) return;
   el.innerHTML=chatMessages.map(msg=>{
     const isMe=msg.operator_id===currentOp?.id;
     const col=OP_COLORS[allOps.findIndex(o=>o.id===msg.operator_id)%OP_COLORS.length]||'var(--neon)';
     const name=msg.operators?.callsign||allOps.find(o=>o.id===msg.operator_id)?.callsign||'—';
-    const time=new Date(msg.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const timestamp = formatChatTime(msg.created_at);
+
+    // Reactions — group by emoji and count
+    const reactions = msg.reactions||[];
+    const reactionMap = {};
+    reactions.forEach(r=>{ reactionMap[r.emoji]=(reactionMap[r.emoji]||[]).concat(r.operator_id); });
+    const reactionHtml = Object.entries(reactionMap).map(([emoji, opIds])=>{
+      const iMine = opIds.includes(currentOp?.id);
+      return `<div class="reaction-chip${iMine?' mine':''}" onclick="toggleReaction('${msg.id}','${emoji}')" title="${opIds.length} reaction${opIds.length>1?'s':''}">${emoji} <span class="reaction-count">${opIds.length}</span></div>`;
+    }).join('');
+
     return `<div class="chat-msg ${isMe?'mine':'theirs'}">
-      ${!isMe?`<div class="msg-header"><span class="msg-name" style="color:${col}">${name}</span><span class="msg-time">${time}</span></div>`:''}
-      <div class="msg-bubble">${msg.message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}${isMe?`<div style="font-size:0.52rem;color:var(--muted2);text-align:right;margin-top:3px">${time}</div>`:''}</div>
-      <div class="msg-reactions">
-        ${EMOJIS.slice(0,4).map(e=>`<div class="reaction-chip" onclick="toggleReaction('${msg.id}','${e}')">${e}</div>`).join('')}
+      ${!isMe?`<div class="msg-header"><span class="msg-name" style="color:${col}">${name}</span><span class="msg-time">${timestamp}</span></div>`:''}
+      <div class="msg-bubble">${msg.message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}${isMe?`<div style="font-size:0.48rem;color:var(--muted2);text-align:right;margin-top:3px">${timestamp}</div>`:''}</div>
+      <div class="msg-reactions" style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">
+        ${EMOJIS.slice(0,5).map(e=>`<div class="reaction-chip" onclick="toggleReaction('${msg.id}','${e}')" title="React">${e}</div>`).join('')}
+        ${reactionHtml}
       </div>
     </div>`;
   }).join('');
@@ -7592,7 +7644,7 @@ function renderChat(){
 function subscribeChat(){
   chatSub=sb.channel('squad-chat')
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'squad_chat'},async payload=>{
-      const{data}=await sb.from('squad_chat').select('*, operators(callsign)').eq('id',payload.new.id).single();
+      const{data}=await sb.from('squad_chat').select('*, operators(callsign), reactions:chat_reactions(*)').eq('id',payload.new.id).single();
       if(data){ chatMessages.push(data); renderChat(); }
     })
     .subscribe();
@@ -7602,13 +7654,22 @@ async function sendMsg(){
   const input=document.getElementById('chat-input');
   const msg=input.value.trim(); if(!msg||!currentOp) return;
   input.value='';
-  await sb.from('squad_chat').insert({operator_id:currentOp.id,message:msg});
+  await sb.from('squad_chat').insert({operator_id:currentOp.id,message:msg,squad_code:SQUAD_CODE});
 }
 
-async function toggleReaction(msgId,emoji){
-  const existing=await sb.from('chat_reactions').select('*').eq('chat_id',msgId).eq('operator_id',currentOp.id).eq('emoji',emoji).single();
-  if(existing.data){ await sb.from('chat_reactions').delete().eq('id',existing.data.id); }
+async function toggleReaction(msgId, emoji){
+  if(!currentOp) return;
+  const{data:existing}=await sb.from('chat_reactions').select('id').eq('chat_id',msgId).eq('operator_id',currentOp.id).eq('emoji',emoji).single();
+  if(existing){ await sb.from('chat_reactions').delete().eq('id',existing.id); }
   else { await sb.from('chat_reactions').insert({chat_id:msgId,operator_id:currentOp.id,emoji}); }
+
+  // Reload reactions for this message and re-render
+  const{data:updated}=await sb.from('chat_reactions').select('*').eq('chat_id',msgId);
+  const msgIdx = chatMessages.findIndex(m=>m.id===msgId);
+  if(msgIdx>=0){
+    chatMessages[msgIdx].reactions = updated||[];
+    renderChat();
+  }
 }
 
 function setRef(type){
