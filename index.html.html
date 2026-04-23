@@ -2527,7 +2527,9 @@ body::after{
     <div class="sec" id="sec-journal">
       <div class="sh"><div><div class="sc">OP-01 // TRADE JOURNAL</div><div class="st">Trade Log</div><div class="ss">Full trade history · Filter · Tag · Analyse</div></div>
         <button class="btn-outline" id="bulk-select-btn" onclick="toggleSelectMode()" style="font-size:0.54rem;letter-spacing:2px">☐ Select</button>
+        <button class="btn-outline" id="bulk-select-all-btn" onclick="selectAllTrades()" style="display:none;font-size:0.54rem;letter-spacing:2px">☑ All</button>
         <button class="btn-danger" id="bulk-delete-btn" onclick="bulkDeleteTrades()" style="display:none;font-size:0.54rem;letter-spacing:2px">✕ Delete Selected</button>
+        <button class="btn-danger" onclick="resetTradeData()" style="font-size:0.52rem;letter-spacing:1px;opacity:0.7" title="Delete all trades — requires 2 confirmations">⚠ Delete All</button>
         <button class="btn-save" onclick="openChecklistGate()">+ NEW TRADE</button>
       </div>
 
@@ -4737,13 +4739,13 @@ function buildHome(){
   document.getElementById('hh-nm').textContent=op.callsign||'—';
 
   const wr=calcWR(op), pnl=calcTotalPnl();
+  const avgRR=calcAvgRR();
   currentOp.total_pnl=pnl;
   document.getElementById('hh-st').textContent=myTrades.length===0
     ? 'Challenge begins. Your strategy is ready. Your edge is proven. Execute without deviation.'
     : `${myTrades.length} trades · P&L: ${fmt$(pnl)} · Win rate: ${wr||0}% · Avg R:R: ${avgRR>0?avgRR+'R':'—'}`;
 
   // KPIs
-  const avgRR=calcAvgRR();
   const wins=myTrades.filter(t=>t.result==='win').length;
   const losses=myTrades.filter(t=>t.result==='loss').length;
   const rrCount=myTrades.filter(t=>t.rr_actual>0).length;
@@ -5952,15 +5954,34 @@ function cancelEditMode(){
 function toggleSelectMode(){
   selectMode = !selectMode;
   selectedTradeIds.clear();
-  const btn = document.getElementById('bulk-select-btn');
+  const btn    = document.getElementById('bulk-select-btn');
+  const allBtn = document.getElementById('bulk-select-all-btn');
   const delBtn = document.getElementById('bulk-delete-btn');
   if(btn){
     btn.textContent = selectMode ? '✕ Cancel' : '☐ Select';
     btn.style.color = selectMode ? 'var(--red3)' : '';
     btn.style.borderColor = selectMode ? 'rgba(255,51,102,0.4)' : '';
   }
+  if(allBtn) allBtn.style.display = selectMode ? 'inline-block' : 'none';
   if(delBtn) delBtn.style.display = 'none';
-  filterTrades(); // re-render cards with/without checkboxes
+  filterTrades();
+}
+
+function selectAllTrades(){
+  // Pull every trade id currently rendered in the journal grid
+  const allIds = myTrades.map(t=>t.id);
+  allIds.forEach(id=>{
+    selectedTradeIds.add(id);
+    const cb = document.getElementById('tcb-'+id);
+    if(cb){ cb.style.background='var(--red3)'; cb.textContent='✓'; }
+  });
+  const allBtn = document.getElementById('bulk-select-all-btn');
+  const delBtn = document.getElementById('bulk-delete-btn');
+  if(allBtn) allBtn.textContent = '☑ All ('+selectedTradeIds.size+')';
+  if(delBtn){
+    delBtn.style.display='inline-block';
+    delBtn.textContent='✕ Delete ('+selectedTradeIds.size+')';
+  }
 }
 
 function toggleTradeSelect(tradeId, e){
@@ -5999,8 +6020,10 @@ async function bulkDeleteTrades(){
   selectMode = false;
 
   const btn = document.getElementById('bulk-select-btn');
+  const allBtn = document.getElementById('bulk-select-all-btn');
   const delBtn = document.getElementById('bulk-delete-btn');
   if(btn){ btn.textContent='☐ Select'; btn.style.color=''; btn.style.borderColor=''; }
+  if(allBtn){ allBtn.style.display='none'; allBtn.textContent='☑ All'; }
   if(delBtn) delBtn.style.display='none';
 
   await fullSync();
