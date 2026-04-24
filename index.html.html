@@ -2427,9 +2427,142 @@ body::after{
 }
 .reaction-chip.mine .reaction-count{ color:var(--neon); }
 
+/* ══════════════════════════════════════════════════
+   KILL SWITCH — LOCKDOWN OVERLAY
+══════════════════════════════════════════════════ */
+.lockdown-overlay{
+  display:none;
+  position:fixed;inset:0;
+  z-index:9999;
+  background:rgba(8,0,0,0.93);
+  backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;
+  flex-direction:column;
+  text-align:center;
+  animation:lockdownIn 0.4s ease forwards;
+}
+.lockdown-overlay.active{ display:flex; }
+
+@keyframes lockdownIn{
+  from{opacity:0;transform:scale(1.03);}
+  to{opacity:1;transform:scale(1);}
+}
+
+/* Pulsing red border around entire screen */
+.lockdown-overlay::before{
+  content:'';
+  position:fixed;inset:0;
+  border:2px solid rgba(255,20,20,0.8);
+  pointer-events:none;
+  animation:lockdownBorder 1.4s ease-in-out infinite;
+  z-index:10000;
+}
+@keyframes lockdownBorder{
+  0%,100%{box-shadow:inset 0 0 40px rgba(255,20,20,0.15),0 0 40px rgba(255,20,20,0.15);}
+  50%{box-shadow:inset 0 0 80px rgba(255,20,20,0.35),0 0 80px rgba(255,20,20,0.35);}
+}
+
+/* Corner scan lines */
+.lockdown-overlay::after{
+  content:'';
+  position:fixed;
+  top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,20,20,0.9),transparent);
+  animation:lockdownScan 3s linear infinite;
+}
+@keyframes lockdownScan{
+  0%{top:0;opacity:0;}
+  5%{opacity:1;}
+  95%{opacity:0.6;}
+  100%{top:100vh;opacity:0;}
+}
+
+.lockdown-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(2.2rem,6vw,5rem);
+  font-weight:900;
+  color:#ff1414;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  text-shadow:0 0 30px rgba(255,20,20,0.8),
+              0 0 60px rgba(255,20,20,0.4),
+              0 0 100px rgba(255,20,20,0.2);
+  animation:titleFlicker 4s ease-in-out infinite;
+  margin-bottom:20px;
+  line-height:1;
+}
+@keyframes titleFlicker{
+  0%,85%,100%{opacity:1;}
+  87%{opacity:0.7;}
+  89%{opacity:1;}
+  91%{opacity:0.5;}
+  93%{opacity:1;}
+}
+
+.lockdown-sub{
+  font-family:'Space Mono',monospace;
+  font-size:clamp(0.7rem,1.8vw,1.1rem);
+  color:rgba(255,80,80,0.75);
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  margin-bottom:36px;
+  line-height:1.8;
+}
+
+.lockdown-accounts{
+  font-family:'Space Mono',monospace;
+  font-size:0.72rem;
+  color:rgba(255,140,140,0.55);
+  letter-spacing:0.1em;
+  margin-bottom:40px;
+  line-height:2;
+}
+.lockdown-accounts span{
+  color:rgba(255,60,60,0.85);
+  font-weight:700;
+}
+
+.lockdown-clock{
+  font-family:'Orbitron',monospace;
+  font-size:1.6rem;
+  font-weight:700;
+  color:rgba(255,60,60,0.6);
+  letter-spacing:0.15em;
+  margin-bottom:40px;
+}
+
+.lockdown-override{
+  font-family:'Space Mono',monospace;
+  font-size:0.55rem;
+  color:rgba(255,80,80,0.25);
+  letter-spacing:0.25em;
+  text-transform:uppercase;
+  cursor:pointer;
+  border:1px solid rgba(255,80,80,0.1);
+  padding:8px 20px;
+  transition:all 0.2s ease;
+}
+.lockdown-override:hover{
+  color:rgba(255,80,80,0.5);
+  border-color:rgba(255,80,80,0.25);
+}
+
 </style>
 </head>
 <body>
+<!-- ══ KILL SWITCH — LOCKDOWN OVERLAY ══ -->
+<div class="lockdown-overlay" id="lockdown-overlay">
+  <div class="lockdown-title">Protocol Breached</div>
+  <div class="lockdown-sub">
+    Daily loss limit exceeded<br>
+    Terminal locked until tomorrow
+  </div>
+  <div class="lockdown-accounts" id="lockdown-accounts"></div>
+  <div class="lockdown-clock" id="lockdown-clock">--:--:--</div>
+  <div class="lockdown-override" onclick="lockdownOverride()">
+    ⚠ &nbsp; Override — Acknowledge & Continue &nbsp; ⚠
+  </div>
+</div>
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursor-ring"></div>
 
@@ -2682,6 +2815,7 @@ body::after{
       <span class="nav-group-label">Intelligence</span>
       <div class="nav-i" onclick="showSec('behaviour',this)"><div class="n-i">🧠</div><div class="n-l">Behaviour Lab</div><div class="n-t n">NEW</div></div>
       <div class="nav-i" onclick="showSec('riskdash',this)"><div class="n-i">⚠</div><div class="n-l">Risk Dashboard</div><div class="n-t n">NEW</div></div>
+      <div class="nav-i" onclick="showSec('montecarlo',this)"><div class="n-i">⬡</div><div class="n-l">Probability Engine</div><div class="n-t n">NEW</div></div>
       <div class="nav-i" onclick="showSec('deployment',this)"><div class="n-i">◈</div><div class="n-l">Deployment Map</div></div>
       <div class="nav-i" onclick="showSec('capabilities',this)"><div class="n-i">⊕</div><div class="n-l">Capabilities</div></div>
       <div class="nav-i" onclick="showSec('assets',this)"><div class="n-i">◻</div><div class="n-l">Asset Targets</div></div>
@@ -3416,6 +3550,121 @@ body::after{
     </div>
 
   </div>
+
+    <!-- PROBABILITY ENGINE — MONTE CARLO SIMULATOR -->
+    <div class="sec" id="sec-montecarlo">
+      <div class="sh">
+        <div>
+          <div class="sc">INTEL-03 // PROBABILITY ENGINE</div>
+          <div class="st">Monte Carlo Simulator</div>
+          <div class="ss">Run thousands of simulated trade sequences from your edge parameters — see where your account ends up</div>
+        </div>
+        <button class="btn-save" onclick="runMonteCarlo()">▶ Run Simulation</button>
+      </div>
+
+      <!-- INPUT PANEL -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px" id="mc-input-grid">
+
+        <div style="background:rgba(0,255,136,0.03);border:1px solid rgba(0,255,136,0.1);padding:16px;position:relative">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon),transparent);opacity:0.4"></div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:3px;color:var(--neon);text-transform:uppercase;margin-bottom:10px;opacity:0.6">Edge Parameters</div>
+          <div class="form-group" style="margin-bottom:10px">
+            <div class="form-label">Win Rate (%)</div>
+            <input class="form-input" type="number" id="mc-wr" placeholder="52" min="1" max="99" step="0.1" value="52">
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <div class="form-label">Avg Win (R)</div>
+            <input class="form-input" type="number" id="mc-avg-win" placeholder="2.0" min="0.1" step="0.1" value="2.0">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Avg Loss (R)</div>
+            <input class="form-input" type="number" id="mc-avg-loss" placeholder="1.0" min="0.1" step="0.1" value="1.0">
+          </div>
+        </div>
+
+        <div style="background:rgba(0,180,255,0.03);border:1px solid rgba(0,180,255,0.1);padding:16px;position:relative">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.4"></div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;margin-bottom:10px;opacity:0.6">Account Config</div>
+          <div class="form-group" style="margin-bottom:10px">
+            <div class="form-label">Starting Balance ($)</div>
+            <input class="form-input" type="number" id="mc-balance" placeholder="100000" value="100000">
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <div class="form-label">Risk Per Trade (%)</div>
+            <input class="form-input" type="number" id="mc-risk-pct" placeholder="1.0" min="0.1" max="10" step="0.1" value="1.0">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Trades Per Simulation</div>
+            <input class="form-input" type="number" id="mc-trades" placeholder="200" min="10" max="1000" step="10" value="200">
+          </div>
+        </div>
+
+        <div style="background:rgba(180,140,255,0.03);border:1px solid rgba(180,140,255,0.1);padding:16px;position:relative">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(180,140,255,0.8),transparent);opacity:0.4"></div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:3px;color:rgba(180,140,255,0.8);text-transform:uppercase;margin-bottom:10px;opacity:0.6">Simulation Config</div>
+          <div class="form-group" style="margin-bottom:10px">
+            <div class="form-label">Number of Simulations</div>
+            <select class="form-select" id="mc-sims">
+              <option value="500">500 — Fast</option>
+              <option value="1000" selected>1,000 — Standard</option>
+              <option value="2500">2,500 — Deep</option>
+              <option value="5000">5,000 — Max</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <div class="form-label">Max Drawdown Limit (%)</div>
+            <input class="form-input" type="number" id="mc-max-dd" placeholder="10" min="1" max="50" step="1" value="10">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Auto-fill from my trades</div>
+            <button class="btn-outline" onclick="mcAutoFill()" style="width:100%;font-size:0.6rem;letter-spacing:2px;padding:8px">⬡ Load My Edge Stats</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS — hidden until simulation runs -->
+      <div id="mc-results" style="display:none">
+
+        <!-- KPI STRIP -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px" id="mc-kpis"></div>
+
+        <!-- CHART + DISTRIBUTION ROW -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div style="background:var(--glass-card);border:1px solid var(--border2);padding:16px;position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon),transparent);opacity:0.3"></div>
+            <div style="font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;letter-spacing:2px;color:var(--neon);text-transform:uppercase;margin-bottom:12px;text-shadow:0 0 8px var(--neon-glow)">
+              Equity Path Distribution
+              <span style="font-family:'Space Mono',monospace;font-size:0.42rem;color:var(--muted2);font-weight:400;margin-left:8px" id="mc-sim-count-label"></span>
+            </div>
+            <canvas id="mc-path-canvas" style="width:100%;height:220px;display:block"></canvas>
+          </div>
+          <div style="background:var(--glass-card);border:1px solid var(--border2);padding:16px;position:relative">
+            <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.3"></div>
+            <div style="font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:12px;text-shadow:0 0 8px var(--cyan-glow)">Final Balance Distribution</div>
+            <canvas id="mc-dist-canvas" style="width:100%;height:220px;display:block"></canvas>
+          </div>
+        </div>
+
+        <!-- PERCENTILE TABLE + VERDICT -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--glass-card);border:1px solid var(--border2);padding:16px">
+            <div style="font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;letter-spacing:2px;color:rgba(180,140,255,0.9);text-transform:uppercase;margin-bottom:12px">Percentile Outcomes</div>
+            <div id="mc-percentile-table"></div>
+          </div>
+          <div style="background:var(--glass-card);border:1px solid var(--border2);padding:16px;position:relative;overflow:hidden">
+            <div style="position:absolute;inset:0;pointer-events:none;opacity:0.03;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='23'%3E%3Cpolygon points='10,1 19,6 19,17 10,22 1,17 1,6' fill='none' stroke='%23fff' stroke-width='0.5'/%3E%3C/svg%3E\");background-size:20px 23px"></div>
+            <div style="font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;letter-spacing:2px;color:var(--amber);text-transform:uppercase;margin-bottom:12px">Edge Verdict</div>
+            <div id="mc-verdict"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div id="mc-empty" style="text-align:center;padding:60px 0">
+        <div style="font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;letter-spacing:4px;color:rgba(0,255,136,0.2);text-transform:uppercase;margin-bottom:8px">Awaiting Parameters</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.56rem;color:rgba(255,255,255,0.12);letter-spacing:1px">Configure your edge above and press RUN SIMULATION</div>
+      </div>
+    </div>
 
   <!-- CHAT COLUMN -->
   <div class="chat-col">
@@ -4906,6 +5155,109 @@ async function fullSync(){
   if(active('sec-riskdash'))    buildRiskDash();
   if(active('sec-playbook'))    buildPlaybook();
   if(active('sec-acctdash'))    buildAcctDash();
+  // 7. Kill Switch — check daily loss limits across all accounts
+  checkKillSwitch();
+}
+
+// ══════════════════════════════════════════════════
+// KILL SWITCH — PROP FIRM DEATH PREVENTION
+// Checks today's P&L per account against daily_loss_limit.
+// Activates lockdown overlay if any account breaches.
+// ══════════════════════════════════════════════════
+let lockdownActive = false;
+let lockdownClockInterval = null;
+
+function checkKillSwitch(){
+  if(!myAccounts.length || !myTrades.length) return;
+
+  // Only accounts with a daily_loss_limit set
+  const guardedAccounts = myAccounts.filter(a => a.daily_loss_limit && a.daily_loss_limit > 0);
+  if(!guardedAccounts.length) return;
+
+  // Today's date string
+  const today = new Date().toISOString().slice(0,10);
+
+  // Filter trades to today only
+  const todayTrades = myTrades.filter(t => t.trade_date === today);
+
+  // Group today's P&L by account_id
+  // Trades without account_id — if only one account exists, attribute to it
+  const pnlByAccount = {};
+  todayTrades.forEach(t => {
+    const accId = t.account_id || (myAccounts.length === 1 ? myAccounts[0].id : null);
+    if(!accId) return;
+    pnlByAccount[accId] = (pnlByAccount[accId] || 0) + (t.pnl || 0);
+  });
+
+  // Check each guarded account
+  const breached = [];
+  guardedAccounts.forEach(acc => {
+    const todayPnl = pnlByAccount[acc.id] || 0;
+    const loss = -todayPnl; // positive = loss
+    if(loss >= acc.daily_loss_limit){
+      breached.push({
+        name: acc.name,
+        loss: loss,
+        limit: acc.daily_loss_limit,
+      });
+    }
+  });
+
+  if(breached.length > 0){
+    activateLockdown(breached);
+  } else {
+    deactivateLockdown();
+  }
+}
+
+function activateLockdown(breachedAccounts){
+  lockdownActive = true;
+  const overlay = document.getElementById('lockdown-overlay');
+  const accsEl  = document.getElementById('lockdown-accounts');
+  if(!overlay) return;
+
+  // Build account detail lines
+  if(accsEl){
+    accsEl.innerHTML = breachedAccounts.map(a =>
+      `<div>${a.name} — Loss today: <span>$${Math.abs(a.loss).toLocaleString(undefined,{maximumFractionDigits:2})}</span> / Limit: <span>$${a.limit.toLocaleString()}</span></div>`
+    ).join('');
+  }
+
+  overlay.classList.add('active');
+
+  // Start countdown to midnight
+  if(lockdownClockInterval) clearInterval(lockdownClockInterval);
+  const clockEl = document.getElementById('lockdown-clock');
+
+  const tick = () => {
+    const now  = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24,0,0,0);
+    const diff = midnight - now;
+    const h  = String(Math.floor(diff/3600000)).padStart(2,'0');
+    const m  = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+    const s  = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+    if(clockEl) clockEl.textContent = `Reset in ${h}:${m}:${s}`;
+  };
+  tick();
+  lockdownClockInterval = setInterval(tick, 1000);
+}
+
+function deactivateLockdown(){
+  if(!lockdownActive) return;
+  lockdownActive = false;
+  document.getElementById('lockdown-overlay')?.classList.remove('active');
+  if(lockdownClockInterval){ clearInterval(lockdownClockInterval); lockdownClockInterval=null; }
+}
+
+function lockdownOverride(){
+  // Logs the override but doesn't permanently disable the kill switch
+  // It will re-lock if another trade is added that breaches the limit
+  if(!confirm('⚠ WARNING\n\nYou are overriding the kill switch.\n\nThis does not remove the loss — it only unlocks the terminal temporarily.\n\nAre you sure you want to continue trading today?')) return;
+  lockdownActive = false;
+  document.getElementById('lockdown-overlay')?.classList.remove('active');
+  if(lockdownClockInterval){ clearInterval(lockdownClockInterval); lockdownClockInterval=null; }
+  toast('KILL SWITCH OVERRIDE', 'Terminal unlocked. Trade at your own risk.');
 }
 
 // ══════════════════════════════════════════════════
@@ -7961,6 +8313,7 @@ function showSec(name,navEl){
   if(name==='playbook') buildPlaybook();
   if(name==='behaviour') buildBehaviourLab();
   if(name==='riskdash') buildRiskDash();
+  if(name==='montecarlo') mcAutoFill();
   if(name==='log'){ buildDiscRating(); loadWeeklyReviews(); }
   if(name==='import'){
     importedTrades=[];
@@ -8228,6 +8581,14 @@ function showAddAccountModal(){
       <div><div class="form-label">Profit Target (%)</div><input class="form-input" type="number" id="ma-target" placeholder="8" value="8"></div>
       <div><div class="form-label">Max Drawdown (%)</div><input class="form-input" type="number" id="ma-dd" placeholder="0.0" step="0.1"></div>
       <div><div class="form-label">Date Started</div><input class="form-input" type="date" id="ma-date"></div>
+      <div style="grid-column:1/-1;border-top:1px solid rgba(255,51,51,0.2);padding-top:10px;margin-top:2px">
+        <div class="form-label" style="color:rgba(255,80,80,0.8)">⚠ Daily Loss Limit ($) — Kill Switch</div>
+        <input class="form-input" type="number" id="ma-daily-loss" placeholder="e.g. 1000 — leave blank to disable" step="1"
+          style="border-color:rgba(255,51,51,0.25);margin-top:4px">
+        <div style="font-family:'Space Mono',monospace;font-size:0.46rem;color:rgba(255,80,80,0.35);letter-spacing:1px;margin-top:4px">
+          Dashboard locks if today's losses on this account reach this amount
+        </div>
+      </div>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn-save" onclick="addAccountFull()">ADD ACCOUNT</button>
@@ -8239,6 +8600,7 @@ function showAddAccountModal(){
 async function addAccountFull(){
   const n=document.getElementById('ma-name')?.value.trim();
   if(!n){ toast('ERROR','Account name required'); return; }
+  const dailyLoss = parseFloat(document.getElementById('ma-daily-loss')?.value)||null;
   const a={
     operator_id:currentOp.id,
     name:n,
@@ -8246,7 +8608,8 @@ async function addAccountFull(){
     account_type:document.getElementById('ma-type')?.value,
     profit_target:parseFloat(document.getElementById('ma-target')?.value)||8,
     max_drawdown:parseFloat(document.getElementById('ma-dd')?.value)||0,
-    started_date:document.getElementById('ma-date')?.value||null
+    started_date:document.getElementById('ma-date')?.value||null,
+    daily_loss_limit: dailyLoss,
   };
   const{data,error}=await sb.from('accounts').insert(a).select().single();
   if(data){ myAccounts.push(data); buildAcctDash(); closeModal(); checkAchievements(); toast('ACCOUNT','Account added — ready to track'); }
@@ -8497,6 +8860,283 @@ function wireRadarTilt(){
 }
 
 // ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// PROBABILITY ENGINE — MONTE CARLO SIMULATOR
+// ══════════════════════════════════════════════════
+
+function mcAutoFill(){
+  // Pre-fill inputs from the user's actual trade stats
+  if(!myTrades.length) return;
+  const wins   = myTrades.filter(t=>t.result==='win');
+  const losses = myTrades.filter(t=>t.result==='loss');
+  const total  = wins.length + losses.length;
+  if(!total) return;
+
+  const wr       = Math.round(wins.length / total * 100 * 10) / 10;
+  const avgWinR  = wins.length   ? parseFloat((wins.reduce((s,t)=>s+Math.abs(t.pnl||0),0)/wins.length / 50).toFixed(2))   : 2.0;
+  const avgLossR = losses.length ? parseFloat((losses.reduce((s,t)=>s+Math.abs(t.pnl||0),0)/losses.length / 50).toFixed(2)) : 1.0;
+
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val; };
+  set('mc-wr',      wr);
+  set('mc-avg-win', Math.min(avgWinR,  10));
+  set('mc-avg-loss',Math.min(avgLossR, 5));
+
+  // Auto-set starting balance from first account if available
+  if(myAccounts.length){
+    const acc = myAccounts.find(a=>['challenge','funded','live'].includes(a.account_type)) || myAccounts[0];
+    if(acc?.size) set('mc-balance', acc.size);
+  }
+}
+
+function runMonteCarlo(){
+  const winRate  = parseFloat(document.getElementById('mc-wr')?.value) / 100   || 0.52;
+  const avgWin   = parseFloat(document.getElementById('mc-avg-win')?.value)     || 2.0;
+  const avgLoss  = parseFloat(document.getElementById('mc-avg-loss')?.value)    || 1.0;
+  const balance  = parseFloat(document.getElementById('mc-balance')?.value)     || 100000;
+  const riskPct  = parseFloat(document.getElementById('mc-risk-pct')?.value)/100|| 0.01;
+  const numTrades= parseInt(document.getElementById('mc-trades')?.value)        || 200;
+  const numSims  = parseInt(document.getElementById('mc-sims')?.value)          || 1000;
+  const maxDD    = parseFloat(document.getElementById('mc-max-dd')?.value)/100  || 0.10;
+
+  if(winRate<=0||winRate>=1){ toast('ERROR','Win rate must be between 1% and 99%'); return; }
+
+  // ── RUN SIMULATIONS ──────────────────────────────
+  const results      = [];   // final balances
+  const bustedCount  = { n:0 };
+  const allPaths     = [];   // subset of paths for chart (max 200 lines)
+  const CHART_PATHS  = Math.min(numSims, 200);
+
+  for(let s=0; s<numSims; s++){
+    let bal = balance;
+    let peakBal = balance;
+    let busted = false;
+    const path = (s < CHART_PATHS) ? [bal] : null;
+
+    for(let t=0; t<numTrades; t++){
+      const risk = bal * riskPct;
+      const isWin = Math.random() < winRate;
+      // Add variance to win/loss size (~15% std dev for realism)
+      const r = isWin
+        ? avgWin  * (1 + (Math.random()-0.5)*0.3)
+        : avgLoss * (1 + (Math.random()-0.5)*0.3);
+      bal = isWin ? bal + risk*r : bal - risk*r;
+      if(bal < 0) bal = 0;
+      if(bal > peakBal) peakBal = bal;
+
+      // Check max drawdown breach
+      if(peakBal > 0 && (peakBal - bal) / peakBal >= maxDD){
+        busted = true; bal = 0; break;
+      }
+      if(path) path.push(bal);
+    }
+
+    results.push(bal);
+    if(busted) bustedCount.n++;
+    if(path) allPaths.push(path);
+  }
+
+  results.sort((a,b)=>a-b);
+  const pct = p => results[Math.floor(p/100*(results.length-1))];
+
+  // ── KPI STRIP ────────────────────────────────────
+  const median       = pct(50);
+  const best10       = pct(90);
+  const worst10      = pct(10);
+  const probProfit   = Math.round(results.filter(r=>r>balance).length/numSims*100);
+  const bustRate     = Math.round(bustedCount.n/numSims*100);
+  const expectancy   = (winRate*avgWin - (1-winRate)*avgLoss);
+
+  const kpis = [
+    {label:'Median Outcome',  val:fmt$(Math.round(median-balance)), col:median>=balance?'var(--neon)':'var(--red3)',   sub:`from $${balance.toLocaleString()}`},
+    {label:'Best 10%',        val:fmt$(Math.round(best10-balance)), col:'var(--neon)',                                sub:'top decile result'},
+    {label:'Worst 10%',       val:fmt$(Math.round(worst10-balance)),col:worst10<balance?'var(--red3)':'var(--amber)', sub:'bottom decile result'},
+    {label:'Prob. of Profit', val:probProfit+'%',                   col:probProfit>=55?'var(--neon)':'var(--amber)',   sub:`${numSims.toLocaleString()} sims`},
+    {label:'Bust Rate',       val:bustRate+'%',                     col:bustRate>=20?'var(--red3)':bustRate>=5?'var(--amber)':'var(--neon)', sub:'hit max drawdown'},
+  ];
+
+  document.getElementById('mc-kpis').innerHTML = kpis.map(k=>`
+    <div style="background:var(--glass-card);border:1px solid var(--border2);padding:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${k.col},transparent);opacity:0.4"></div>
+      <div style="font-family:'Space Mono',monospace;font-size:0.4rem;letter-spacing:2px;color:rgba(255,255,255,0.25);text-transform:uppercase;margin-bottom:6px">${k.label}</div>
+      <div style="font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:800;color:${k.col};text-shadow:0 0 12px ${k.col}">${k.val}</div>
+      <div style="font-family:'Space Mono',monospace;font-size:0.44rem;color:rgba(255,255,255,0.2);margin-top:3px">${k.sub}</div>
+    </div>`).join('');
+
+  // ── PATH CHART ───────────────────────────────────
+  const pathCanvas = document.getElementById('mc-path-canvas');
+  if(pathCanvas){
+    pathCanvas.width  = pathCanvas.offsetWidth  || 400;
+    pathCanvas.height = pathCanvas.offsetHeight || 220;
+    const ctx = pathCanvas.getContext('2d');
+    ctx.clearRect(0,0,pathCanvas.width,pathCanvas.height);
+
+    const W = pathCanvas.width, H = pathCanvas.height;
+    const pad = {t:10,r:10,b:30,l:60};
+    const iW = W-pad.l-pad.r, iH = H-pad.t-pad.b;
+
+    // Find Y range
+    const allVals = allPaths.flat();
+    const minV = Math.min(...allVals, balance*0.5);
+    const maxV = Math.max(...allVals, balance*1.5);
+    const toX = i => pad.l + (i/(numTrades))*iW;
+    const toY = v => pad.t + iH - ((v-minV)/(maxV-minV||1))*iH;
+
+    // Horizontal gridlines
+    ctx.setLineDash([2,4]);
+    ctx.strokeStyle='rgba(255,255,255,0.06)';
+    ctx.lineWidth=0.5;
+    for(let i=0;i<=4;i++){
+      const y = pad.t + iH*(i/4);
+      ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+      const val = minV + (maxV-minV)*(1-i/4);
+      ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px Space Mono'; ctx.textAlign='right';
+      ctx.fillText('$'+(val/1000).toFixed(0)+'k', pad.l-4, y+3);
+    }
+    ctx.setLineDash([]);
+
+    // Starting balance line
+    const startY = toY(balance);
+    ctx.beginPath(); ctx.moveTo(pad.l,startY); ctx.lineTo(W-pad.r,startY);
+    ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw paths — colour by final result
+    allPaths.forEach(path=>{
+      const final = path[path.length-1];
+      const ratio = (final-balance)/balance;
+      let alpha, color;
+      if(final === 0){
+        color=`rgba(255,51,102,`; alpha=0.12;
+      } else if(ratio > 0.15){
+        color=`rgba(0,255,136,`; alpha=0.09;
+      } else if(ratio > 0){
+        color=`rgba(0,255,136,`; alpha=0.05;
+      } else {
+        color=`rgba(255,100,50,`; alpha=0.06;
+      }
+      ctx.beginPath();
+      path.forEach((v,i)=> i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
+      ctx.strokeStyle=color+alpha+')'; ctx.lineWidth=0.7; ctx.stroke();
+    });
+
+    // Median path overlay — find closest to median
+    const medianPath = allPaths.reduce((best,p)=>
+      Math.abs(p[p.length-1]-median) < Math.abs(best[best.length-1]-median) ? p : best
+    , allPaths[0]);
+    if(medianPath){
+      ctx.beginPath();
+      medianPath.forEach((v,i)=> i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
+      ctx.strokeStyle='rgba(0,255,136,0.85)'; ctx.lineWidth=2;
+      ctx.shadowColor='rgba(0,255,136,0.5)'; ctx.shadowBlur=4;
+      ctx.stroke(); ctx.shadowBlur=0;
+    }
+
+    // X-axis label
+    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px Space Mono'; ctx.textAlign='center';
+    ctx.fillText(`${numTrades} trades`, W/2, H-2);
+    document.getElementById('mc-sim-count-label').textContent = `${numSims.toLocaleString()} simulations`;
+  }
+
+  // ── DISTRIBUTION HISTOGRAM ────────────────────────
+  const distCanvas = document.getElementById('mc-dist-canvas');
+  if(distCanvas){
+    distCanvas.width  = distCanvas.offsetWidth  || 400;
+    distCanvas.height = distCanvas.offsetHeight || 220;
+    const ctx = distCanvas.getContext('2d');
+    ctx.clearRect(0,0,distCanvas.width,distCanvas.height);
+    const W=distCanvas.width, H=distCanvas.height;
+    const pad={t:10,r:10,b:30,l:10};
+    const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+
+    const BINS = 40;
+    const mn=results[0], mx=results[results.length-1];
+    const binW=(mx-mn||1)/BINS;
+    const bins=Array(BINS).fill(0);
+    results.forEach(r=>{ const bi=Math.min(Math.floor((r-mn)/binW),BINS-1); bins[bi]++; });
+    const maxBin=Math.max(...bins);
+    const bw=iW/BINS;
+
+    bins.forEach((count,i)=>{
+      const x=pad.l+i*bw;
+      const h=(count/maxBin)*iH;
+      const val=mn+i*binW;
+      const col = val<balance ? 'rgba(255,51,102,0.55)' : 'rgba(0,255,136,0.55)';
+      ctx.fillStyle=col;
+      ctx.fillRect(x,pad.t+iH-h,bw-1,h);
+    });
+
+    // Median marker
+    const medX = pad.l + ((median-mn)/(mx-mn||1))*iW;
+    ctx.beginPath(); ctx.moveTo(medX,pad.t); ctx.lineTo(medX,pad.t+iH);
+    ctx.strokeStyle='rgba(0,255,136,0.9)'; ctx.lineWidth=1.5;
+    ctx.shadowColor='rgba(0,255,136,0.5)'; ctx.shadowBlur=4; ctx.stroke(); ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(0,255,136,0.8)'; ctx.font='9px Space Mono'; ctx.textAlign='center';
+    ctx.fillText('MEDIAN', medX, pad.t+8);
+
+    // Starting line
+    const startX = pad.l + ((balance-mn)/(mx-mn||1))*iW;
+    ctx.beginPath(); ctx.moveTo(startX,pad.t); ctx.lineTo(startX,pad.t+iH);
+    ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // ── PERCENTILE TABLE ─────────────────────────────
+  const ptRows = [
+    {label:'99th percentile (best 1%)',  pct:99, note:'Exceptional run'},
+    {label:'90th percentile (best 10%)', pct:90, note:'Strong run'},
+    {label:'75th percentile',            pct:75, note:'Above average'},
+    {label:'50th percentile (median)',   pct:50, note:'Expected outcome'},
+    {label:'25th percentile',            pct:25, note:'Below average'},
+    {label:'10th percentile (worst 10%)',pct:10, note:'Rough stretch'},
+    {label:'1st percentile (worst 1%)',  pct:1,  note:'Extreme drawdown'},
+  ];
+  document.getElementById('mc-percentile-table').innerHTML = ptRows.map(row=>{
+    const val = pct(row.pct);
+    const diff = val - balance;
+    const col = val>=balance?'var(--neon)':'var(--red3)';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+      <div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.56rem;color:rgba(255,255,255,0.5)">${row.label}</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.44rem;color:rgba(255,255,255,0.2)">${row.note}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:700;color:${col}">$${Math.round(val).toLocaleString()}</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.44rem;color:${col};opacity:0.7">${diff>=0?'+':''}${fmt$(Math.round(diff))}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── EDGE VERDICT ─────────────────────────────────
+  const edgeLabel = expectancy >= 0.5 ? 'STRONG POSITIVE EDGE'
+    : expectancy >= 0.2 ? 'POSITIVE EDGE'
+    : expectancy >= 0   ? 'MARGINAL EDGE'
+    : expectancy >= -0.2? 'NEGATIVE EDGE'
+    : 'NO EDGE — DO NOT TRADE LIVE';
+  const edgeCol = expectancy >= 0.5 ? 'var(--neon)' : expectancy >= 0.2 ? 'var(--neon)' : expectancy >= 0 ? 'var(--amber)' : 'var(--red3)';
+
+  document.getElementById('mc-verdict').innerHTML = `
+    <div style="font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:900;color:${edgeCol};text-shadow:0 0 12px ${edgeCol};margin-bottom:12px;letter-spacing:2px">${edgeLabel}</div>
+    ${[
+      ['Expectancy per trade', expectancy.toFixed(3)+'R', expectancy>=0?'var(--neon)':'var(--red3)'],
+      ['Win rate input',       (winRate*100).toFixed(1)+'%', 'var(--cyan)'],
+      ['Avg win : avg loss',   avgWin.toFixed(1)+'R : '+avgLoss.toFixed(1)+'R', 'var(--cyan)'],
+      ['Risk per trade',       (riskPct*100).toFixed(1)+'%', 'var(--amber)'],
+      ['Ruin probability',     bustRate+'%', bustRate<5?'var(--neon)':bustRate<20?'var(--amber)':'var(--red3)'],
+      ['Prob. of doubling',    Math.round(results.filter(r=>r>=balance*2).length/numSims*100)+'%', 'var(--neon)'],
+    ].map(([l,v,c])=>`
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+        <span style="font-family:'Space Mono',monospace;font-size:0.52rem;color:rgba(255,255,255,0.3)">${l}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:0.58rem;font-weight:700;color:${c}">${v}</span>
+      </div>`).join('')}
+    <div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:0.46rem;color:rgba(255,255,255,0.18);line-height:1.8;letter-spacing:0.5px">
+      Based on ${numSims.toLocaleString()} simulated sequences of ${numTrades} trades.<br>
+      Past performance does not guarantee future results.
+    </div>`;
+
+  // Show results, hide empty state
+  document.getElementById('mc-results').style.display = 'block';
+  document.getElementById('mc-empty').style.display   = 'none';
+}
+
 // INIT
 // ══════════════════════════════════════════════════
 async function init(){
