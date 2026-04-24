@@ -7370,10 +7370,91 @@ function guessSession(timeStr){
   if(h>=0&&h<6)   return 'Asian';
   return 'Other';
 }
+
+// ══════════════════════════════════════════════════
+// BUILD UI — called once after data loads
+// ══════════════════════════════════════════════════
+function buildUI(){
+  initParticles();
+  syncUI();
+  buildDiscRating();
+  buildOpsGrid();
+  buildHome();
+  renderChat();
+
+  const today=new Date();
+  const td=document.getElementById('e-date'); if(td) td.value=fmtDate(today);
+  const tt2=document.getElementById('t-date'); if(tt2) tt2.value=fmtDate(today);
+
+  setTimeout(()=>{
+    const stats=[['e',currentOp?.stat_edge_iq||0],['d',currentOp?.stat_discipline||0],['p',currentOp?.stat_patience||0],['r',currentOp?.stat_risk_control||0]];
+    stats.forEach(([id,v])=>{ const el=document.getElementById(`af-${id}`); if(el) el.style.width=v+'%'; });
+  },500);
+
+  loadWeeklyReviews();
+  setTimeout(initWidgetHovers, 800);
+}
+
+// ══════════════════════════════════════════════════
+// WIDGET HOVER INTERACTIONS
+// ══════════════════════════════════════════════════
+function initWidgetHovers(){
+  wireKpiGlow();
+  wireRadarTilt();
+}
+
+function wireKpiGlow(){
+  document.querySelectorAll('.kpi-card').forEach(card=>{
+    if(card.querySelector('.cursor-glow')) return;
+    const glow=document.createElement('div');
+    glow.className='cursor-glow';
+    card.appendChild(glow);
+    card.addEventListener('mousemove',e=>{
+      const rect=card.getBoundingClientRect();
+      const x=e.clientX-rect.left, y=e.clientY-rect.top;
+      glow.style.left=x+'px'; glow.style.top=y+'px';
+      const cx=rect.width/2, cy=rect.height/2;
+      const dx=(x-cx)/cx, dy=(y-cy)/cy;
+      card.style.transform=`translateY(-4px) scale(1.01) perspective(600px) rotateX(${-dy*5}deg) rotateY(${dx*5}deg)`;
+    });
+    card.addEventListener('mouseleave',()=>{ card.style.transform=''; });
+  });
+}
+
+function wireRadarTilt(){
+  const card=document.querySelector('.radar-card');
+  if(!card||card._tiltWired) return;
+  card._tiltWired=true;
+  card.addEventListener('mousemove',e=>{
+    const rect=card.getBoundingClientRect();
+    const x=e.clientX-rect.left, y=e.clientY-rect.top;
+    const cx=rect.width/2, cy=rect.height/2;
+    const dx=(x-cx)/cx, dy=(y-cy)/cy;
+    card.style.transform=`perspective(800px) rotateX(${-dy*3}deg) rotateY(${dx*3}deg)`;
+    card.style.transition='transform 0.08s ease';
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform='perspective(800px) rotateX(0) rotateY(0)';
+    card.style.transition='transform 0.4s ease, border-color 0.3s ease, box-shadow 0.3s ease';
+  });
+}
+
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
 async function init(){
+  // Init cursor immediately — works on login screen too
+  initCursor();
+  initMatrix();
+
+  // Check keys are set — show helpful error if not
+  if(SUPABASE_URL.includes('YOUR_SUPABASE')||SUPABASE_ANON_KEY.includes('YOUR_SUPABASE')){
+    hideLoader();
+    document.getElementById('auth-screen').style.display='flex';
+    setTimeout(()=>showErr('Supabase keys not configured. Open the file and replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY with your actual keys.'),500);
+    return;
+  }
+
   await setLoader('Establishing secure connection...',20);
   const{data:{session}}=await sb.auth.getSession();
   await setLoader('Verifying credentials...',50);
