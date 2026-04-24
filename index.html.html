@@ -378,151 +378,152 @@ body::after{
 .sidebar::-webkit-scrollbar-thumb{background:var(--neon2);border-radius:1px;}
 .panel{border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:4px;}
 .panel:last-child{border-bottom:none;}
+/* ══════════════════════════════════════════════════
+   ATOMIC ORBITAL AVATAR
+══════════════════════════════════════════════════ */
 .op-acc{
-  width:58px;height:58px;
+  width:62px;height:62px;
   position:relative;
-  margin:16px auto 6px;
+  margin:18px auto 6px;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;cursor:default;
 }
 
-/* Single clean rotating arc */
-.op-acc::before{
-  content:'';
-  position:absolute;inset:-5px;
-  border-radius:50%;
-  border:1.5px solid transparent;
-  border-top-color:var(--neon);
-  border-right-color:rgba(0,255,136,0.25);
-  animation:avatarSpin 3.5s linear infinite;
-}
-
-@keyframes avatarSpin{
-  from{transform:rotate(0deg);}
-  to{transform:rotate(360deg);}
-}
-
-/* Main circle face */
+/* ── NUCLEUS ── */
 .op-acc-face{
-  width:100%;height:100%;
+  width:26px;height:26px;
   border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;
-  border:1px solid rgba(0,255,136,0.25);
-  background:radial-gradient(circle at 38% 32%,
-    rgba(0,255,136,0.14) 0%,
-    rgba(0,15,8,0.85) 55%,
-    rgba(0,2,6,0.97) 100%
+  position:relative;z-index:4;
+  background:radial-gradient(circle at 38% 35%,
+    rgba(0,255,136,0.55) 0%,
+    rgba(0,80,40,0.9) 50%,
+    rgba(0,10,5,1) 100%
   );
+  box-shadow:0 0 10px rgba(0,255,136,0.5),
+             0 0 22px rgba(0,255,136,0.2),
+             inset 0 0 6px rgba(0,255,136,0.15);
+  animation:nucleusPulse 3s ease-in-out infinite;
+  overflow:visible;
+}
+@keyframes nucleusPulse{
+  0%,100%{box-shadow:0 0 10px rgba(0,255,136,0.5),0 0 22px rgba(0,255,136,0.2);}
+  50%{box-shadow:0 0 16px rgba(0,255,136,0.7),0 0 34px rgba(0,255,136,0.3);}
 }
 
-/* Subtle scan sweep — slow, barely visible */
-.op-acc-face::after{
-  content:'';
-  position:absolute;left:0;right:0;height:40%;
-  background:linear-gradient(180deg,transparent,rgba(0,255,136,0.07),transparent);
-  top:-40%;
-  animation:avScan 6s ease-in-out infinite;
-}
-@keyframes avScan{
-  0%,40%{top:-40%;opacity:0;}
-  45%{opacity:1;}
-  82%{top:120%;opacity:0.4;}
-  84%,100%{top:-40%;opacity:0;}
-}
-
-/* Initials */
+/* Initials inside nucleus */
 .op-acc-init{
   font-family:'Orbitron',monospace;
-  font-size:1rem;font-weight:900;
-  letter-spacing:2px;
-  position:relative;z-index:1;
+  font-size:0.62rem;font-weight:900;
+  letter-spacing:1px;
   line-height:1;
-  text-shadow:0 0 12px currentColor;
+  position:relative;z-index:1;
+  text-shadow:0 0 8px currentColor;
 }
 
-/* Outer glow — subtle breathing */
+/* ── ORBITAL TRACK 1 — tilted ~20deg, fast ── */
+.op-acc-o1{
+  position:absolute;
+  width:54px;height:22px;
+  border-radius:50%;
+  border:1px solid rgba(0,255,136,0.2);
+  transform:rotate(20deg);
+  animation:none;
+}
+/* Electron on orbit 1 */
+.op-acc-o1::before{
+  content:'';
+  position:absolute;
+  width:5px;height:5px;
+  border-radius:50%;
+  background:var(--neon);
+  box-shadow:0 0 6px var(--neon),0 0 12px rgba(0,255,136,0.6);
+  top:50%;left:-2.5px;
+  transform:translateY(-50%);
+  animation:electronOrbit1 2.2s linear infinite;
+  transform-origin:29px 50%;
+}
+@keyframes electronOrbit1{
+  from{transform:translateY(-50%) rotate(0deg)   translateX(27px);}
+  to{  transform:translateY(-50%) rotate(360deg) translateX(27px);}
+}
+
+/* ── ORBITAL TRACK 2 — tilted ~-50deg, medium ── */
+.op-acc-o2{
+  position:absolute;
+  width:54px;height:22px;
+  border-radius:50%;
+  border:1px solid rgba(0,180,255,0.18);
+  transform:rotate(-50deg);
+}
+.op-acc-o2::before{
+  content:'';
+  position:absolute;
+  width:4px;height:4px;
+  border-radius:50%;
+  background:#00b4ff;
+  box-shadow:0 0 6px #00b4ff,0 0 12px rgba(0,180,255,0.5);
+  top:50%;left:-2px;
+  transform:translateY(-50%);
+  animation:electronOrbit2 3.4s linear infinite;
+  transform-origin:29px 50%;
+}
+@keyframes electronOrbit2{
+  from{transform:translateY(-50%) rotate(120deg) translateX(27px);}
+  to{  transform:translateY(-50%) rotate(480deg) translateX(27px);}
+}
+
+/* ── ORBITAL TRACK 3 — tilted ~80deg, slow ── */
+.op-acc-o3{
+  position:absolute;
+  width:58px;height:20px;
+  border-radius:50%;
+  border:1px solid rgba(180,140,255,0.15);
+  transform:rotate(80deg);
+}
+.op-acc-o3::before{
+  content:'';
+  position:absolute;
+  width:4px;height:4px;
+  border-radius:50%;
+  background:#b48cff;
+  box-shadow:0 0 6px #b48cff,0 0 12px rgba(180,140,255,0.5);
+  top:50%;left:-2px;
+  transform:translateY(-50%);
+  animation:electronOrbit3 4.8s linear infinite;
+  transform-origin:30px 50%;
+}
+@keyframes electronOrbit3{
+  from{transform:translateY(-50%) rotate(240deg) translateX(29px);}
+  to{  transform:translateY(-50%) rotate(600deg) translateX(29px);}
+}
+
+/* Glow — just a soft ambient bloom */
 .op-acc-glow{
-  position:absolute;inset:-2px;
+  position:absolute;inset:-4px;
   border-radius:50%;
   pointer-events:none;
-  animation:avGlow 4s ease-in-out infinite;
-}
-@keyframes avGlow{
-  0%,100%{box-shadow:0 0 8px rgba(0,255,136,0.15);}
-  50%{box-shadow:0 0 20px rgba(0,255,136,0.35),0 0 40px rgba(0,255,136,0.08);}
+  background:radial-gradient(circle,rgba(0,255,136,0.04) 0%,transparent 70%);
 }
 
-/* Live status dot */
+/* ── LIVE STATUS DOT ── */
 .op-acc-status{
-  position:absolute;bottom:2px;right:2px;
-  width:9px;height:9px;border-radius:50%;
+  position:absolute;bottom:0px;right:0px;
+  width:8px;height:8px;border-radius:50%;
   background:var(--neon);
   border:2px solid var(--bg0);
   box-shadow:0 0 6px var(--neon);
-  z-index:2;
+  z-index:10;
   animation:statusPulse 2.5s ease-in-out infinite;
 }
 @keyframes statusPulse{
   0%,100%{opacity:1;}
-  50%{opacity:0.55;}
+  50%{opacity:0.5;}
 }
 
-/* ── CORNER BRACKETS inside circle ── */
-.op-acc-br{
-  position:absolute;
-  pointer-events:none;
-}
-.op-acc-br.tl{top:6px;left:6px;width:8px;height:8px;
-  border-top:1px solid rgba(0,255,136,0.6);
-  border-left:1px solid rgba(0,255,136,0.6);}
-.op-acc-br.tr{top:6px;right:6px;width:8px;height:8px;
-  border-top:1px solid rgba(0,255,136,0.6);
-  border-right:1px solid rgba(0,255,136,0.6);}
-.op-acc-br.bl{bottom:6px;left:6px;width:8px;height:8px;
-  border-bottom:1px solid rgba(0,255,136,0.6);
-  border-left:1px solid rgba(0,255,136,0.6);}
-.op-acc-br.br{bottom:6px;right:6px;width:8px;height:8px;
-  border-bottom:1px solid rgba(0,255,136,0.6);
-  border-right:1px solid rgba(0,255,136,0.6);}
+/* Remove old ::before ::after stubs */
+.op-acc::before,.op-acc::after{ display:none; }
 
-/* ── INITIALS ── */
-.op-acc-init{
-  font-family:'Orbitron',monospace;
-  font-size:1.05rem;font-weight:900;
-  letter-spacing:2px;
-  position:relative;z-index:1;
-  line-height:1;
-  text-shadow:0 0 14px currentColor, 0 0 30px currentColor;
-  filter:drop-shadow(0 0 4px currentColor);
-}
-
-/* ── OUTER PULSING GLOW RING ── */
-.op-acc-glow{
-  position:absolute;inset:-3px;
-  border-radius:50%;
-  pointer-events:none;
-  animation:avGlow 3.5s ease-in-out infinite;
-}
-@keyframes avGlow{
-  0%,100%{box-shadow:0 0 12px rgba(0,255,136,0.2),inset 0 0 8px rgba(0,255,136,0.04);}
-  50%{box-shadow:0 0 28px rgba(0,255,136,0.5),0 0 50px rgba(0,255,136,0.12),inset 0 0 16px rgba(0,255,136,0.08);}
-}
-
-/* ── LIVE STATUS DOT ── bottom right of avatar ── */
-.op-acc-status{
-  position:absolute;bottom:1px;right:1px;
-  width:10px;height:10px;border-radius:50%;
-  background:var(--neon);
-  border:2px solid var(--bg0);
-  box-shadow:0 0 8px var(--neon);
-  z-index:2;
-  animation:statusPulse 2s ease-in-out infinite;
-}
-@keyframes statusPulse{
-  0%,100%{box-shadow:0 0 6px var(--neon);transform:scale(1);}
-  50%{box-shadow:0 0 14px var(--neon),0 0 24px rgba(0,255,136,0.4);transform:scale(1.15);}
-}
 .ph{padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;}
 .ph-t{font-family:var(--font-mono);font-size:0.46rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
 .ph-b{font-family:var(--font-mono);font-size:0.44rem;letter-spacing:2px;color:var(--neon);text-transform:uppercase;}
@@ -2654,6 +2655,9 @@ body::after{
     <div class="panel">
       <div class="op-acc" id="sb-acc">
         <div class="op-acc-glow" id="sb-acc-glow"></div>
+        <div class="op-acc-o1"></div>
+        <div class="op-acc-o2"></div>
+        <div class="op-acc-o3"></div>
         <div class="op-acc-face" id="sb-acc-face">
           <div class="op-acc-init" id="sb-acc-init">—</div>
         </div>
