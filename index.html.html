@@ -8962,298 +8962,351 @@ function runMonteCarlo(){
       <div style="font-family:'Space Mono',monospace;font-size:0.44rem;color:rgba(255,255,255,0.2);margin-top:3px">${k.sub}</div>
     </div>`).join('');
 
+  // ══════════════════════════════════════════════════
+  // CHART RENDERING — deferred one frame so DOM is painted
+  // and offsetWidth returns the real value
+  // ══════════════════════════════════════════════════
+  requestAnimationFrame(()=>{
+
   // ── EQUITY PATH CHART ────────────────────────────
   const pathCanvas = document.getElementById('mc-path-canvas');
   if(pathCanvas){
-    const DPR = window.devicePixelRatio || 1;
-    const CW  = pathCanvas.parentElement.offsetWidth  || 560;
-    const CH  = 300;
-    pathCanvas.width  = CW * DPR;
-    pathCanvas.height = CH * DPR;
+    const DPR = Math.min(window.devicePixelRatio||1, 3); // cap at 3x to avoid OOM
+    const CW  = Math.max(pathCanvas.parentElement.offsetWidth - 32, 300);
+    const CH  = 320;
+    pathCanvas.width  = Math.round(CW * DPR);
+    pathCanvas.height = Math.round(CH * DPR);
     pathCanvas.style.width  = CW + 'px';
     pathCanvas.style.height = CH + 'px';
     const ctx = pathCanvas.getContext('2d');
+    ctx.setTransform(1,0,0,1,0,0); // reset before scale
     ctx.scale(DPR, DPR);
-    const W = CW, H = CH;
-    const pad = {t:20, r:20, b:36, l:70};
-    const iW = W-pad.l-pad.r, iH = H-pad.t-pad.b;
+    const W=CW, H=CH;
+    const pad = {t:24, r:56, b:44, l:72};
+    const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
 
     ctx.clearRect(0,0,W,H);
 
-    // Y range — clip extreme outliers for readability (2nd–98th pct of final vals)
+    // Clip extreme outliers (2–98th pct) so one rogue run doesn't flatten everything
     const sortedFinals = allPaths.map(p=>p[p.length-1]).sort((a,b)=>a-b);
-    const clipLo = sortedFinals[Math.floor(sortedFinals.length*0.02)];
-    const clipHi = sortedFinals[Math.floor(sortedFinals.length*0.98)];
-    const minV = Math.max(0, clipLo * 0.90);
-    const maxV = clipHi * 1.10;
+    const clipLo = sortedFinals[Math.floor(sortedFinals.length*0.02)] ?? balance*0.5;
+    const clipHi = sortedFinals[Math.floor(sortedFinals.length*0.98)] ?? balance*2;
+    const minV = Math.max(0, clipLo * 0.88);
+    const maxV = clipHi * 1.12;
     const toX = i => pad.l + (i/numTrades)*iW;
     const toY = v => pad.t + iH - Math.min(Math.max((v-minV)/(maxV-minV||1),0),1)*iH;
 
-    // Background gradient
-    const bg = ctx.createLinearGradient(0,pad.t,0,pad.t+iH);
-    bg.addColorStop(0,'rgba(0,255,136,0.04)');
-    bg.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=bg;
-    ctx.fillRect(pad.l,pad.t,iW,iH);
+    // Draw area inside chart bounds
+    ctx.beginPath();
+    ctx.rect(pad.l, pad.t, iW, iH);
+    ctx.fillStyle='rgba(0,255,136,0.02)';
+    ctx.fill();
 
-    // Grid lines + Y-axis labels
-    const gridCount = 5;
-    for(let i=0;i<=gridCount;i++){
-      const y = pad.t + iH*(i/gridCount);
-      const val = minV + (maxV-minV)*(1-i/gridCount);
-      ctx.setLineDash([3,5]);
-      ctx.strokeStyle = i===0||i===gridCount ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.05)';
-      ctx.lineWidth=0.8;
-      ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    // Axis lines
+    ctx.strokeStyle='rgba(0,255,136,0.18)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+iH); ctx.stroke(); // Y axis
+    ctx.beginPath(); ctx.moveTo(pad.l,pad.t+iH); ctx.lineTo(pad.l+iW,pad.t+iH); ctx.stroke(); // X axis
+
+    // Y gridlines + labels
+    const YGRID = 5;
+    for(let i=0;i<=YGRID;i++){
+      const y   = pad.t + iH*(i/YGRID);
+      const val = minV + (maxV-minV)*(1-i/YGRID);
+      ctx.setLineDash([2,6]);
+      ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=0.6;
+      ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+iW,y); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle='rgba(255,255,255,0.28)';
-      ctx.font=`10px "Space Mono"`;
+      const lbl = val>=1e6 ? (val/1e6).toFixed(1)+'M' : val>=1e3 ? Math.round(val/1e3)+'k' : Math.round(val).toString();
+      ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.font='bold 10px "Space Mono"';
       ctx.textAlign='right'; ctx.textBaseline='middle';
-      const label = val>=1000000 ? (val/1000000).toFixed(1)+'M' : val>=1000 ? (val/1000).toFixed(0)+'k' : val.toFixed(0);
-      ctx.fillText('$'+label, pad.l-8, y);
+      ctx.fillText('$'+lbl, pad.l-8, y);
     }
+    // Y axis title
+    ctx.save(); ctx.translate(14, pad.t+iH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px "Space Mono"';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('ACCOUNT BALANCE', 0, 0); ctx.restore();
 
-    // X-axis ticks
-    const xSteps = 5;
-    for(let i=0;i<=xSteps;i++){
-      const x = pad.l + iW*(i/xSteps);
-      const t = Math.round(numTrades*(i/xSteps));
-      ctx.fillStyle='rgba(255,255,255,0.2)';
-      ctx.font='9px "Space Mono"'; ctx.textAlign='center'; ctx.textBaseline='top';
+    // X gridlines + labels
+    const XGRID = 5;
+    for(let i=0;i<=XGRID;i++){
+      const x = pad.l + iW*(i/XGRID);
+      const t = Math.round(numTrades*(i/XGRID));
+      ctx.setLineDash([2,6]); ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=0.6;
+      ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+iH); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='10px "Space Mono"';
+      ctx.textAlign='center'; ctx.textBaseline='top';
       ctx.fillText(t, x, pad.t+iH+6);
     }
-    ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.font='10px "Space Mono"';
-    ctx.textAlign='center';
-    ctx.fillText('TRADE NUMBER', pad.l+iW/2, H-6);
+    // X axis title
+    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px "Space Mono"';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText('NUMBER OF TRADES', pad.l+iW/2, H-4);
 
-    // Starting balance dashed line
+    // Starting balance dashed reference line
     const startY = toY(balance);
-    ctx.setLineDash([5,5]);
-    ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(pad.l,startY); ctx.lineTo(W-pad.r,startY); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.font='9px "Space Mono"';
-    ctx.textAlign='left'; ctx.textBaseline='bottom';
-    ctx.fillText('START', pad.l+4, startY-3);
-
-    // Confidence bands — compute p10/p25/p75/p90 at each step
-    const numSteps = Math.min(numTrades, 100);
-    const stepSize = numTrades/numSteps;
-    const bands = { p10:[], p25:[], p75:[], p90:[] };
-    for(let s=0;s<=numSteps;s++){
-      const stepIdx = Math.round(s*stepSize);
-      const vals = allPaths.map(p=>p[Math.min(stepIdx,p.length-1)]).sort((a,b)=>a-b);
-      const q = p => vals[Math.floor(p/100*(vals.length-1))];
-      bands.p10.push({x:toX(stepIdx), y:toY(q(10))});
-      bands.p25.push({x:toX(stepIdx), y:toY(q(25))});
-      bands.p75.push({x:toX(stepIdx), y:toY(q(75))});
-      bands.p90.push({x:toX(stepIdx), y:toY(q(90))});
-    }
-    const drawBand = (upper, lower, color, alpha) => {
-      ctx.beginPath();
-      upper.forEach((p,i)=> i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
-      [...lower].reverse().forEach(p=> ctx.lineTo(p.x,p.y));
-      ctx.closePath();
-      ctx.fillStyle=`rgba(${color},${alpha})`;
-      ctx.fill();
-    };
-    drawBand(bands.p90, bands.p10, '0,255,136', 0.06);
-    drawBand(bands.p75, bands.p25, '0,255,136', 0.08);
-
-    // Individual simulation paths — draw behind bands
-    allPaths.forEach(path=>{
-      const final = path[path.length-1];
-      const ratio = (final-balance)/balance;
-      let r,g,b,a;
-      if(final<=0){         r=255;g=51; b=102; a=0.10; }
-      else if(ratio>0.5){   r=0;  g=255;b=136; a=0.06; }
-      else if(ratio>0){     r=0;  g=255;b=136; a=0.04; }
-      else{                 r=255;g=120;b=40;  a=0.06; }
-      ctx.beginPath();
-      path.forEach((v,i)=>{
-        const x=toX(i), y=toY(v);
-        i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      });
-      ctx.strokeStyle=`rgba(${r},${g},${b},${a})`;
-      ctx.lineWidth=0.6;
-      ctx.stroke();
-    });
-
-    // P90, P50, P10 overlay lines
-    const overlayLines = [
-      {pts:bands.p90, col:'rgba(0,255,136,0.5)',  lw:1,   dash:[3,4], label:'P90'},
-      {pts:bands.p75, col:'rgba(0,255,136,0.3)',  lw:0.8, dash:[2,4], label:'P75'},
-      {pts:bands.p25, col:'rgba(255,120,40,0.3)', lw:0.8, dash:[2,4], label:'P25'},
-      {pts:bands.p10, col:'rgba(255,51,102,0.5)', lw:1,   dash:[3,4], label:'P10'},
-    ];
-    overlayLines.forEach(ol=>{
-      ctx.setLineDash(ol.dash);
-      ctx.strokeStyle=ol.col; ctx.lineWidth=ol.lw;
-      ctx.beginPath();
-      ol.pts.forEach((p,i)=> i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
-      ctx.stroke();
-      // Label at right edge
-      const last=ol.pts[ol.pts.length-1];
+    if(startY>=pad.t && startY<=pad.t+iH){
+      ctx.setLineDash([6,4]); ctx.strokeStyle='rgba(255,255,255,0.22)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(pad.l,startY); ctx.lineTo(pad.l+iW,startY); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle=ol.col.replace('0.5','0.8').replace('0.3','0.7');
-      ctx.font='9px "Space Mono"'; ctx.textAlign='left'; ctx.textBaseline='middle';
-      ctx.fillText(ol.label, last.x+3, last.y);
-    });
-    ctx.setLineDash([]);
-
-    // Median path — brightest line with glow
-    const medianPath = allPaths.reduce((best,p)=>
-      Math.abs(p[p.length-1]-median) < Math.abs(best[best.length-1]-median) ? p : best
-    , allPaths[0]);
-    if(medianPath){
-      // Glow pass
-      ctx.shadowColor='rgba(0,255,136,0.6)'; ctx.shadowBlur=12;
-      ctx.strokeStyle='rgba(0,255,136,0.9)'; ctx.lineWidth=2.5;
-      ctx.beginPath();
-      medianPath.forEach((v,i)=>{
-        const x=toX(i), y=toY(v);
-        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-      });
-      ctx.stroke();
-      ctx.shadowBlur=0;
-      // End dot
-      const lastX=toX(medianPath.length-1), lastY=toY(medianPath[medianPath.length-1]);
-      ctx.beginPath(); ctx.arc(lastX,lastY,4,0,Math.PI*2);
-      ctx.fillStyle='rgba(0,255,136,1)';
-      ctx.shadowColor='rgba(0,255,136,0.8)'; ctx.shadowBlur=8;
-      ctx.fill(); ctx.shadowBlur=0;
-      // Label
-      ctx.fillStyle='rgba(0,255,136,0.9)'; ctx.font='bold 9px "Space Mono"';
-      ctx.textAlign='left'; ctx.textBaseline='middle';
-      ctx.fillText('MEDIAN', lastX+8, lastY);
+      ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.font='9px "Space Mono"';
+      ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText('START  $'+(balance/1000).toFixed(0)+'k', pad.l+4, startY-3);
     }
 
-    document.getElementById('mc-sim-count-label').textContent = `${numSims.toLocaleString()} simulations`;
+    // Confidence bands — sample 60 steps across the simulation
+    const STEPS=60;
+    const bandData={p10:[],p25:[],p75:[],p90:[]};
+    for(let s=0;s<=STEPS;s++){
+      const si=Math.round(s*(numTrades/STEPS));
+      const sv=allPaths.map(p=>p[Math.min(si,p.length-1)]).sort((a,b)=>a-b);
+      const q=pct=>sv[Math.min(Math.floor(pct/100*(sv.length-1)),sv.length-1)];
+      bandData.p10.push({x:toX(si),y:toY(q(10))});
+      bandData.p25.push({x:toX(si),y:toY(q(25))});
+      bandData.p75.push({x:toX(si),y:toY(q(75))});
+      bandData.p90.push({x:toX(si),y:toY(q(90))});
+    }
+    const fillBand=(u,l,r,g,b,a)=>{
+      ctx.beginPath();
+      u.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+      [...l].reverse().forEach(p=>ctx.lineTo(p.x,p.y));
+      ctx.closePath(); ctx.fillStyle=`rgba(${r},${g},${b},${a})`; ctx.fill();
+    };
+    fillBand(bandData.p90,bandData.p10, 0,255,136, 0.05);
+    fillBand(bandData.p75,bandData.p25, 0,255,136, 0.09);
+
+    // Individual paths — draw as thin lines
+    allPaths.forEach(path=>{
+      const fin=path[path.length-1], ratio=(fin-balance)/balance;
+      let r=0,g=255,b=136,a=0.04;
+      if(fin<=0){r=255;g=51;b=102;a=0.12;}
+      else if(ratio<0){r=255;g=110;b=30;a=0.05;}
+      ctx.beginPath();
+      path.forEach((v,i)=>{const x=toX(i),y=toY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+      ctx.strokeStyle=`rgba(${r},${g},${b},${a})`; ctx.lineWidth=0.5; ctx.stroke();
+    });
+
+    // Percentile boundary lines with labels
+    const pLines=[
+      {d:bandData.p90, col:'rgba(0,255,136,0.55)',  lw:1.2, lbl:'P90'},
+      {d:bandData.p75, col:'rgba(0,255,136,0.30)',  lw:0.8, lbl:'P75'},
+      {d:bandData.p25, col:'rgba(255,140,30,0.30)', lw:0.8, lbl:'P25'},
+      {d:bandData.p10, col:'rgba(255,51,102,0.55)', lw:1.2, lbl:'P10'},
+    ];
+    pLines.forEach(({d,col,lw,lbl})=>{
+      ctx.setLineDash([3,5]); ctx.strokeStyle=col; ctx.lineWidth=lw;
+      ctx.beginPath(); d.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+      ctx.setLineDash([]);
+      const lp=d[d.length-1];
+      ctx.fillStyle=col.replace(/[\d.]+\)$/,'0.85)');
+      ctx.font='bold 10px "Space Mono"'; ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(lbl, lp.x+5, lp.y);
+    });
+
+    // Median path — glowing hero line
+    const medP=allPaths.reduce((b,p)=>Math.abs(p[p.length-1]-median)<Math.abs(b[b.length-1]-median)?p:b, allPaths[0]);
+    if(medP){
+      // Wide glow
+      ctx.shadowColor='rgba(0,255,136,0.4)'; ctx.shadowBlur=20;
+      ctx.strokeStyle='rgba(0,255,136,0.25)'; ctx.lineWidth=8;
+      ctx.beginPath(); medP.forEach((v,i)=>{const x=toX(i),y=toY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.stroke();
+      // Core line
+      ctx.shadowColor='rgba(0,255,136,0.8)'; ctx.shadowBlur=8;
+      ctx.strokeStyle='rgba(0,255,136,1)'; ctx.lineWidth=2;
+      ctx.beginPath(); medP.forEach((v,i)=>{const x=toX(i),y=toY(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.stroke();
+      ctx.shadowBlur=0;
+      // End terminal dot
+      const ex=toX(medP.length-1), ey=toY(medP[medP.length-1]);
+      ctx.shadowColor='rgba(0,255,136,1)'; ctx.shadowBlur=16;
+      ctx.beginPath(); ctx.arc(ex,ey,5,0,Math.PI*2);
+      ctx.fillStyle='rgba(0,255,136,1)'; ctx.fill(); ctx.shadowBlur=0;
+      // MEDIAN label pill
+      const mlabel='MEDIAN  $'+(Math.round(median/1000))+'k';
+      ctx.font='bold 10px "Space Mono"';
+      const tw=ctx.measureText(mlabel).width;
+      ctx.fillStyle='rgba(0,10,5,0.88)';
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(ex+10,ey-9,tw+12,18,3); else ctx.rect(ex+10,ey-9,tw+12,18);
+      ctx.fill();
+      ctx.strokeStyle='rgba(0,255,136,0.4)'; ctx.lineWidth=0.5;
+      ctx.stroke();
+      ctx.fillStyle='rgba(0,255,136,0.95)'; ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(mlabel, ex+16, ey);
+    }
+
+    document.getElementById('mc-sim-count-label').textContent=`${numSims.toLocaleString()} simulations`;
   }
 
-  // ── DISTRIBUTION HISTOGRAM ────────────────────────
+  // ── DISTRIBUTION CHART ────────────────────────────
   const distCanvas = document.getElementById('mc-dist-canvas');
   if(distCanvas){
-    const DPR = window.devicePixelRatio || 1;
-    const CW  = distCanvas.parentElement.offsetWidth || 460;
-    const CH  = 300;
-    distCanvas.width  = CW * DPR;
-    distCanvas.height = CH * DPR;
+    const DPR = Math.min(window.devicePixelRatio||1, 3);
+    const CW  = Math.max(distCanvas.parentElement.offsetWidth - 32, 300);
+    const CH  = 320;
+    distCanvas.width  = Math.round(CW * DPR);
+    distCanvas.height = Math.round(CH * DPR);
     distCanvas.style.width  = CW + 'px';
     distCanvas.style.height = CH + 'px';
     const ctx = distCanvas.getContext('2d');
+    ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(DPR, DPR);
     const W=CW, H=CH;
-    const pad={t:20,r:20,b:36,l:50};
+    const pad={t:24, r:24, b:56, l:70};
     const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
     ctx.clearRect(0,0,W,H);
 
-    // Build bins
-    const BINS = 50;
-    const mn=results[0], mx=results[results.length-1];
-    const range = mx-mn || 1;
-    const binW  = range/BINS;
-    const bins  = Array(BINS).fill(0);
-    results.forEach(r=>{ const bi=Math.min(Math.floor((r-mn)/binW),BINS-1); bins[bi]++; });
-    const maxBin = Math.max(...bins);
+    // Axis lines
+    ctx.strokeStyle='rgba(0,180,255,0.2)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+iH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad.l,pad.t+iH); ctx.lineTo(pad.l+iW,pad.t+iH); ctx.stroke();
 
-    // Smooth the histogram with a simple 3-bin average
-    const smooth = bins.map((v,i,a)=>(a[i-1]||v)*0.2+v*0.6+(a[i+1]||v)*0.2);
-
-    const bw = iW/BINS;
-
-    // Draw bars with gradient fill and glow
-    smooth.forEach((count,i)=>{
-      const x   = pad.l + i*bw;
-      const h   = (count/maxBin)*iH;
-      const val = mn + i*binW;
-      const isProfitable = val >= balance;
-
-      // Gradient per bar
-      const grad = ctx.createLinearGradient(x, pad.t+iH-h, x, pad.t+iH);
-      if(isProfitable){
-        grad.addColorStop(0,'rgba(0,255,136,0.85)');
-        grad.addColorStop(1,'rgba(0,255,136,0.15)');
-      } else {
-        grad.addColorStop(0,'rgba(255,51,102,0.85)');
-        grad.addColorStop(1,'rgba(255,51,102,0.15)');
-      }
-      ctx.fillStyle = grad;
-
-      // Rounded top on bars
-      const bx=x+1, by=pad.t+iH-h, bw2=bw-2;
-      const r=Math.min(3,bw2/2,h/2);
-      ctx.beginPath();
-      ctx.moveTo(bx+r,by);
-      ctx.lineTo(bx+bw2-r,by);
-      ctx.quadraticCurveTo(bx+bw2,by,bx+bw2,by+r);
-      ctx.lineTo(bx+bw2,by+h);
-      ctx.lineTo(bx,by+h);
-      ctx.lineTo(bx,by+r);
-      ctx.quadraticCurveTo(bx,by,bx+r,by);
-      ctx.closePath();
-      ctx.fill();
+    // Build histogram
+    const BINS=48;
+    // Clip to 2–98th percentile for visual clarity
+    const rlo=results[Math.floor(results.length*0.01)];
+    const rhi=results[Math.floor(results.length*0.99)];
+    const range=Math.max(rhi-rlo,1);
+    const bW=range/BINS;
+    const bins=Array(BINS).fill(0);
+    results.forEach(r=>{
+      if(r<rlo||r>rhi) return;
+      const bi=Math.min(Math.floor((r-rlo)/bW),BINS-1);
+      bins[bi]++;
     });
+    // Gaussian smooth
+    const smooth=bins.map((v,i,a)=>(a[i-2]||v)*0.1+(a[i-1]||v)*0.2+v*0.4+(a[i+1]||v)*0.2+(a[i+2]||v)*0.1);
+    const maxBin=Math.max(...smooth);
+    const bPx=iW/BINS;
 
-    // X gridlines
-    for(let i=0;i<=4;i++){
-      const y=pad.t+iH*(i/4);
-      ctx.setLineDash([2,4]);
-      ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=0.5;
-      ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    // Y-axis labels (frequency)
+    const YGRID=4;
+    for(let i=0;i<=YGRID;i++){
+      const y=pad.t+iH*(i/YGRID);
+      ctx.setLineDash([2,5]); ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=0.6;
+      ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+iW,y); ctx.stroke();
       ctx.setLineDash([]);
+      const freq=Math.round(maxBin*(1-i/YGRID));
+      ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.font='10px "Space Mono"';
+      ctx.textAlign='right'; ctx.textBaseline='middle';
+      ctx.fillText(freq, pad.l-8, y);
     }
+    // Y axis title
+    ctx.save(); ctx.translate(14, pad.t+iH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px "Space Mono"';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('FREQUENCY', 0, 0); ctx.restore();
 
-    // X axis labels — show 5 evenly spaced values
-    for(let i=0;i<=4;i++){
-      const val = mn + range*(i/4);
-      const x   = pad.l + iW*(i/4);
-      const label = val>=1000000 ? (val/1000000).toFixed(1)+'M' : val>=1000 ? (val/1000).toFixed(0)+'k' : val.toFixed(0);
-      ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px "Space Mono"';
+    // X axis labels — 5 dollar values
+    for(let i=0;i<=5;i++){
+      const val=rlo+range*(i/5);
+      const x=pad.l+iW*(i/5);
+      ctx.setLineDash([2,5]); ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=0.6;
+      ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+iH); ctx.stroke();
+      ctx.setLineDash([]);
+      const lbl=val>=1e6?(val/1e6).toFixed(1)+'M':val>=1e3?'$'+Math.round(val/1e3)+'k':'$'+Math.round(val);
+      ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.font='10px "Space Mono"';
       ctx.textAlign='center'; ctx.textBaseline='top';
-      ctx.fillText('$'+label, x, pad.t+iH+6);
+      ctx.fillText(lbl, x, pad.t+iH+8);
+    }
+    // X axis title
+    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px "Space Mono"';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText('FINAL ACCOUNT BALANCE', pad.l+iW/2, H-4);
+
+    // Bars with gradient fill
+    smooth.forEach((count,i)=>{
+      const x=pad.l+i*bPx;
+      const h=(count/maxBin)*iH;
+      const val=rlo+i*bW;
+      const profitable=val>=balance;
+      const grad=ctx.createLinearGradient(x,pad.t+iH-h,x,pad.t+iH);
+      if(profitable){
+        grad.addColorStop(0,'rgba(0,255,136,0.9)');
+        grad.addColorStop(0.6,'rgba(0,255,136,0.5)');
+        grad.addColorStop(1,'rgba(0,255,136,0.08)');
+      } else {
+        grad.addColorStop(0,'rgba(255,51,102,0.9)');
+        grad.addColorStop(0.6,'rgba(255,51,102,0.5)');
+        grad.addColorStop(1,'rgba(255,51,102,0.08)');
+      }
+      ctx.fillStyle=grad;
+      const bx=x+0.5, by=pad.t+iH-h, bw2=bPx-1.5;
+      const cr=Math.min(2.5,bw2/2,h/2);
+      if(h>0){
+        ctx.beginPath();
+        ctx.moveTo(bx+cr,by); ctx.lineTo(bx+bw2-cr,by);
+        ctx.quadraticCurveTo(bx+bw2,by,bx+bw2,by+cr);
+        ctx.lineTo(bx+bw2,by+h); ctx.lineTo(bx,by+h); ctx.lineTo(bx,by+cr);
+        ctx.quadraticCurveTo(bx,by,bx+cr,by);
+        ctx.closePath(); ctx.fill();
+      }
+    });
+
+    // Vertical marker helper
+    const vLine=(val,col,dash,lw)=>{
+      if(val<rlo||val>rhi) return;
+      const x=pad.l+((val-rlo)/range)*iW;
+      ctx.setLineDash(dash); ctx.strokeStyle=col; ctx.lineWidth=lw;
+      ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+iH); ctx.stroke();
+      ctx.setLineDash([]);
+      return x;
+    };
+
+    // Starting balance
+    const sx=vLine(balance,'rgba(255,255,255,0.3)',[5,4],1);
+    if(sx){
+      ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.font='bold 10px "Space Mono"';
+      ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText('START', sx, pad.t+iH-2);
     }
 
-    // Starting balance vertical line
-    const startX = pad.l + ((balance-mn)/range)*iW;
-    ctx.setLineDash([4,4]);
-    ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(startX,pad.t); ctx.lineTo(startX,pad.t+iH); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.font='9px "Space Mono"';
-    ctx.textAlign='center'; ctx.textBaseline='bottom';
-    ctx.fillText('START', startX, pad.t+iH-2);
+    // P10 marker
+    const p10v=pct(10);
+    const p10x=vLine(p10v,'rgba(255,51,102,0.7)',[4,4],1.5);
+    if(p10x){
+      ctx.fillStyle='rgba(255,51,102,0.8)'; ctx.font='bold 10px "Space Mono"';
+      ctx.textAlign='center'; ctx.textBaseline='top';
+      ctx.fillText('P10', p10x, pad.t+4);
+      ctx.font='9px "Space Mono"'; ctx.fillStyle='rgba(255,51,102,0.6)';
+      const p10lbl='$'+(p10v>=1000?Math.round(p10v/1000)+'k':Math.round(p10v));
+      ctx.fillText(p10lbl, p10x, pad.t+16);
+    }
 
-    // Median vertical line with glow
-    const medX = pad.l + ((median-mn)/range)*iW;
-    ctx.shadowColor='rgba(0,255,136,0.6)'; ctx.shadowBlur=8;
-    ctx.strokeStyle='rgba(0,255,136,0.95)'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(medX,pad.t); ctx.lineTo(medX,pad.t+iH); ctx.stroke();
-    ctx.shadowBlur=0;
-    // Median label pill background
-    const mlabel = '$'+(median>=1000 ? (median/1000).toFixed(0)+'k' : median.toFixed(0));
-    ctx.font='bold 10px "Space Mono"';
-    const tw = ctx.measureText('MEDIAN  '+mlabel).width;
-    ctx.fillStyle='rgba(0,10,5,0.85)';
-    ctx.fillRect(medX-tw/2-6, pad.t+2, tw+12, 18);
-    ctx.strokeStyle='rgba(0,255,136,0.4)'; ctx.lineWidth=0.5;
-    ctx.strokeRect(medX-tw/2-6, pad.t+2, tw+12, 18);
-    ctx.fillStyle='rgba(0,255,136,0.95)'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('MEDIAN  '+mlabel, medX, pad.t+11);
+    // P90 marker
+    const p90v=pct(90);
+    const p90x=vLine(p90v,'rgba(0,180,255,0.7)',[4,4],1.5);
+    if(p90x){
+      ctx.fillStyle='rgba(0,180,255,0.8)'; ctx.font='bold 10px "Space Mono"';
+      ctx.textAlign='center'; ctx.textBaseline='top';
+      ctx.fillText('P90', p90x, pad.t+4);
+      ctx.font='9px "Space Mono"'; ctx.fillStyle='rgba(0,180,255,0.6)';
+      const p90lbl='$'+(p90v>=1000?Math.round(p90v/1000)+'k':Math.round(p90v));
+      ctx.fillText(p90lbl, p90x, pad.t+16);
+    }
 
-    // P10 and P90 markers
-    [[pct(10),'rgba(255,51,102,0.8)','P10'],[pct(90),'rgba(0,200,255,0.8)','P90']].forEach(([val,col,lbl])=>{
-      const x=pad.l+((val-mn)/range)*iW;
-      ctx.shadowColor=col; ctx.shadowBlur=4;
-      ctx.strokeStyle=col.replace('0.8','0.6'); ctx.lineWidth=1;
-      ctx.setLineDash([3,3]);
-      ctx.beginPath(); ctx.moveTo(x,pad.t+20); ctx.lineTo(x,pad.t+iH); ctx.stroke();
-      ctx.setLineDash([]); ctx.shadowBlur=0;
-      ctx.fillStyle=col; ctx.font='9px "Space Mono"';
-      ctx.textAlign='center'; ctx.textBaseline='bottom';
-      ctx.fillText(lbl, x, pad.t+20);
-    });
+    // Median — glowing vertical line with pill label
+    const medV=median;
+    if(medV>=rlo && medV<=rhi){
+      const mx=pad.l+((medV-rlo)/range)*iW;
+      ctx.shadowColor='rgba(0,255,136,0.7)'; ctx.shadowBlur=10;
+      ctx.strokeStyle='rgba(0,255,136,0.95)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(mx,pad.t); ctx.lineTo(mx,pad.t+iH); ctx.stroke();
+      ctx.shadowBlur=0;
+      const mlbl='MEDIAN  $'+(medV>=1000?Math.round(medV/1000)+'k':Math.round(medV));
+      ctx.font='bold 10px "Space Mono"';
+      const tw=ctx.measureText(mlbl).width;
+      const px=Math.min(Math.max(mx-tw/2-8,0),W-tw-20);
+      ctx.fillStyle='rgba(0,8,4,0.9)';
+      if(ctx.roundRect) ctx.roundRect(px,pad.t+3,tw+16,20,3); else ctx.rect(px,pad.t+3,tw+16,20);
+      ctx.fill();
+      ctx.strokeStyle='rgba(0,255,136,0.4)'; ctx.lineWidth=0.5; ctx.stroke();
+      ctx.fillStyle='rgba(0,255,136,1)'; ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(mlbl, px+8, pad.t+13);
+    }
   }
+
+  }); // end requestAnimationFrame
 
   // ── PERCENTILE TABLE ─────────────────────────────
   const ptRows = [
