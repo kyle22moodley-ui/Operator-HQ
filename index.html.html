@@ -7930,7 +7930,6 @@ function drawAnimChart(canvas,data,labels,col,prefix,fillArea,yMin,yMax){
 // ══════════════════════════════════════════════════
 // TRADE JOURNAL
 // ══════════════════════════════════════════════════
-let selectedConflTags=[], newCustomTags=[];
 
 function toggleTag(el){
   el.classList.toggle('selected');
@@ -8453,12 +8452,6 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLightbox(); }
 // ══════════════════════════════════════════════════
 // OPS
 // ══════════════════════════════════════════════════
-const OPS_DEF=[
-  {id:'pre',icon:'◈',title:'Pre-Mission Prep',items:[{id:'p1',label:'Check economic calendar',pts:20},{id:'p2',label:'Mark HTF structure and key levels',pts:25},{id:'p3',label:'Identify POI before session',pts:20},{id:'p4',label:'Set price alerts',pts:15},{id:'p5',label:'Define max daily loss',pts:20}]},
-  {id:'eng',icon:'⬡',title:'Engagement Protocol',items:[{id:'e1',label:'All 5 pre-trade criteria confirmed',pts:35},{id:'e2',label:'Risk within 1% limit',pts:25},{id:'e3',label:'Min 1:2 R:R confirmed',pts:20},{id:'e4',label:'Stop loss not adjusted',pts:40},{id:'e5',label:'Zero off-strategy trades',pts:50}]},
-  {id:'deb',icon:'◻',title:'Debrief',items:[{id:'d1',label:'All trades journaled',pts:30},{id:'d2',label:'Screenshots saved',pts:20},{id:'d3',label:'One strength identified',pts:25},{id:'d4',label:'One improvement set',pts:25}]},
-  {id:'wk',icon:'⊕',title:'Weekly Review',items:[{id:'w1',label:'Full week trade audit',pts:60},{id:'w2',label:'Win rate calculated',pts:40},{id:'w3',label:'P&L tracker updated',pts:35},{id:'w4',label:'Next week focus defined',pts:35}]},
-];
 
 function buildOpsGrid(){
   const grid=document.getElementById('ops-grid'); if(!grid) return;
@@ -8582,17 +8575,6 @@ async function viewOpProfile(opId){
 // ══════════════════════════════════════════════════
 // RANKINGS (was: compare)
 // ══════════════════════════════════════════════════
-let rankSortKey = 'xp';
-const RANK_SORTS = [
-  { key:'xp',      label:'XP',         fn:op=>(op.xp||0) },
-  { key:'wr',      label:'Win Rate',    fn:op=>calcWR(op) },
-  { key:'disc',    label:'Discipline',  fn:op=>(op.stat_discipline||0) },
-  { key:'edge',    label:'Edge IQ',     fn:op=>(op.stat_edge_iq||0) },
-  { key:'risk',    label:'Risk Ctrl',   fn:op=>(op.stat_risk_control||0) },
-  { key:'pat',     label:'Patience',    fn:op=>(op.stat_patience||0) },
-  { key:'pnl',     label:'P&L',         fn:op=>(op.total_pnl||0) },
-  { key:'streak',  label:'Streak',      fn:op=>(op.streak||0) },
-];
 
 function buildRankings(){
   if(!allOps.length) return;
