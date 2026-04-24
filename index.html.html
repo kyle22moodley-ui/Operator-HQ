@@ -379,11 +379,156 @@ body::after{
 .panel{border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:4px;}
 .panel:last-child{border-bottom:none;}
 .op-acc{
-  width:40px;height:40px;border-radius:50%;
-  border:2px solid var(--neon2);display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-display);font-size:0.9rem;font-weight:900;
-  margin:12px auto 0;background:var(--neon-dim);
-  box-shadow:0 0 20px var(--neon-glow),inset 0 0 10px rgba(0,255,136,0.05);
+  width:64px;height:64px;
+  position:relative;
+  margin:16px auto 6px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;cursor:default;
+}
+
+/* ── OUTERMOST DASHED ORBIT ── */
+.op-acc-orbit3{
+  position:absolute;inset:-14px;
+  border-radius:50%;
+  border:1px dashed rgba(0,255,136,0.12);
+  animation:avatarSpin 18s linear infinite;
+}
+/* Orbit dot markers */
+.op-acc-orbit3::before,
+.op-acc-orbit3::after{
+  content:'';position:absolute;
+  width:4px;height:4px;border-radius:50%;
+  background:rgba(0,255,136,0.5);
+  box-shadow:0 0 6px rgba(0,255,136,0.8);
+}
+.op-acc-orbit3::before{ top:-2px; left:50%; transform:translateX(-50%); }
+.op-acc-orbit3::after { bottom:-2px; left:50%; transform:translateX(-50%); }
+
+/* ── OUTER ROTATING ARC RING ── */
+.op-acc::before{
+  content:'';
+  position:absolute;inset:-6px;
+  border-radius:50%;
+  border:1.5px solid transparent;
+  border-top-color:var(--neon);
+  border-right-color:rgba(0,255,136,0.2);
+  border-bottom-color:transparent;
+  animation:avatarSpin 2.8s linear infinite;
+}
+
+/* ── INNER COUNTER-ROTATING ARC ── */
+.op-acc::after{
+  content:'';
+  position:absolute;inset:-10px;
+  border-radius:50%;
+  border:1px solid transparent;
+  border-bottom-color:rgba(0,180,255,0.6);
+  border-left-color:rgba(0,180,255,0.15);
+  animation:avatarSpin 4.5s linear infinite reverse;
+}
+
+@keyframes avatarSpin{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
+}
+
+/* ── MAIN CIRCLE FACE ── */
+.op-acc-face{
+  width:100%;height:100%;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  border:1px solid rgba(0,255,136,0.35);
+  background:radial-gradient(circle at 35% 35%,
+    rgba(0,255,136,0.12) 0%,
+    rgba(0,40,20,0.8) 45%,
+    rgba(0,2,6,0.95) 100%
+  );
+}
+
+/* Hex grid watermark */
+.op-acc-face::before{
+  content:'';
+  position:absolute;inset:0;border-radius:50%;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='16'%3E%3Cpolygon points='7,1 13,4.5 13,11.5 7,15 1,11.5 1,4.5' fill='none' stroke='%2300ff88' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-size:14px 16px;
+  opacity:0.07;
+  animation:hexDriftAv 10s linear infinite;
+}
+@keyframes hexDriftAv{
+  0%{background-position:0 0;}
+  100%{background-position:14px 32px;}
+}
+
+/* Periodic scan sweep */
+.op-acc-face::after{
+  content:'';
+  position:absolute;left:0;right:0;height:35%;
+  background:linear-gradient(180deg,transparent,rgba(0,255,136,0.1),transparent);
+  top:-35%;
+  animation:avScan 5s ease-in-out infinite;
+}
+@keyframes avScan{
+  0%,35%{top:-35%;opacity:0;}
+  40%{opacity:1;}
+  78%{top:115%;opacity:0.5;}
+  80%,100%{top:-35%;opacity:0;}
+}
+
+/* ── CORNER BRACKETS inside circle ── */
+.op-acc-br{
+  position:absolute;
+  pointer-events:none;
+}
+.op-acc-br.tl{top:6px;left:6px;width:8px;height:8px;
+  border-top:1px solid rgba(0,255,136,0.6);
+  border-left:1px solid rgba(0,255,136,0.6);}
+.op-acc-br.tr{top:6px;right:6px;width:8px;height:8px;
+  border-top:1px solid rgba(0,255,136,0.6);
+  border-right:1px solid rgba(0,255,136,0.6);}
+.op-acc-br.bl{bottom:6px;left:6px;width:8px;height:8px;
+  border-bottom:1px solid rgba(0,255,136,0.6);
+  border-left:1px solid rgba(0,255,136,0.6);}
+.op-acc-br.br{bottom:6px;right:6px;width:8px;height:8px;
+  border-bottom:1px solid rgba(0,255,136,0.6);
+  border-right:1px solid rgba(0,255,136,0.6);}
+
+/* ── INITIALS ── */
+.op-acc-init{
+  font-family:'Orbitron',monospace;
+  font-size:1.05rem;font-weight:900;
+  letter-spacing:2px;
+  position:relative;z-index:1;
+  line-height:1;
+  text-shadow:0 0 14px currentColor, 0 0 30px currentColor;
+  filter:drop-shadow(0 0 4px currentColor);
+}
+
+/* ── OUTER PULSING GLOW RING ── */
+.op-acc-glow{
+  position:absolute;inset:-3px;
+  border-radius:50%;
+  pointer-events:none;
+  animation:avGlow 3.5s ease-in-out infinite;
+}
+@keyframes avGlow{
+  0%,100%{box-shadow:0 0 12px rgba(0,255,136,0.2),inset 0 0 8px rgba(0,255,136,0.04);}
+  50%{box-shadow:0 0 28px rgba(0,255,136,0.5),0 0 50px rgba(0,255,136,0.12),inset 0 0 16px rgba(0,255,136,0.08);}
+}
+
+/* ── LIVE STATUS DOT ── bottom right of avatar ── */
+.op-acc-status{
+  position:absolute;bottom:1px;right:1px;
+  width:10px;height:10px;border-radius:50%;
+  background:var(--neon);
+  border:2px solid var(--bg0);
+  box-shadow:0 0 8px var(--neon);
+  z-index:2;
+  animation:statusPulse 2s ease-in-out infinite;
+}
+@keyframes statusPulse{
+  0%,100%{box-shadow:0 0 6px var(--neon);transform:scale(1);}
+  50%{box-shadow:0 0 14px var(--neon),0 0 24px rgba(0,255,136,0.4);transform:scale(1.15);}
 }
 .ph{padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;}
 .ph-t{font-family:var(--font-mono);font-size:0.46rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
@@ -2514,7 +2659,18 @@ body::after{
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="panel">
-      <div class="op-acc" id="sb-acc"></div>
+      <div class="op-acc" id="sb-acc">
+        <div class="op-acc-orbit3"></div>
+        <div class="op-acc-glow" id="sb-acc-glow"></div>
+        <div class="op-acc-face" id="sb-acc-face">
+          <div class="op-acc-br tl"></div>
+          <div class="op-acc-br tr"></div>
+          <div class="op-acc-br bl"></div>
+          <div class="op-acc-br br"></div>
+          <div class="op-acc-init" id="sb-acc-init">—</div>
+        </div>
+        <div class="op-acc-status"></div>
+      </div>
       <div class="ph"><div class="ph-t">Operator File</div><div class="ph-b" id="sb-cl">CLEARANCE: DELTA</div></div>
       <div class="pb">
         <div class="rk-wrap">
@@ -4667,22 +4823,33 @@ function computeStats(){
   }
 
   // ── PATIENCE ────────────────────────────────────
-  const fomoCount=trades.filter(t=>t.emotional_state==='fomo').length;
-  const cutEarlyWins=trades.filter(t=>t.result==='win'&&t.rr_planned>0&&t.rr_actual>0&&t.rr_actual<t.rr_planned*0.7).length;
-  const noTradeDays=logs.filter(l=>l.session_result==='no-trade').length;
-  const tradeDateMap={};
-  trades.forEach(t=>{tradeDateMap[t.trade_date]=(tradeDateMap[t.trade_date]||0)+1;});
-  const overtradeDays=Object.values(tradeDateMap).filter(c=>c>3).length;
-  const uniqueDays=Object.keys(tradeDateMap).length;
-  const journalConsistency=Math.min(ln/Math.max(uniqueDays,1),1);
-  const noTradeBonus=Math.min(noTradeDays/Math.max(ln*0.15,1),1);
-  const panicCuts=trades.filter(t=>t.outcome_detail==='partial'&&t.result==='win').length;
-  let patience=0;
-  if(n>0||ln>0){
-    // Give base patience score just from having trades even without R:R data
-    const basePat=Math.min(uniqueDays/20,1)*40+noTradeBonus*30;
-    const penalty=(fomoCount*10)+(cutEarlyWins*8)+(overtradeDays*7)+(panicCuts*5);
-    patience=Math.max(0,Math.min(100,Math.round(basePat-penalty+Math.min(noTradeDays*3,20))));
+  const fomoCount      = trades.filter(t=>t.emotional_state==='fomo').length;
+  const cutEarlyWins   = trades.filter(t=>t.result==='win'&&t.rr_planned>0&&t.rr_actual>0&&t.rr_actual<t.rr_planned*0.7).length;
+  const noTradeDays    = logs.filter(l=>l.session_result==='no-trade').length;
+  const tradeDateMap   = {};
+  trades.forEach(t=>{ tradeDateMap[t.trade_date]=(tradeDateMap[t.trade_date]||0)+1; });
+  const overtradeDays  = Object.values(tradeDateMap).filter(c=>c>4).length; // raised threshold — 3 is realistic
+  const uniqueDays     = Object.keys(tradeDateMap).length;
+  const panicCuts      = trades.filter(t=>t.outcome_detail==='partial'&&t.result==='win').length;
+
+  let patience = 0;
+  if(n > 0){
+    // Base score — how spread out are the trades across days?
+    // More unique trading days = more selective entry (patience)
+    const avgTradesPerDay = n / Math.max(uniqueDays, 1);
+    const selectivity    = Math.max(0, Math.min(1, 1 - (avgTradesPerDay - 1) / 4)); // 1 trade/day = 1.0, 5+ = 0
+    const spreadScore    = Math.min(uniqueDays / 30, 1) * 40;   // up to 40pts for trading across many days
+    const selectScore    = selectivity * 35;                      // up to 35pts for not overtrading
+    const noTradeBonus   = Math.min(noTradeDays * 2, 15);        // up to 15pts for logged no-trade days
+
+    // Penalties only apply when we have actual data showing impatience
+    const fomoPenalty    = fomoCount * 8;
+    const cutPenalty     = cutEarlyWins * 6;
+    const overtradePen   = overtradeDays * 5;
+    const panicPenalty   = panicCuts * 4;
+
+    const raw = spreadScore + selectScore + noTradeBonus - fomoPenalty - cutPenalty - overtradePen - panicPenalty;
+    patience = Math.max(0, Math.min(100, Math.round(raw)));
   }
 
   // ── RISK CONTROL ────────────────────────────────
@@ -4840,8 +5007,27 @@ function syncUI(){
   const op=currentOp, xp=op.xp||0, l=lvl(xp), col=opCol(op);
   const cur=xp%XPL;
 
-  // Sidebar identity
-  document.getElementById('sb-acc').style.background=col;
+  // Sidebar identity — holographic avatar
+  const initials = (op.callsign||'?').substring(0,2).toUpperCase();
+  const face = document.getElementById('sb-acc-face');
+  const init = document.getElementById('sb-acc-init');
+  const glow = document.getElementById('sb-acc-glow');
+  if(face){
+    face.style.background = `radial-gradient(circle at 40% 35%, rgba(${hexToRgb(col)},0.22) 0%, rgba(${hexToRgb(col)},0.06) 60%, rgba(0,2,6,0.95) 100%)`;
+    face.style.borderColor = col.replace(')',',0.35)').replace('rgb','rgba').replace('#','');
+  }
+  if(init){ init.textContent = initials; init.style.color = col; }
+  if(glow){ glow.style.boxShadow = `0 0 16px ${col}44, inset 0 0 10px ${col}11`; }
+  // Spinning ring colours
+  const acc = document.getElementById('sb-acc');
+  if(acc){
+    acc.style.setProperty('--av-col', col);
+    // Update the CSS custom property for ring colour
+    const styleId = 'av-ring-style';
+    let st = document.getElementById(styleId);
+    if(!st){ st = document.createElement('style'); st.id=styleId; document.head.appendChild(st); }
+    st.textContent = `.op-acc::before{border-top-color:${col};border-right-color:${col}44;}.op-acc::after{border-bottom-color:${col.replace('#','').length===6?col+'88':col};border-left-color:${col}33;}`;
+  }
   document.getElementById('sb-lv').textContent=l; document.getElementById('sb-lv').style.color=col;
   document.getElementById('sb-nm').textContent=op.callsign||'—';
   document.getElementById('sb-tt').textContent=title(l); document.getElementById('sb-tt').style.color=col;
