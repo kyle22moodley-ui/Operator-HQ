@@ -3634,12 +3634,12 @@ body::after{
               Equity Path Distribution
               <span style="font-family:'Space Mono',monospace;font-size:0.42rem;color:var(--muted2);font-weight:400;margin-left:8px" id="mc-sim-count-label"></span>
             </div>
-            <canvas id="mc-path-canvas" style="width:100%;height:220px;display:block"></canvas>
+            <canvas id="mc-path-canvas" style="width:100%;height:300px;display:block"></canvas>
           </div>
           <div style="background:var(--glass-card);border:1px solid var(--border2);padding:16px;position:relative">
             <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.3"></div>
             <div style="font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:12px;text-shadow:0 0 8px var(--cyan-glow)">Final Balance Distribution</div>
-            <canvas id="mc-dist-canvas" style="width:100%;height:220px;display:block"></canvas>
+            <canvas id="mc-dist-canvas" style="width:100%;height:300px;display:block"></canvas>
           </div>
         </div>
 
@@ -8962,121 +8962,297 @@ function runMonteCarlo(){
       <div style="font-family:'Space Mono',monospace;font-size:0.44rem;color:rgba(255,255,255,0.2);margin-top:3px">${k.sub}</div>
     </div>`).join('');
 
-  // ── PATH CHART ───────────────────────────────────
+  // ── EQUITY PATH CHART ────────────────────────────
   const pathCanvas = document.getElementById('mc-path-canvas');
   if(pathCanvas){
-    pathCanvas.width  = pathCanvas.offsetWidth  || 400;
-    pathCanvas.height = pathCanvas.offsetHeight || 220;
+    const DPR = window.devicePixelRatio || 1;
+    const CW  = pathCanvas.parentElement.offsetWidth  || 560;
+    const CH  = 300;
+    pathCanvas.width  = CW * DPR;
+    pathCanvas.height = CH * DPR;
+    pathCanvas.style.width  = CW + 'px';
+    pathCanvas.style.height = CH + 'px';
     const ctx = pathCanvas.getContext('2d');
-    ctx.clearRect(0,0,pathCanvas.width,pathCanvas.height);
-
-    const W = pathCanvas.width, H = pathCanvas.height;
-    const pad = {t:10,r:10,b:30,l:60};
+    ctx.scale(DPR, DPR);
+    const W = CW, H = CH;
+    const pad = {t:20, r:20, b:36, l:70};
     const iW = W-pad.l-pad.r, iH = H-pad.t-pad.b;
 
-    // Find Y range
-    const allVals = allPaths.flat();
-    const minV = Math.min(...allVals, balance*0.5);
-    const maxV = Math.max(...allVals, balance*1.5);
-    const toX = i => pad.l + (i/(numTrades))*iW;
-    const toY = v => pad.t + iH - ((v-minV)/(maxV-minV||1))*iH;
+    ctx.clearRect(0,0,W,H);
 
-    // Horizontal gridlines
-    ctx.setLineDash([2,4]);
-    ctx.strokeStyle='rgba(255,255,255,0.06)';
-    ctx.lineWidth=0.5;
-    for(let i=0;i<=4;i++){
-      const y = pad.t + iH*(i/4);
+    // Y range — clip extreme outliers for readability (2nd–98th pct of final vals)
+    const sortedFinals = allPaths.map(p=>p[p.length-1]).sort((a,b)=>a-b);
+    const clipLo = sortedFinals[Math.floor(sortedFinals.length*0.02)];
+    const clipHi = sortedFinals[Math.floor(sortedFinals.length*0.98)];
+    const minV = Math.max(0, clipLo * 0.90);
+    const maxV = clipHi * 1.10;
+    const toX = i => pad.l + (i/numTrades)*iW;
+    const toY = v => pad.t + iH - Math.min(Math.max((v-minV)/(maxV-minV||1),0),1)*iH;
+
+    // Background gradient
+    const bg = ctx.createLinearGradient(0,pad.t,0,pad.t+iH);
+    bg.addColorStop(0,'rgba(0,255,136,0.04)');
+    bg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=bg;
+    ctx.fillRect(pad.l,pad.t,iW,iH);
+
+    // Grid lines + Y-axis labels
+    const gridCount = 5;
+    for(let i=0;i<=gridCount;i++){
+      const y = pad.t + iH*(i/gridCount);
+      const val = minV + (maxV-minV)*(1-i/gridCount);
+      ctx.setLineDash([3,5]);
+      ctx.strokeStyle = i===0||i===gridCount ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.05)';
+      ctx.lineWidth=0.8;
       ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
-      const val = minV + (maxV-minV)*(1-i/4);
-      ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px Space Mono'; ctx.textAlign='right';
-      ctx.fillText('$'+(val/1000).toFixed(0)+'k', pad.l-4, y+3);
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(255,255,255,0.28)';
+      ctx.font=`10px "Space Mono"`;
+      ctx.textAlign='right'; ctx.textBaseline='middle';
+      const label = val>=1000000 ? (val/1000000).toFixed(1)+'M' : val>=1000 ? (val/1000).toFixed(0)+'k' : val.toFixed(0);
+      ctx.fillText('$'+label, pad.l-8, y);
     }
-    ctx.setLineDash([]);
 
-    // Starting balance line
+    // X-axis ticks
+    const xSteps = 5;
+    for(let i=0;i<=xSteps;i++){
+      const x = pad.l + iW*(i/xSteps);
+      const t = Math.round(numTrades*(i/xSteps));
+      ctx.fillStyle='rgba(255,255,255,0.2)';
+      ctx.font='9px "Space Mono"'; ctx.textAlign='center'; ctx.textBaseline='top';
+      ctx.fillText(t, x, pad.t+iH+6);
+    }
+    ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.font='10px "Space Mono"';
+    ctx.textAlign='center';
+    ctx.fillText('TRADE NUMBER', pad.l+iW/2, H-6);
+
+    // Starting balance dashed line
     const startY = toY(balance);
-    ctx.beginPath(); ctx.moveTo(pad.l,startY); ctx.lineTo(W-pad.r,startY);
-    ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke();
+    ctx.setLineDash([5,5]);
+    ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,startY); ctx.lineTo(W-pad.r,startY); ctx.stroke();
     ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.font='9px "Space Mono"';
+    ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillText('START', pad.l+4, startY-3);
 
-    // Draw paths — colour by final result
+    // Confidence bands — compute p10/p25/p75/p90 at each step
+    const numSteps = Math.min(numTrades, 100);
+    const stepSize = numTrades/numSteps;
+    const bands = { p10:[], p25:[], p75:[], p90:[] };
+    for(let s=0;s<=numSteps;s++){
+      const stepIdx = Math.round(s*stepSize);
+      const vals = allPaths.map(p=>p[Math.min(stepIdx,p.length-1)]).sort((a,b)=>a-b);
+      const q = p => vals[Math.floor(p/100*(vals.length-1))];
+      bands.p10.push({x:toX(stepIdx), y:toY(q(10))});
+      bands.p25.push({x:toX(stepIdx), y:toY(q(25))});
+      bands.p75.push({x:toX(stepIdx), y:toY(q(75))});
+      bands.p90.push({x:toX(stepIdx), y:toY(q(90))});
+    }
+    const drawBand = (upper, lower, color, alpha) => {
+      ctx.beginPath();
+      upper.forEach((p,i)=> i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+      [...lower].reverse().forEach(p=> ctx.lineTo(p.x,p.y));
+      ctx.closePath();
+      ctx.fillStyle=`rgba(${color},${alpha})`;
+      ctx.fill();
+    };
+    drawBand(bands.p90, bands.p10, '0,255,136', 0.06);
+    drawBand(bands.p75, bands.p25, '0,255,136', 0.08);
+
+    // Individual simulation paths — draw behind bands
     allPaths.forEach(path=>{
       const final = path[path.length-1];
       const ratio = (final-balance)/balance;
-      let alpha, color;
-      if(final === 0){
-        color=`rgba(255,51,102,`; alpha=0.12;
-      } else if(ratio > 0.15){
-        color=`rgba(0,255,136,`; alpha=0.09;
-      } else if(ratio > 0){
-        color=`rgba(0,255,136,`; alpha=0.05;
-      } else {
-        color=`rgba(255,100,50,`; alpha=0.06;
-      }
+      let r,g,b,a;
+      if(final<=0){         r=255;g=51; b=102; a=0.10; }
+      else if(ratio>0.5){   r=0;  g=255;b=136; a=0.06; }
+      else if(ratio>0){     r=0;  g=255;b=136; a=0.04; }
+      else{                 r=255;g=120;b=40;  a=0.06; }
       ctx.beginPath();
-      path.forEach((v,i)=> i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
-      ctx.strokeStyle=color+alpha+')'; ctx.lineWidth=0.7; ctx.stroke();
+      path.forEach((v,i)=>{
+        const x=toX(i), y=toY(v);
+        i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      });
+      ctx.strokeStyle=`rgba(${r},${g},${b},${a})`;
+      ctx.lineWidth=0.6;
+      ctx.stroke();
     });
 
-    // Median path overlay — find closest to median
+    // P90, P50, P10 overlay lines
+    const overlayLines = [
+      {pts:bands.p90, col:'rgba(0,255,136,0.5)',  lw:1,   dash:[3,4], label:'P90'},
+      {pts:bands.p75, col:'rgba(0,255,136,0.3)',  lw:0.8, dash:[2,4], label:'P75'},
+      {pts:bands.p25, col:'rgba(255,120,40,0.3)', lw:0.8, dash:[2,4], label:'P25'},
+      {pts:bands.p10, col:'rgba(255,51,102,0.5)', lw:1,   dash:[3,4], label:'P10'},
+    ];
+    overlayLines.forEach(ol=>{
+      ctx.setLineDash(ol.dash);
+      ctx.strokeStyle=ol.col; ctx.lineWidth=ol.lw;
+      ctx.beginPath();
+      ol.pts.forEach((p,i)=> i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+      ctx.stroke();
+      // Label at right edge
+      const last=ol.pts[ol.pts.length-1];
+      ctx.setLineDash([]);
+      ctx.fillStyle=ol.col.replace('0.5','0.8').replace('0.3','0.7');
+      ctx.font='9px "Space Mono"'; ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(ol.label, last.x+3, last.y);
+    });
+    ctx.setLineDash([]);
+
+    // Median path — brightest line with glow
     const medianPath = allPaths.reduce((best,p)=>
       Math.abs(p[p.length-1]-median) < Math.abs(best[best.length-1]-median) ? p : best
     , allPaths[0]);
     if(medianPath){
+      // Glow pass
+      ctx.shadowColor='rgba(0,255,136,0.6)'; ctx.shadowBlur=12;
+      ctx.strokeStyle='rgba(0,255,136,0.9)'; ctx.lineWidth=2.5;
       ctx.beginPath();
-      medianPath.forEach((v,i)=> i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
-      ctx.strokeStyle='rgba(0,255,136,0.85)'; ctx.lineWidth=2;
-      ctx.shadowColor='rgba(0,255,136,0.5)'; ctx.shadowBlur=4;
-      ctx.stroke(); ctx.shadowBlur=0;
+      medianPath.forEach((v,i)=>{
+        const x=toX(i), y=toY(v);
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+      ctx.shadowBlur=0;
+      // End dot
+      const lastX=toX(medianPath.length-1), lastY=toY(medianPath[medianPath.length-1]);
+      ctx.beginPath(); ctx.arc(lastX,lastY,4,0,Math.PI*2);
+      ctx.fillStyle='rgba(0,255,136,1)';
+      ctx.shadowColor='rgba(0,255,136,0.8)'; ctx.shadowBlur=8;
+      ctx.fill(); ctx.shadowBlur=0;
+      // Label
+      ctx.fillStyle='rgba(0,255,136,0.9)'; ctx.font='bold 9px "Space Mono"';
+      ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText('MEDIAN', lastX+8, lastY);
     }
 
-    // X-axis label
-    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px Space Mono'; ctx.textAlign='center';
-    ctx.fillText(`${numTrades} trades`, W/2, H-2);
     document.getElementById('mc-sim-count-label').textContent = `${numSims.toLocaleString()} simulations`;
   }
 
   // ── DISTRIBUTION HISTOGRAM ────────────────────────
   const distCanvas = document.getElementById('mc-dist-canvas');
   if(distCanvas){
-    distCanvas.width  = distCanvas.offsetWidth  || 400;
-    distCanvas.height = distCanvas.offsetHeight || 220;
+    const DPR = window.devicePixelRatio || 1;
+    const CW  = distCanvas.parentElement.offsetWidth || 460;
+    const CH  = 300;
+    distCanvas.width  = CW * DPR;
+    distCanvas.height = CH * DPR;
+    distCanvas.style.width  = CW + 'px';
+    distCanvas.style.height = CH + 'px';
     const ctx = distCanvas.getContext('2d');
-    ctx.clearRect(0,0,distCanvas.width,distCanvas.height);
-    const W=distCanvas.width, H=distCanvas.height;
-    const pad={t:10,r:10,b:30,l:10};
+    ctx.scale(DPR, DPR);
+    const W=CW, H=CH;
+    const pad={t:20,r:20,b:36,l:50};
     const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+    ctx.clearRect(0,0,W,H);
 
-    const BINS = 40;
+    // Build bins
+    const BINS = 50;
     const mn=results[0], mx=results[results.length-1];
-    const binW=(mx-mn||1)/BINS;
-    const bins=Array(BINS).fill(0);
+    const range = mx-mn || 1;
+    const binW  = range/BINS;
+    const bins  = Array(BINS).fill(0);
     results.forEach(r=>{ const bi=Math.min(Math.floor((r-mn)/binW),BINS-1); bins[bi]++; });
-    const maxBin=Math.max(...bins);
-    const bw=iW/BINS;
+    const maxBin = Math.max(...bins);
 
-    bins.forEach((count,i)=>{
-      const x=pad.l+i*bw;
-      const h=(count/maxBin)*iH;
-      const val=mn+i*binW;
-      const col = val<balance ? 'rgba(255,51,102,0.55)' : 'rgba(0,255,136,0.55)';
-      ctx.fillStyle=col;
-      ctx.fillRect(x,pad.t+iH-h,bw-1,h);
+    // Smooth the histogram with a simple 3-bin average
+    const smooth = bins.map((v,i,a)=>(a[i-1]||v)*0.2+v*0.6+(a[i+1]||v)*0.2);
+
+    const bw = iW/BINS;
+
+    // Draw bars with gradient fill and glow
+    smooth.forEach((count,i)=>{
+      const x   = pad.l + i*bw;
+      const h   = (count/maxBin)*iH;
+      const val = mn + i*binW;
+      const isProfitable = val >= balance;
+
+      // Gradient per bar
+      const grad = ctx.createLinearGradient(x, pad.t+iH-h, x, pad.t+iH);
+      if(isProfitable){
+        grad.addColorStop(0,'rgba(0,255,136,0.85)');
+        grad.addColorStop(1,'rgba(0,255,136,0.15)');
+      } else {
+        grad.addColorStop(0,'rgba(255,51,102,0.85)');
+        grad.addColorStop(1,'rgba(255,51,102,0.15)');
+      }
+      ctx.fillStyle = grad;
+
+      // Rounded top on bars
+      const bx=x+1, by=pad.t+iH-h, bw2=bw-2;
+      const r=Math.min(3,bw2/2,h/2);
+      ctx.beginPath();
+      ctx.moveTo(bx+r,by);
+      ctx.lineTo(bx+bw2-r,by);
+      ctx.quadraticCurveTo(bx+bw2,by,bx+bw2,by+r);
+      ctx.lineTo(bx+bw2,by+h);
+      ctx.lineTo(bx,by+h);
+      ctx.lineTo(bx,by+r);
+      ctx.quadraticCurveTo(bx,by,bx+r,by);
+      ctx.closePath();
+      ctx.fill();
     });
 
-    // Median marker
-    const medX = pad.l + ((median-mn)/(mx-mn||1))*iW;
-    ctx.beginPath(); ctx.moveTo(medX,pad.t); ctx.lineTo(medX,pad.t+iH);
-    ctx.strokeStyle='rgba(0,255,136,0.9)'; ctx.lineWidth=1.5;
-    ctx.shadowColor='rgba(0,255,136,0.5)'; ctx.shadowBlur=4; ctx.stroke(); ctx.shadowBlur=0;
-    ctx.fillStyle='rgba(0,255,136,0.8)'; ctx.font='9px Space Mono'; ctx.textAlign='center';
-    ctx.fillText('MEDIAN', medX, pad.t+8);
+    // X gridlines
+    for(let i=0;i<=4;i++){
+      const y=pad.t+iH*(i/4);
+      ctx.setLineDash([2,4]);
+      ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
-    // Starting line
-    const startX = pad.l + ((balance-mn)/(mx-mn||1))*iW;
-    ctx.beginPath(); ctx.moveTo(startX,pad.t); ctx.lineTo(startX,pad.t+iH);
-    ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+    // X axis labels — show 5 evenly spaced values
+    for(let i=0;i<=4;i++){
+      const val = mn + range*(i/4);
+      const x   = pad.l + iW*(i/4);
+      const label = val>=1000000 ? (val/1000000).toFixed(1)+'M' : val>=1000 ? (val/1000).toFixed(0)+'k' : val.toFixed(0);
+      ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px "Space Mono"';
+      ctx.textAlign='center'; ctx.textBaseline='top';
+      ctx.fillText('$'+label, x, pad.t+iH+6);
+    }
+
+    // Starting balance vertical line
+    const startX = pad.l + ((balance-mn)/range)*iW;
+    ctx.setLineDash([4,4]);
+    ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(startX,pad.t); ctx.lineTo(startX,pad.t+iH); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.font='9px "Space Mono"';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText('START', startX, pad.t+iH-2);
+
+    // Median vertical line with glow
+    const medX = pad.l + ((median-mn)/range)*iW;
+    ctx.shadowColor='rgba(0,255,136,0.6)'; ctx.shadowBlur=8;
+    ctx.strokeStyle='rgba(0,255,136,0.95)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(medX,pad.t); ctx.lineTo(medX,pad.t+iH); ctx.stroke();
+    ctx.shadowBlur=0;
+    // Median label pill background
+    const mlabel = '$'+(median>=1000 ? (median/1000).toFixed(0)+'k' : median.toFixed(0));
+    ctx.font='bold 10px "Space Mono"';
+    const tw = ctx.measureText('MEDIAN  '+mlabel).width;
+    ctx.fillStyle='rgba(0,10,5,0.85)';
+    ctx.fillRect(medX-tw/2-6, pad.t+2, tw+12, 18);
+    ctx.strokeStyle='rgba(0,255,136,0.4)'; ctx.lineWidth=0.5;
+    ctx.strokeRect(medX-tw/2-6, pad.t+2, tw+12, 18);
+    ctx.fillStyle='rgba(0,255,136,0.95)'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('MEDIAN  '+mlabel, medX, pad.t+11);
+
+    // P10 and P90 markers
+    [[pct(10),'rgba(255,51,102,0.8)','P10'],[pct(90),'rgba(0,200,255,0.8)','P90']].forEach(([val,col,lbl])=>{
+      const x=pad.l+((val-mn)/range)*iW;
+      ctx.shadowColor=col; ctx.shadowBlur=4;
+      ctx.strokeStyle=col.replace('0.8','0.6'); ctx.lineWidth=1;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(x,pad.t+20); ctx.lineTo(x,pad.t+iH); ctx.stroke();
+      ctx.setLineDash([]); ctx.shadowBlur=0;
+      ctx.fillStyle=col; ctx.font='9px "Space Mono"';
+      ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText(lbl, x, pad.t+20);
+    });
   }
 
   // ── PERCENTILE TABLE ─────────────────────────────
