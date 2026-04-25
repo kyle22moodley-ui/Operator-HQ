@@ -166,7 +166,7 @@ body::after{
 .loader-fill{height:100%;background:linear-gradient(90deg,var(--neon2),var(--neon),var(--cyan));width:0%;transition:width 0.3s ease;box-shadow:0 0 10px var(--neon);}
 
 /* ── AUTH SCREEN ─────────────────────────────────────── */
-#auth-screen{position:fixed;inset:0;background:var(--bg0);z-index:8000;display:none;align-items:center;justify-content:center;padding:20px;}
+#auth-screen{position:fixed;inset:0;background:var(--bg0);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;}
 .auth-wrap{width:400px;max-width:100%;text-align:center;}
 .auth-logo{margin-bottom:20px;}
 .auth-emblem{
@@ -2557,7 +2557,12 @@ body.perf-mode .op-acc-o2,
 body.perf-mode .op-acc-o3{ display:none; }
 body.perf-mode .kpi-card:hover{ transform:none !important; }
 body.perf-mode .chart-c:hover{ transform:none !important; }
-body.perf-mode *{ animation-duration:0s !important; transition-duration:0.1s !important; }
+/* Scope animation kill to app content only — never auth/loader */
+body.perf-mode .app-layout *,
+body.perf-mode .cmd-bar *{
+  animation-duration:0.01s !important;
+  transition-duration:0.1s !important;
+}
 body.perf-mode .rstat-scan,
 body.perf-mode .rstat-hex-bg{ display:none; }
 
@@ -5089,7 +5094,33 @@ function loadSettingsToUI(){
 }
 
 function getSavedSettings(){
-  try{ return JSON.parse(localStorage.getItem('ophq_settings')||'{}'); } catch(e){ return {}; }
+  try{ return JSON.parse(localStorage.getItem('ophq_settings')||'{}'); }
+  catch(e){ return {}; }
+}
+
+function safeLocalGet(key){ try{ return localStorage.getItem(key); } catch(e){ return null; } }
+function safeLocalSet(key,val){ try{ localStorage.setItem(key,val); } catch(e){} }
+
+function loadAndApplySettings(){
+  const s = getSavedSettings();
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+  // Auto performance mode on mobile if no saved preference
+  const hasSaved = safeLocalGet('ophq_settings') !== null;
+  const perfMode = hasSaved ? (s.perfMode||false) : isMobile;
+
+  document.body.classList.toggle('perf-mode',   perfMode);
+  document.body.classList.toggle('reduce-anim', s.reduceAnim||perfMode||false);
+  document.body.classList.toggle('compact-mode',s.compact||false);
+
+  if(s.fontScale && s.fontScale!==100){
+    document.documentElement.style.fontSize=(s.fontScale/100)+'em';
+  }
+  if(s.hideChat){
+    const chatCol=document.querySelector('.chat-col');
+    if(chatCol) chatCol.style.display='none';
+  }
+  window._radarAnimEnabled = perfMode ? false : (s.radarAnim !== false);
 }
 
 function applySettings(){
@@ -5105,7 +5136,7 @@ function applySettings(){
   if(scaleVal) scaleVal.textContent=fontScale+'%';
 
   // Save
-  localStorage.setItem('ophq_settings', JSON.stringify({perfMode,reduceAnim,radarAnim,hideChat,compact,fontScale}));
+  safeLocalSet('ophq_settings', JSON.stringify({perfMode,reduceAnim,radarAnim,hideChat,compact,fontScale}));
 
   // Apply immediately
   document.body.classList.toggle('perf-mode',    perfMode);
@@ -5121,26 +5152,6 @@ function applySettings(){
 
   // Radar animation flag
   window._radarAnimEnabled = radarAnim;
-}
-
-function loadAndApplySettings(){
-  const s = getSavedSettings();
-  document.body.classList.toggle('perf-mode',    s.perfMode||false);
-  document.body.classList.toggle('reduce-anim',  s.reduceAnim||s.perfMode||false);
-  document.body.classList.toggle('compact-mode', s.compact||false);
-  if(s.fontScale && s.fontScale!==100){
-    document.documentElement.style.fontSize=(s.fontScale/100)+'em';
-  }
-  if(s.hideChat){
-    const chatCol=document.querySelector('.chat-col');
-    if(chatCol) chatCol.style.display='none';
-  }
-  window._radarAnimEnabled = s.radarAnim !== false;
-  // Auto-enable performance mode on mobile
-  if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && !localStorage.getItem('ophq_settings')){
-    document.body.classList.add('perf-mode','reduce-anim');
-    window._radarAnimEnabled = false;
-  }
 }
 
 function toggleMobileNav(){
@@ -9801,6 +9812,13 @@ async function init(){
     as.style.display='flex';
   }
   sb.auth.onAuthStateChange(async(e,s)=>{ if(e==='SIGNED_IN'&&s?.user&&!currentUser) await bootApp(s.user); });
+}
+
+// Apply settings after DOM ready — never before
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',()=>{ try{ loadAndApplySettings(); }catch(e){} });
+} else {
+  try{ loadAndApplySettings(); }catch(e){}
 }
 init();
 </script>
