@@ -96,6 +96,7 @@ body{
   box-shadow:0 0 12px var(--neon),0 0 24px var(--neon-glow);
   transition:transform 0.1s ease,width 0.2s ease,height 0.2s ease;
 }
+@media(pointer:coarse){ #cursor,#cursor-ring{display:none!important;} }
 .cursor-ring{
   position:fixed;width:28px;height:28px;
   border:1px solid rgba(0,255,136,0.4);border-radius:50%;
@@ -2546,6 +2547,165 @@ body::after{
   color:rgba(255,80,80,0.5);
   border-color:rgba(255,80,80,0.25);
 }
+/* ══════════════════════════════════════════════════
+   PERFORMANCE MODE — reduces GPU load
+══════════════════════════════════════════════════ */
+body.perf-mode #p-canvas,
+body.perf-mode #matrix-canvas{ display:none !important; }
+body.perf-mode .op-acc-o1,
+body.perf-mode .op-acc-o2,
+body.perf-mode .op-acc-o3{ display:none; }
+body.perf-mode .kpi-card:hover{ transform:none !important; }
+body.perf-mode .chart-c:hover{ transform:none !important; }
+body.perf-mode *{ animation-duration:0s !important; transition-duration:0.1s !important; }
+body.perf-mode .rstat-scan,
+body.perf-mode .rstat-hex-bg{ display:none; }
+
+/* ══════════════════════════════════════════════════
+   MOBILE RESPONSIVE FIXES
+══════════════════════════════════════════════════ */
+@media(max-width:768px){
+  .app-layout{
+    grid-template-columns:1fr !important;
+    grid-template-rows:auto 1fr;
+  }
+  .sidebar{ display:none; }
+  .chat-col{ display:none !important; }
+  .cmd-bar{ padding:0 8px; gap:6px; }
+  .cv-stat{ min-width:50px; }
+  .cv-label{ font-size:0.32rem; }
+  .cv-val{ font-size:0.65rem; }
+  .content-area{ padding:10px; }
+  .sec{ padding:10px; }
+  .home-grid{ grid-template-columns:1fr 1fr !important; gap:8px !important; }
+  .charts-2col{ grid-template-columns:1fr !important; }
+  .kpi-v{ font-size:1.1rem !important; }
+  .sh{ flex-direction:column; gap:8px; align-items:flex-start; }
+  .sh .btn-save,.sh .btn-outline,.sh .btn-danger{ font-size:0.5rem; padding:6px 10px; }
+  #mc-input-grid{ grid-template-columns:1fr !important; }
+  .radar-stats-panel{ grid-template-columns:1fr !important; }
+  .trade-modal-grid{ grid-template-columns:1fr !important; }
+  .form-grid{ grid-template-columns:1fr !important; }
+  .form-group.full{ grid-column:1 !important; }
+}
+@media(max-width:480px){
+  .home-grid{ grid-template-columns:1fr !important; }
+  .cmd-bar .cv-stat:nth-child(n+4){ display:none; }
+}
+
+/* Mobile nav toggle */
+.mob-nav-btn{
+  display:none;
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--bg0);border:1px solid var(--neon2);
+  color:var(--neon);font-family:var(--font-mono);font-size:0.55rem;
+  letter-spacing:2px;padding:10px 20px;z-index:200;cursor:pointer;
+  box-shadow:0 0 20px rgba(0,255,136,0.2);
+}
+@media(max-width:768px){
+  .mob-nav-btn{ display:block; }
+  .sidebar.mob-open{ display:flex !important; z-index:190; position:fixed; }
+}
+
+/* ══════════════════════════════════════════════════
+   SETTINGS PANEL
+══════════════════════════════════════════════════ */
+.settings-overlay{
+  display:none;position:fixed;inset:0;z-index:800;
+  background:rgba(0,2,6,0.92);backdrop-filter:blur(12px);
+  align-items:center;justify-content:center;
+}
+.settings-overlay.open{ display:flex; }
+.settings-panel{
+  width:440px;max-width:95vw;max-height:88vh;overflow-y:auto;
+  background:#000206;border:1px solid rgba(0,255,136,0.2);
+  position:relative;
+}
+.settings-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--neon),var(--cyan),transparent);
+}
+.sp-header{
+  padding:18px 20px 14px;border-bottom:1px solid rgba(0,255,136,0.08);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.sp-title{font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:900;letter-spacing:4px;color:var(--white);text-transform:uppercase;}
+.sp-close{background:none;border:none;color:var(--muted2);font-size:1.1rem;cursor:pointer;padding:0 4px;}
+.sp-close:hover{color:var(--white);}
+.sp-body{ padding:16px 20px; }
+.sp-section-title{
+  font-family:'Space Mono',monospace;font-size:0.42rem;letter-spacing:4px;
+  color:rgba(0,255,136,0.5);text-transform:uppercase;margin:14px 0 8px;
+  display:flex;align-items:center;gap:8px;
+}
+.sp-section-title::after{content:'';flex:1;height:1px;background:rgba(0,255,136,0.1);}
+.sp-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.sp-label{font-family:'Space Mono',monospace;font-size:0.62rem;color:rgba(255,255,255,0.55);}
+.sp-sub{font-family:'Space Mono',monospace;font-size:0.44rem;color:rgba(255,255,255,0.2);margin-top:2px;}
+/* Toggle switch */
+.sp-toggle{position:relative;width:40px;height:22px;flex-shrink:0;}
+.sp-toggle input{opacity:0;width:0;height:0;}
+.sp-toggle-track{
+  position:absolute;inset:0;background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.12);cursor:pointer;transition:all 0.2s;
+}
+.sp-toggle input:checked + .sp-toggle-track{
+  background:rgba(0,255,136,0.2);border-color:var(--neon);
+}
+.sp-toggle-track::after{
+  content:'';position:absolute;width:14px;height:14px;
+  background:rgba(255,255,255,0.4);top:3px;left:3px;transition:transform 0.2s;
+}
+.sp-toggle input:checked + .sp-toggle-track::after{
+  background:var(--neon);transform:translateX(18px);
+  box-shadow:0 0 6px var(--neon);
+}
+/* Font size slider */
+.sp-slider{
+  -webkit-appearance:none;appearance:none;
+  width:140px;height:3px;background:rgba(0,255,136,0.15);outline:none;
+}
+.sp-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--neon);box-shadow:0 0 6px var(--neon);cursor:pointer;
+}
+.sp-slider-val{
+  font-family:'Space Mono',monospace;font-size:0.6rem;
+  color:var(--neon);min-width:28px;text-align:right;
+}
+/* ── LIVE INDICATOR ── */
+.live-indicator{display:flex;align-items:center;gap:5px;}
+
+/* ── SAELUM BADGES ── */
+.loader-saelum{
+  position:absolute;bottom:28px;left:0;right:0;
+  text-align:center;
+  font-family:'Space Mono',monospace;
+  font-size:0.42rem;letter-spacing:3px;color:rgba(255,255,255,0.12);
+  text-transform:uppercase;
+}
+.loader-saelum span{color:rgba(0,255,136,0.3);}
+
+.auth-powered{
+  text-align:center;margin-top:16px;
+  font-family:'Space Mono',monospace;
+  font-size:0.4rem;letter-spacing:3px;
+  color:rgba(255,255,255,0.12);text-transform:uppercase;
+}
+.auth-powered span{color:rgba(0,255,136,0.35);}
+
+.saelum-badge{
+  margin:auto 12px 14px;padding:8px 12px;
+  border-top:1px solid rgba(0,255,136,0.06);
+  font-family:'Space Mono',monospace;
+  font-size:0.38rem;letter-spacing:2.5px;
+  color:rgba(255,255,255,0.1);text-transform:uppercase;
+  text-align:center;
+}
+.saelum-badge span{color:rgba(0,255,136,0.22);}
 
 </style>
 </head>
@@ -2648,7 +2808,7 @@ body::after{
   <div class="loader-title">Operator HQ</div>
   <div class="loader-sub" id="loader-sub">Initialising Command Systems</div>
   <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
-</div>
+  <div class="loader-saelum">Powered by <span>Saelum AI</span></div></div>
 
 <!-- AUTH -->
 <div id="auth-screen">
@@ -2678,7 +2838,7 @@ body::after{
         <button class="btn-auth" id="btn-su" onclick="doSignup()">⬡ CREATE OPERATOR</button>
         <div class="auth-note">Sign in immediately after registering.</div>
       </div>
-    </div>
+    <div class="auth-powered">Powered by <span>Saelum AI</span></div>
   </div>
 </div>
 
@@ -2726,11 +2886,103 @@ body::after{
       </div>
     </div>
     <div class="cmd-right">
-      <div class="live-d"></div><div class="live-t">Live</div>
+      <div class="live-indicator"><div class="live-d"></div><span class="live-t">Live</span></div>
+      <button class="btn-xs" onclick="openSettings()" style="letter-spacing:1px">⚙</button>
       <button class="btn-xs" onclick="doSignOut()">Sign Out</button>
     </div>
   </div>
 </div>
+
+<!-- SETTINGS OVERLAY -->
+<div class="settings-overlay" id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-panel">
+    <div class="sp-header">
+      <div class="sp-title">System Settings</div>
+      <button class="sp-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="sp-body">
+
+      <div class="sp-section-title">Performance</div>
+
+      <div class="sp-row">
+        <div>
+          <div class="sp-label">Performance Mode</div>
+          <div class="sp-sub">Disables particles, matrix rain, and animations. Reduces CPU/GPU load significantly — recommended for mobile and lower-end devices.</div>
+        </div>
+        <label class="sp-toggle" style="margin-left:16px">
+          <input type="checkbox" id="set-perf-mode" onchange="applySettings()">
+          <div class="sp-toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="sp-row">
+        <div>
+          <div class="sp-label">Reduce Animations</div>
+          <div class="sp-sub">Keeps hover effects but disables continuous background animations (hex grids, scan lines).</div>
+        </div>
+        <label class="sp-toggle" style="margin-left:16px">
+          <input type="checkbox" id="set-reduce-anim" onchange="applySettings()">
+          <div class="sp-toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="sp-row">
+        <div>
+          <div class="sp-label">Radar Animation</div>
+          <div class="sp-sub">Disables the rotating 3D radar on home base (most GPU-intensive element).</div>
+        </div>
+        <label class="sp-toggle" style="margin-left:16px">
+          <input type="checkbox" id="set-radar-anim" checked onchange="applySettings()">
+          <div class="sp-toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="sp-section-title">Display</div>
+
+      <div class="sp-row">
+        <div>
+          <div class="sp-label">Interface Scale</div>
+          <div class="sp-sub">Scales all text and UI elements. Useful on mobile or large monitors.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-left:16px">
+          <input type="range" class="sp-slider" id="set-font-scale" min="80" max="130" value="100" step="5" oninput="applySettings()">
+          <div class="sp-slider-val" id="set-font-scale-val">100%</div>
+        </div>
+      </div>
+
+      <div class="sp-row">
+        <div>
+          <div class="sp-label">Chat Column</div>
+          <div class="sp-sub">Hide the squad chat panel to give the main content more space.</div>
+        </div>
+        <label class="sp-toggle" style="margin-left:16px">
+          <input type="checkbox" id="set-hide-chat" onchange="applySettings()">
+          <div class="sp-toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="sp-row">
+        <div>
+          <div class="sp-label">Compact Mode</div>
+          <div class="sp-sub">Tighter spacing, smaller paddings. Better on smaller screens.</div>
+        </div>
+        <label class="sp-toggle" style="margin-left:16px">
+          <input type="checkbox" id="set-compact" onchange="applySettings()">
+          <div class="sp-toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="sp-section-title">About</div>
+      <div style="font-family:'Space Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.2);line-height:2;letter-spacing:0.5px">
+        Operator HQ · Built by Saelum AI<br>
+        Settings are saved to your browser and persist across sessions.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE NAV TOGGLE -->
+<button class="mob-nav-btn" onclick="toggleMobileNav()">☰ &nbsp; NAVIGATE</button>
 
 <div class="app-layout z1">
 
@@ -2821,6 +3073,7 @@ body::after{
       <div class="nav-i" onclick="showSec('assets',this)"><div class="n-i">◻</div><div class="n-l">Asset Targets</div></div>
       <div class="nav-i" onclick="showSec('financials',this)"><div class="n-i">$</div><div class="n-l">Financial Intel</div></div>
     </div>
+    <div class="saelum-badge">Powered by <span>Saelum AI</span></div>
   </div>
 
   <!-- MAIN CONTENT -->
@@ -4763,19 +5016,31 @@ function buildRiskDash(){
 // PARTICLES
 // ══════════════════════════════════════════════════
 function initParticles(){
-  const c=document.getElementById('p-canvas');
+  const c=document.getElementById('p-canvas'); if(!c) return;
   const ctx=c.getContext('2d');
+
+  // Detect device capability — reduce load on mobile/low-end
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const particleCount = isMobile ? 18 : 45; // was 60
+  const connectDist   = isMobile ? 0  : 80; // disable connections on mobile
+
   c.width=window.innerWidth; c.height=window.innerHeight;
-  window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight;});
-  // Mix of neon green and cyan particles for depth
-  const ps=Array.from({length:60},()=>({
-    x:Math.random()*c.width,y:Math.random()*c.height,
-    vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,
-    sz:Math.random()*1.4+.3,
-    op:Math.random()*.25+.06,
+  window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight;},{ passive:true });
+
+  const ps=Array.from({length:particleCount},()=>({
+    x:Math.random()*c.width, y:Math.random()*c.height,
+    vx:(Math.random()-.5)*.15, vy:(Math.random()-.5)*.15,
+    sz:Math.random()*1.2+.3,
+    op:Math.random()*.2+.05,
     col:Math.random()>.7?'0,180,255':'0,255,136'
   }));
-  function draw(){
+
+  // Throttle to ~30fps instead of 60fps — halves GPU load
+  let lastT=0;
+  function draw(ts){
+    if(ts-lastT < 33){ requestAnimationFrame(draw); return; } // ~30fps cap
+    lastT=ts;
+    if(document.hidden) { requestAnimationFrame(draw); return; } // pause when tab hidden
     ctx.clearRect(0,0,c.width,c.height);
     ps.forEach(p=>{
       p.x+=p.vx; p.y+=p.vy;
@@ -4783,26 +5048,113 @@ function initParticles(){
       if(p.y<0)p.y=c.height; if(p.y>c.height)p.y=0;
       ctx.beginPath(); ctx.arc(p.x,p.y,p.sz,0,Math.PI*2);
       ctx.fillStyle=`rgba(${p.col},${p.op})`; ctx.fill();
-      // Glow on larger particles
-      if(p.sz>1){ctx.beginPath();ctx.arc(p.x,p.y,p.sz*2,0,Math.PI*2);ctx.fillStyle=`rgba(${p.col},${p.op*.3})`;ctx.fill();}
     });
-    for(let i=0;i<ps.length;i++) for(let j=i+1;j<ps.length;j++){
-      const dx=ps[i].x-ps[j].x,dy=ps[i].y-ps[j].y,d=Math.sqrt(dx*dx+dy*dy);
-      if(d<90){
-        ctx.beginPath();ctx.moveTo(ps[i].x,ps[i].y);ctx.lineTo(ps[j].x,ps[j].y);
-        ctx.strokeStyle=`rgba(0,255,136,${.04*(1-d/90)})`;ctx.lineWidth=.3;ctx.stroke();
+    // Connection lines — O(n²) so skip entirely on mobile
+    if(connectDist>0){
+      for(let i=0;i<ps.length;i++) for(let j=i+1;j<ps.length;j++){
+        const dx=ps[i].x-ps[j].x, dy=ps[i].y-ps[j].y, d=dx*dx+dy*dy;
+        if(d<connectDist*connectDist){
+          ctx.beginPath(); ctx.moveTo(ps[i].x,ps[i].y); ctx.lineTo(ps[j].x,ps[j].y);
+          ctx.strokeStyle=`rgba(0,255,136,${.035*(1-Math.sqrt(d)/connectDist)})`; ctx.lineWidth=.3; ctx.stroke();
+        }
       }
     }
     requestAnimationFrame(draw);
   }
-  draw();
+  requestAnimationFrame(draw);
+}
+
+// ══════════════════════════════════════════════════
+// SETTINGS — persist to localStorage
+// ══════════════════════════════════════════════════
+function openSettings(){
+  loadSettingsToUI();
+  document.getElementById('settings-overlay')?.classList.add('open');
+}
+function closeSettings(){
+  document.getElementById('settings-overlay')?.classList.remove('open');
+}
+
+function loadSettingsToUI(){
+  const s = getSavedSettings();
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.checked=!!val; };
+  set('set-perf-mode',    s.perfMode);
+  set('set-reduce-anim',  s.reduceAnim);
+  set('set-radar-anim',   s.radarAnim !== false); // default on
+  set('set-hide-chat',    s.hideChat);
+  set('set-compact',      s.compact);
+  const scaleEl=document.getElementById('set-font-scale');
+  if(scaleEl){ scaleEl.value=s.fontScale||100; }
+  document.getElementById('set-font-scale-val').textContent=(s.fontScale||100)+'%';
+}
+
+function getSavedSettings(){
+  try{ return JSON.parse(localStorage.getItem('ophq_settings')||'{}'); } catch(e){ return {}; }
+}
+
+function applySettings(){
+  const g = id => document.getElementById(id);
+  const perfMode   = g('set-perf-mode')?.checked   || false;
+  const reduceAnim = g('set-reduce-anim')?.checked  || false;
+  const radarAnim  = g('set-radar-anim')?.checked   !== false;
+  const hideChat   = g('set-hide-chat')?.checked    || false;
+  const compact    = g('set-compact')?.checked      || false;
+  const fontScale  = parseInt(g('set-font-scale')?.value||'100');
+
+  const scaleVal=g('set-font-scale-val');
+  if(scaleVal) scaleVal.textContent=fontScale+'%';
+
+  // Save
+  localStorage.setItem('ophq_settings', JSON.stringify({perfMode,reduceAnim,radarAnim,hideChat,compact,fontScale}));
+
+  // Apply immediately
+  document.body.classList.toggle('perf-mode',    perfMode);
+  document.body.classList.toggle('reduce-anim',  reduceAnim || perfMode);
+  document.body.classList.toggle('compact-mode', compact);
+
+  // Font scale — apply to root element
+  document.documentElement.style.fontSize = (fontScale/100) + 'em';
+
+  // Chat column visibility
+  const chatCol = document.querySelector('.chat-col');
+  if(chatCol) chatCol.style.display = hideChat ? 'none' : '';
+
+  // Radar animation flag
+  window._radarAnimEnabled = radarAnim;
+}
+
+function loadAndApplySettings(){
+  const s = getSavedSettings();
+  document.body.classList.toggle('perf-mode',    s.perfMode||false);
+  document.body.classList.toggle('reduce-anim',  s.reduceAnim||s.perfMode||false);
+  document.body.classList.toggle('compact-mode', s.compact||false);
+  if(s.fontScale && s.fontScale!==100){
+    document.documentElement.style.fontSize=(s.fontScale/100)+'em';
+  }
+  if(s.hideChat){
+    const chatCol=document.querySelector('.chat-col');
+    if(chatCol) chatCol.style.display='none';
+  }
+  window._radarAnimEnabled = s.radarAnim !== false;
+  // Auto-enable performance mode on mobile
+  if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && !localStorage.getItem('ophq_settings')){
+    document.body.classList.add('perf-mode','reduce-anim');
+    window._radarAnimEnabled = false;
+  }
+}
+
+function toggleMobileNav(){
+  document.querySelector('.sidebar')?.classList.toggle('mob-open');
 }
 
 // ══════════════════════════════════════════════════
 // CUSTOM CURSOR
 // ══════════════════════════════════════════════════
 function initCursor(){
+  // Use pure CSS pointer-events — no rAF loop needed
+  // Only wire mousemove for the dot, skip the ring animation loop
   const cur=document.getElementById('cursor');
+  if(!cur||window.matchMedia('(pointer:coarse)').matches) return; // skip on touch devices
   const ring=document.getElementById('cursor-ring');
   if(!cur||!ring) return;
   let mx=0,my=0,rx=0,ry=0;
@@ -4855,7 +5207,12 @@ function initMatrix(){
       drops[i]++;
     });
   }
-  setInterval(draw,50);
+  let matLastT=0;
+  function matLoop(ts){
+    if(!document.hidden && ts-matLastT>80){ draw(); matLastT=ts; }
+    requestAnimationFrame(matLoop);
+  }
+  requestAnimationFrame(matLoop);
 }
 
 // ══════════════════════════════════════════════════
@@ -5566,7 +5923,7 @@ function buildRadar(){
     const raw=Math.min(elapsed/BUILD,1);
     const ease=1-Math.pow(1-raw,4); // expo ease-out
 
-    rot+=0.005;
+    rot+=0.003;
     scanR=(scanR+0.8)%(R*1.4);
 
     ctx.clearRect(0,0,W,H);
@@ -8397,20 +8754,84 @@ function updateFinancials(){
 // ══════════════════════════════════════════════════
 let ssData={before:null,after:null};
 
+// ══════════════════════════════════════════════════
+// IMAGE COMPRESSION ENGINE
+// Resizes to max 1600px wide, exports WebP @ 0.72 quality
+// Falls back to JPEG if WebP unsupported
+// Target: ~150-250KB per image — keeps Supabase storage tiny
+// ══════════════════════════════════════════════════
+async function compressImage(file){
+  return new Promise((resolve)=>{
+    const MAX_W = 1600;
+    const QUALITY = 0.72;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        // Calculate output dimensions
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if(w > MAX_W){ h = Math.round(h * MAX_W / w); w = MAX_W; }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Try WebP first, fall back to JPEG
+        const webpData = canvas.toDataURL('image/webp', QUALITY);
+        if(webpData.startsWith('data:image/webp')){
+          resolve({ dataUrl: webpData, ext: 'webp', mime: 'image/webp' });
+        } else {
+          resolve({ dataUrl: canvas.toDataURL('image/jpeg', QUALITY), ext: 'jpg', mime: 'image/jpeg' });
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadCompressedImage(file, side){
+  // Show optimising indicator
+  const placeholder = document.getElementById(`ss-${side}-placeholder`);
+  const prevHTML = placeholder ? placeholder.innerHTML : '';
+  if(placeholder) placeholder.innerHTML = `<div style="font-family:'Space Mono',monospace;font-size:0.52rem;color:var(--neon);letter-spacing:1px;text-align:center;padding:20px 0"><div style="margin-bottom:6px">⟳ Optimising...</div><div style="font-size:0.42rem;color:rgba(255,255,255,0.25)">Compressing image</div></div>`;
+
+  const compressed = await compressImage(file);
+  if(!compressed){ if(placeholder) placeholder.innerHTML=prevHTML; return; }
+
+  // Show preview immediately from compressed data
+  setSS(side, compressed.dataUrl);
+
+  // Upload to Supabase in the background — don't block the UI
+  try{
+    const fname = `screenshots/${Date.now()}_${side}.${compressed.ext}`;
+    // Convert dataUrl to blob
+    const res = await fetch(compressed.dataUrl);
+    const blob = await res.blob();
+    const { data, error } = await sb.storage.from('trade-attachments').upload(fname, blob, {
+      contentType: compressed.mime, upsert: false,
+    });
+    if(error){ console.warn('Screenshot upload failed:', error.message); return; }
+    const { data: pub } = sb.storage.from('trade-attachments').getPublicUrl(fname);
+    if(pub?.publicUrl){
+      ssData[side] = pub.publicUrl; // overwrite dataUrl with CDN URL
+    }
+  } catch(err){ console.warn('Upload error:', err); }
+}
+
 function handleSSfile(input,side){
   const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{ setSS(side,e.target.result); };
-  reader.readAsDataURL(file);
+  uploadCompressedImage(file, side);
 }
 
 function handleSSdrop(event,side){
   event.preventDefault();
   document.getElementById(`ss-${side}-drop`).classList.remove('drag-over');
   const file=event.dataTransfer.files[0]; if(!file||!file.type.startsWith('image/')) return;
-  const reader=new FileReader();
-  reader.onload=e=>{ setSS(side,e.target.result); };
-  reader.readAsDataURL(file);
+  uploadCompressedImage(file, side);
 }
 
 function setSS(side,dataUrl){
@@ -8782,6 +9203,7 @@ function toast(code,msg){
 // BUILD UI
 // ══════════════════════════════════════════════════
 function buildUI(){
+  loadAndApplySettings(); // apply saved settings before any render
   initParticles();
   initCursor();
   initMatrix();
