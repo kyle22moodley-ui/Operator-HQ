@@ -194,8 +194,54 @@ body::after{
   50%{     opacity:1; }
 }
 
-.auth-title{font-family:var(--font-display);font-size:1.8rem;font-weight:900;letter-spacing:4px;color:var(--white);text-transform:uppercase;line-height:1;text-shadow:0 0 30px rgba(255,255,255,0.1);}
-.auth-sub{font-family:var(--font-mono);font-size:0.58rem;letter-spacing:4px;color:var(--muted2);text-transform:uppercase;margin-top:6px;margin-bottom:28px;}
+.auth-title{
+  font-family:var(--font-display);
+  font-size:2.6rem;
+  font-weight:900;
+  letter-spacing:8px;
+  color:var(--white);
+  text-transform:uppercase;
+  line-height:1;
+  position:relative;
+  display:inline-block;
+  text-shadow:
+    0 0 16px rgba(0,255,136,0.6),
+    0 0 40px rgba(0,255,136,0.22),
+    0 0 80px rgba(0,255,136,0.08),
+    0 0 3px rgba(160,60,255,0.35);
+  animation:ambientBreath 5s ease-in-out infinite;
+}
+.auth-title::before,
+.auth-title::after{
+  content:attr(data-text);
+  position:absolute;top:0;left:0;
+  font-family:var(--font-display);
+  font-size:2.6rem;font-weight:900;
+  letter-spacing:8px;text-transform:uppercase;
+  overflow:hidden;pointer-events:none;
+  will-change:transform,opacity;
+}
+.auth-title::before{
+  color:#ff1040;
+  text-shadow:0 0 10px rgba(255,16,64,0.9);
+  animation:glitchRed 2.8s steps(1,end) infinite;
+}
+.auth-title::after{
+  color:#00b4ff;
+  text-shadow:0 0 10px rgba(0,180,255,0.9);
+  animation:glitchBlue 2.8s steps(1,end) infinite;
+}
+.auth-title-purple{
+  position:absolute;top:0;left:0;
+  font-family:var(--font-display);
+  font-size:2.6rem;font-weight:900;
+  letter-spacing:8px;text-transform:uppercase;
+  overflow:hidden;pointer-events:none;
+  color:#c040ff;
+  text-shadow:0 0 10px rgba(192,64,255,0.9);
+  animation:glitchPurple 2.8s steps(1,end) infinite;
+}
+.auth-sub{font-family:var(--font-mono);font-size:0.58rem;letter-spacing:4px;color:var(--muted2);text-transform:uppercase;margin-top:10px;margin-bottom:32px;}
 .auth-card{
   background:var(--glass-bg);
   border:1px solid var(--glass-border);
@@ -259,98 +305,184 @@ body::after{
 .cmd-line{height:1px;background:linear-gradient(90deg,transparent,var(--neon),var(--cyan),var(--mag),transparent);opacity:0.5;animation:lineGlow 4s ease-in-out infinite alternate;}
 @keyframes lineGlow{0%{opacity:0.3;}100%{opacity:0.7;}}
 .cmd-inner{display:flex;align-items:stretch;height:52px;}
-.cmd-logo{display:flex;align-items:center;padding:0 18px;border-right:1px solid var(--border);gap:10px;flex-shrink:0;}
-
-/* ── GLITCH LOGO ─────────────────────────────────── */
-.logo-glitch-wrap{position:relative;display:inline-block;}
-.cmd-t{
-  font-family:var(--font-display);font-size:0.75rem;font-weight:900;
-  letter-spacing:4px;color:var(--white);text-transform:uppercase;
-  position:relative;
+.cmd-logo{
+  display:flex;align-items:center;padding:0 20px;
+  border-right:1px solid var(--border);
+  flex-shrink:0;position:relative;overflow:visible;
 }
+
+/* ══════════════════════════════════════════════════
+   OPERATOR HQ — AMBIENT GLITCH WORDMARK
+══════════════════════════════════════════════════ */
+.cmd-t{
+  font-family:var(--font-display);
+  font-size:1rem;
+  font-weight:900;
+  letter-spacing:5px;
+  color:var(--white);
+  text-transform:uppercase;
+  position:relative;
+  /* Ambient text glow — layered, colour-themed */
+  text-shadow:
+    0 0 12px rgba(0,255,136,0.55),
+    0 0 28px rgba(0,255,136,0.2),
+    0 0 60px rgba(0,255,136,0.08),
+    0 0 2px rgba(160,60,255,0.3);
+  animation:ambientBreath 5s ease-in-out infinite;
+}
+@keyframes ambientBreath{
+  0%,100%{
+    text-shadow:
+      0 0 10px rgba(0,255,136,0.5),
+      0 0 24px rgba(0,255,136,0.18),
+      0 0 50px rgba(0,255,136,0.07),
+      0 0 2px rgba(160,60,255,0.25);
+  }
+  50%{
+    text-shadow:
+      0 0 16px rgba(0,255,136,0.8),
+      0 0 40px rgba(0,255,136,0.3),
+      0 0 80px rgba(0,255,136,0.12),
+      0 0 4px rgba(160,60,255,0.5),
+      0 0 60px rgba(0,120,255,0.1);
+  }
+}
+
+/* Three glitch layers — red, blue, purple */
 .cmd-t::before,
 .cmd-t::after{
   content:attr(data-text);
   position:absolute;top:0;left:0;
-  font-family:var(--font-display);font-size:0.75rem;font-weight:900;
-  letter-spacing:4px;text-transform:uppercase;
+  font-family:var(--font-display);
+  font-size:1rem;font-weight:900;
+  letter-spacing:5px;text-transform:uppercase;
   overflow:hidden;pointer-events:none;
+  will-change:transform,opacity;
 }
+/* RED layer — top slice */
 .cmd-t::before{
-  color:#ff0040;
-  animation:glitchRed 4.5s infinite;
-  clip-path:polygon(0 0,100% 0,100% 35%,0 35%);
+  color:#ff1040;
+  text-shadow:0 0 8px rgba(255,16,64,0.8);
+  animation:glitchRed 2.8s steps(1,end) infinite;
 }
+/* BLUE layer — bottom slice */
 .cmd-t::after{
   color:#00b4ff;
-  animation:glitchBlue 4.5s infinite;
-  clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%);
+  text-shadow:0 0 8px rgba(0,180,255,0.8);
+  animation:glitchBlue 2.8s steps(1,end) infinite;
+}
+/* PURPLE layer — mid slice, separate span */
+.cmd-t-purple{
+  content:attr(data-text);
+  position:absolute;top:0;left:0;
+  font-family:var(--font-display);
+  font-size:1rem;font-weight:900;
+  letter-spacing:5px;text-transform:uppercase;
+  overflow:hidden;pointer-events:none;
+  color:#c040ff;
+  text-shadow:0 0 8px rgba(192,64,255,0.8);
+  animation:glitchPurple 2.8s steps(1,end) infinite;
 }
 
 @keyframes glitchRed{
-  0%,89%      {transform:translate(0,0);    opacity:0;}
-  90%         {transform:translate(-2px,1px);opacity:1;clip-path:polygon(0 10%,100% 10%,100% 40%,0 40%);}
-  91%         {transform:translate(2px,-1px);opacity:0.8;clip-path:polygon(0 5%,100% 5%,100% 20%,0 20%);}
-  92%         {transform:translate(-1px,2px);opacity:1;clip-path:polygon(0 25%,100% 25%,100% 55%,0 55%);}
-  93%         {transform:translate(0,0);    opacity:0;}
-  94%,96%     {transform:translate(-3px,0); opacity:0.9;clip-path:polygon(0 0%,100% 0%,100% 30%,0 30%);}
-  95%         {transform:translate(3px,1px);opacity:0;}
-  97%,100%    {transform:translate(0,0);    opacity:0;}
+  0%,74%,100%{ opacity:0;transform:none;clip-path:none; }
+  75%   { opacity:1;transform:translateX(-28px) skewX(-5deg); clip-path:polygon(0 0%,100% 0%,100% 12%,0 12%); }
+  75.3% { opacity:1;transform:translateX(-8px)  skewX(-1deg); clip-path:polygon(0 14%,100% 14%,100% 24%,0 24%); }
+  75.6% { opacity:1;transform:translateX(-40px) skewX(-7deg); clip-path:polygon(0 26%,100% 26%,100% 34%,0 34%); }
+  75.9% { opacity:1;transform:translateX(-6px);               clip-path:polygon(0 36%,100% 36%,100% 44%,0 44%); }
+  76.2% { opacity:1;transform:translateX(-32px) skewX(-4deg); clip-path:polygon(0 46%,100% 46%,100% 56%,0 56%); }
+  76.5% { opacity:1;transform:translateX(-14px) skewX(-2deg); clip-path:polygon(0 58%,100% 58%,100% 67%,0 67%); }
+  76.8% { opacity:1;transform:translateX(-50px) skewX(-8deg); clip-path:polygon(0 69%,100% 69%,100% 78%,0 78%); }
+  77.1% { opacity:1;transform:translateX(-10px) skewX(-1deg); clip-path:polygon(0 80%,100% 80%,100% 100%,0 100%); }
+  77.5% { opacity:0.6;transform:translateX(-12px); clip-path:polygon(0 0%,100% 0%,100% 60%,0 60%); }
+  77.9% { opacity:0.3;transform:translateX(-4px);  clip-path:polygon(0 0%,100% 0%,100% 30%,0 30%); }
+  78.3% { opacity:0;transform:none;clip-path:none; }
+  87%   { opacity:1;transform:translateX(-18px) skewX(-3deg); clip-path:polygon(0 10%,100% 10%,100% 22%,0 22%); }
+  87.3% { opacity:1;transform:translateX(-35px) skewX(-5deg); clip-path:polygon(0 44%,100% 44%,100% 56%,0 56%); }
+  87.6% { opacity:1;transform:translateX(-10px);               clip-path:polygon(0 70%,100% 70%,100% 84%,0 84%); }
+  88%   { opacity:0.3;transform:translateX(-3px); clip-path:polygon(0 0%,100% 0%,100% 50%,0 50%); }
+  88.3% { opacity:0;transform:none;clip-path:none; }
 }
 
 @keyframes glitchBlue{
-  0%,89%      {transform:translate(0,0);    opacity:0;}
-  90%         {transform:translate(2px,-1px);opacity:0;}
-  91%         {transform:translate(-2px,1px);opacity:1;clip-path:polygon(0 60%,100% 60%,100% 85%,0 85%);}
-  92%         {transform:translate(1px,-2px);opacity:0.8;clip-path:polygon(0 70%,100% 70%,100% 100%,0 100%);}
-  93%         {transform:translate(-1px,0);  opacity:0;}
-  94%         {transform:translate(3px,1px); opacity:0.9;clip-path:polygon(0 55%,100% 55%,100% 80%,0 80%);}
-  95%         {transform:translate(-3px,0);  opacity:1;clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%);}
-  96%         {transform:translate(0,0);     opacity:0;}
-  97%,100%    {transform:translate(0,0);     opacity:0;}
+  0%,74%,100%{ opacity:0;transform:none;clip-path:none; }
+  75%   { opacity:0; }
+  75.3% { opacity:1;transform:translateX(32px)  skewX(5deg);  clip-path:polygon(0 0%,100% 0%,100% 10%,0 10%); }
+  75.6% { opacity:1;transform:translateX(10px)  skewX(1deg);  clip-path:polygon(0 12%,100% 12%,100% 22%,0 22%); }
+  75.9% { opacity:1;transform:translateX(44px)  skewX(7deg);  clip-path:polygon(0 24%,100% 24%,100% 33%,0 33%); }
+  76.2% { opacity:1;transform:translateX(8px);                clip-path:polygon(0 35%,100% 35%,100% 45%,0 45%); }
+  76.5% { opacity:1;transform:translateX(36px)  skewX(5deg);  clip-path:polygon(0 47%,100% 47%,100% 57%,0 57%); }
+  76.8% { opacity:1;transform:translateX(16px)  skewX(2deg);  clip-path:polygon(0 59%,100% 59%,100% 69%,0 69%); }
+  77.1% { opacity:1;transform:translateX(52px)  skewX(8deg);  clip-path:polygon(0 71%,100% 71%,100% 82%,0 82%); }
+  77.4% { opacity:1;transform:translateX(12px);               clip-path:polygon(0 84%,100% 84%,100% 100%,0 100%); }
+  77.8% { opacity:0.6;transform:translateX(14px); clip-path:polygon(0 40%,100% 40%,100% 100%,0 100%); }
+  78.2% { opacity:0.3;transform:translateX(5px);  clip-path:polygon(0 60%,100% 60%,100% 100%,0 100%); }
+  78.6% { opacity:0;transform:none;clip-path:none; }
+  87%   { opacity:1;transform:translateX(22px)  skewX(4deg);  clip-path:polygon(0 5%,100% 5%,100% 18%,0 18%); }
+  87.3% { opacity:1;transform:translateX(40px)  skewX(6deg);  clip-path:polygon(0 48%,100% 48%,100% 62%,0 62%); }
+  87.6% { opacity:1;transform:translateX(12px);               clip-path:polygon(0 74%,100% 74%,100% 88%,0 88%); }
+  88%   { opacity:0.3;transform:translateX(4px); clip-path:polygon(0 50%,100% 50%,100% 100%,0 100%); }
+  88.3% { opacity:0;transform:none;clip-path:none; }
 }
 
-/* Emblem glitch flicker */
-/* ── CMD BAR LOGO — mini scope ── */
-.cmd-em{
-  width:28px;height:28px;
-  position:relative;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
-  animation:emblemGlitch 5s infinite;
-}
-.cmd-em svg{ width:100%;height:100%;overflow:visible; }
-.cmd-em::before{
-  content:'';position:absolute;inset:-6px;border-radius:50%;
-  background:radial-gradient(circle,rgba(0,255,136,0.14) 0%,transparent 70%);
-  animation:scopeGlow 4s ease-in-out infinite;
-  pointer-events:none;
-}
-@keyframes emblemGlitch{
-  0%,88%,100%{ filter:none; transform:translate(0,0); }
-  90%{ filter:drop-shadow(0 0 3px #ff0040) hue-rotate(-120deg); transform:translate(-1px,0); }
-  91%{ filter:drop-shadow(0 0 3px #00b4ff) hue-rotate(60deg);  transform:translate(1px,0); }
-  92%{ filter:none; transform:translate(0,0); }
-  94%{ filter:drop-shadow(0 0 2px #ff0040); transform:translate(1px,-1px); }
-  95%{ filter:none; transform:translate(0,0); }
+@keyframes glitchPurple{
+  0%,73%,100%{ opacity:0;transform:none;clip-path:none; }
+  73.5% { opacity:1;transform:translateX(36px)  skewX(7deg);  clip-path:polygon(0 8%,100% 8%,100% 20%,0 20%); }
+  73.9% { opacity:1;transform:translateX(-30px) skewX(-6deg); clip-path:polygon(0 28%,100% 28%,100% 40%,0 40%); }
+  74.3% { opacity:1;transform:translateX(48px)  skewX(9deg);  clip-path:polygon(0 48%,100% 48%,100% 60%,0 60%); }
+  74.7% { opacity:1;transform:translateX(-20px) skewX(-3deg); clip-path:polygon(0 65%,100% 65%,100% 77%,0 77%); }
+  75.1% { opacity:1;transform:translateX(28px)  skewX(4deg);  clip-path:polygon(0 82%,100% 82%,100% 95%,0 95%); }
+  75.5% { opacity:0.5;transform:translateX(10px); clip-path:polygon(0 20%,100% 20%,100% 65%,0 65%); }
+  75.9% { opacity:0;transform:none;clip-path:none; }
+  87%   { opacity:1;transform:translateX(-38px) skewX(-7deg); clip-path:polygon(0 22%,100% 22%,100% 38%,0 38%); }
+  87.4% { opacity:1;transform:translateX(28px)  skewX(5deg);  clip-path:polygon(0 52%,100% 52%,100% 68%,0 68%); }
+  87.8% { opacity:0.4;transform:translateX(-8px);             clip-path:polygon(0 30%,100% 30%,100% 70%,0 70%); }
+  88.2% { opacity:0;transform:none;clip-path:none; }
 }
 
+@keyframes glitchWhite{
+  0%,74%,100%{ opacity:0;transform:none;clip-path:none; }
+  75%   { opacity:1;transform:translateX(-6px);  clip-path:polygon(0 0%,100% 0%,100% 8%,0 8%); }
+  75.4% { opacity:1;transform:translateX(8px);   clip-path:polygon(0 32%,100% 32%,100% 40%,0 40%); }
+  75.8% { opacity:1;transform:translateX(-12px); clip-path:polygon(0 62%,100% 62%,100% 70%,0 70%); }
+  76.2% { opacity:1;transform:translateX(5px);   clip-path:polygon(0 88%,100% 88%,100% 100%,0 100%); }
+  76.6% { opacity:0;transform:none;clip-path:none; }
+}
 
-/* Scanline sweep across the whole logo area on glitch */
+/* Scanline sweep across logo on glitch */
 .cmd-logo::after{
   content:'';position:absolute;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(0,255,136,0.4),transparent);
-  animation:logoScanline 4.5s infinite;
-  pointer-events:none;
-  opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(0,255,136,0.5),rgba(160,60,255,0.3),transparent);
+  animation:logoScanline 2.8s steps(1,end) infinite;
+  pointer-events:none;opacity:0;
 }
 @keyframes logoScanline{
-  0%,88%  {opacity:0;top:0%;}
-  90%     {opacity:1;top:20%;}
-  91%     {opacity:0.6;top:60%;}
-  92%     {opacity:0;top:100%;}
-  93%,100%{opacity:0;top:0%;}
+  0%,77%  {opacity:0;top:0%;}
+  79%     {opacity:1;top:10%;}
+  80%     {opacity:0.8;top:50%;}
+  81%     {opacity:0.4;top:90%;}
+  82%,100%{opacity:0;top:0%;}
 }
-.cmd-s{font-family:var(--font-mono);font-size:0.44rem;letter-spacing:3px;color:var(--muted2);text-transform:uppercase;}
+
+.cmd-t-white{
+  position:absolute;top:0;left:0;
+  font-family:var(--font-display);
+  font-size:1rem;font-weight:900;
+  letter-spacing:5px;text-transform:uppercase;
+  overflow:hidden;pointer-events:none;
+  color:#ffffff;
+  animation:glitchWhite 2.8s steps(1,end) infinite;
+}
+.auth-title-white{
+  position:absolute;top:0;left:0;
+  font-family:var(--font-display);
+  font-size:2.6rem;font-weight:900;
+  letter-spacing:8px;text-transform:uppercase;
+  overflow:hidden;pointer-events:none;
+  color:#ffffff;
+  animation:glitchWhite 2.8s steps(1,end) infinite;
+}
+.cmd-s{font-family:var(--font-mono);font-size:0.4rem;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:2px;}
 .cmd-op{display:flex;align-items:center;padding:0 16px;border-right:1px solid var(--border);gap:8px;}
 .cmd-av{width:28px;height:28px;border-radius:50%;border:1px solid;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:0.6rem;font-weight:800;}
 .cmd-op-n{font-family:var(--font-display);font-size:0.68rem;font-weight:700;letter-spacing:2px;color:var(--white);text-transform:uppercase;}
@@ -2731,51 +2863,8 @@ body::after{
 <div id="auth-screen">
   <div class="auth-wrap">
     <div class="auth-logo">
-      <div class="auth-emblem">
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="glassBase" cx="40%" cy="35%" r="65%">
-              <stop offset="0%"   stop-color="#1a2a20" stop-opacity="0.9"/>
-              <stop offset="100%" stop-color="#020806" stop-opacity="1"/>
-            </radialGradient>
-            <radialGradient id="glassSheen" cx="38%" cy="30%" r="45%">
-              <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.07"/>
-              <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-            </radialGradient>
-            <filter id="softGlow">
-              <feGaussianBlur stdDeviation="2" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-
-          <!-- Glass body -->
-          <circle cx="50" cy="50" r="48" fill="url(#glassBase)"/>
-
-          <!-- Outer ring — single clean stroke -->
-          <circle cx="50" cy="50" r="47.5" fill="none"
-            stroke="#00ff88" stroke-width="0.8" opacity="0.35"/>
-
-          <!-- Inner ring — tighter, dimmer -->
-          <circle cx="50" cy="50" r="32" fill="none"
-            stroke="#00ff88" stroke-width="0.5" opacity="0.15"/>
-
-          <!-- Crosshair — four segments, large gap, ultra thin -->
-          <line x1="50" y1="16" x2="50" y2="42" stroke="#00ff88" stroke-width="0.7" opacity="0.7"/>
-          <line x1="50" y1="58" x2="50" y2="84" stroke="#00ff88" stroke-width="0.7" opacity="0.7"/>
-          <line x1="16" y1="50" x2="42" y2="50" stroke="#00ff88" stroke-width="0.7" opacity="0.7"/>
-          <line x1="58" y1="50" x2="84" y2="50" stroke="#00ff88" stroke-width="0.7" opacity="0.7"/>
-
-          <!-- Centre dot — tiny, precise -->
-          <circle cx="50" cy="50" r="1.8" fill="#00ff88" opacity="0.9" filter="url(#softGlow)">
-            <animate attributeName="opacity" values="0.9;0.4;0.9" dur="3s" repeatCount="indefinite"/>
-          </circle>
-
-          <!-- Lens sheen — Apple glass highlight -->
-          <circle cx="50" cy="50" r="48" fill="url(#glassSheen)"/>
-        </svg>
-      </div>
-      <div class="auth-title">Operator HQ</div>
-      <div class="auth-sub">Squad Command · v6</div>
+      <div class="auth-title" data-text="Operator HQ">Operator HQ<span class="auth-title-purple" aria-hidden="true">Operator HQ</span><span class="auth-title-white" aria-hidden="true">Operator HQ</span></div>
+      <div class="auth-sub">Squad Command · v8</div>
     </div>
     <div class="auth-card">
       <div class="auth-tabs">
@@ -2814,19 +2903,9 @@ body::after{
   <div class="cmd-line"></div>
   <div class="cmd-inner">
     <div class="cmd-logo" style="position:relative;overflow:visible">
-      <div class="cmd-em">
-        <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
-          <circle cx="14" cy="14" r="12" fill="rgba(0,18,8,0.95)" stroke="#00ff88" stroke-width="0.7" opacity="0.9"/>
-          <line x1="14" y1="3"  x2="14" y2="10" stroke="#00ff88" stroke-width="1.2" opacity="0.85"/>
-          <line x1="14" y1="18" x2="14" y2="25" stroke="#00ff88" stroke-width="1.2" opacity="0.85"/>
-          <line x1="3"  y1="14" x2="10" y2="14" stroke="#00ff88" stroke-width="1.2" opacity="0.85"/>
-          <line x1="18" y1="14" x2="25" y2="14" stroke="#00ff88" stroke-width="1.2" opacity="0.85"/>
-          <circle cx="14" cy="14" r="1.6" fill="#ff3040" opacity="0.95"/>
-        </svg>
-      </div>
       <div>
-        <div class="cmd-t" data-text="Operator HQ">Operator HQ</div>
-        <div class="cmd-s">Squad Command · v6</div>
+        <div class="cmd-t" data-text="Operator HQ">Operator HQ<span class="cmd-t-purple" aria-hidden="true">Operator HQ</span><span class="cmd-t-white" aria-hidden="true">Operator HQ</span></div>
+        <div class="cmd-s">Squad Command · v8</div>
       </div>
     </div>
     <div class="cmd-op">
