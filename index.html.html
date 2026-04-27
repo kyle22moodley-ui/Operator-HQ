@@ -4604,12 +4604,16 @@ function buildRiskDash(){
   const cards = activeAccs.map(a=>{
     const size    = a.size||0;
     const pnl     = a.current_pnl||0;
-    const maxDD   = (a.max_drawdown||10)/100;         // % → decimal
-    const profTgt = (a.profit_target||8)/100;
-    const maxDDValue = size*maxDD;
+    // Max drawdown: only apply if explicitly set and > 0, otherwise use 10%
+    const maxDDpct = (a.max_drawdown && a.max_drawdown > 0) ? a.max_drawdown : 10;
+    const maxDDValue = size * (maxDDpct/100);
     const ddUsed  = pnl < 0 ? Math.abs(pnl) : 0;
-    const ddPct   = maxDDValue > 0 ? ddUsed/maxDDValue*100 : 0;
-    const profPct = pnl > 0 ? pnl/(size*profTgt)*100 : 0;
+    const ddPct   = maxDDValue > 0 ? Math.min(ddUsed/maxDDValue*100, 100) : 0;
+    // Profit target: only calculate if both size and target are meaningful
+    const profTgtPct = (a.profit_target && a.profit_target > 0) ? a.profit_target : 8;
+    const profTgtVal = size * (profTgtPct/100);
+    const profPct = (pnl > 0 && profTgtVal > 0) ? Math.min(pnl/profTgtVal*100, 100) : 0;
+    const maxDD = maxDDpct/100; // keep for riskClass
 
     // Risk state
     let riskClass, riskLabel, alert='', suggestion='';
@@ -4653,7 +4657,7 @@ function buildRiskDash(){
       <div class="risk-meter">
         <div class="risk-meter-hdr">
           <div class="risk-meter-lbl">Profit Target</div>
-          <div class="risk-meter-val" style="color:var(--neon)">${Math.min(profPct,100).toFixed(0)}%</div>
+          <div class="risk-meter-val" style="color:var(--neon)">${profPct.toFixed(0)}%</div>
         </div>
         <div class="risk-meter-track">
           <div class="risk-meter-fill" style="width:${Math.min(profPct,100)}%;background:var(--neon)"></div>
@@ -5595,20 +5599,25 @@ let lockdownActive = false;
 let lockdownClockInterval = null;
 
 function checkKillSwitch(){
-  if(!myAccounts.length || !myTrades.length) return;
+  // Never fire if no trades at all
+  if(!myAccounts.length || !myTrades.length){ deactivateLockdown(); return; }
 
-  // Only accounts with a daily_loss_limit set
-  const guardedAccounts = myAccounts.filter(a => a.daily_loss_limit && a.daily_loss_limit > 0);
-  if(!guardedAccounts.length) return;
+  // Only accounts where daily_loss_limit was explicitly set to a positive number
+  const guardedAccounts = myAccounts.filter(a =>
+    a.daily_loss_limit !== null &&
+    a.daily_loss_limit !== undefined &&
+    parseFloat(a.daily_loss_limit) > 0
+  );
+  if(!guardedAccounts.length){ deactivateLockdown(); return; }
 
-  // Today's date string
-  const today = new Date().toISOString().slice(0,10);
+  // Today's date string — use local date not UTC
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
   // Filter trades to today only
   const todayTrades = myTrades.filter(t => t.trade_date === today);
 
   // Group today's P&L by account_id
-  // Trades without account_id — if only one account exists, attribute to it
   const pnlByAccount = {};
   todayTrades.forEach(t => {
     const accId = t.account_id || (myAccounts.length === 1 ? myAccounts[0].id : null);
@@ -5620,13 +5629,10 @@ function checkKillSwitch(){
   const breached = [];
   guardedAccounts.forEach(acc => {
     const todayPnl = pnlByAccount[acc.id] || 0;
-    const loss = -todayPnl; // positive = loss
-    if(loss >= acc.daily_loss_limit){
-      breached.push({
-        name: acc.name,
-        loss: loss,
-        limit: acc.daily_loss_limit,
-      });
+    const loss = -todayPnl;
+    const limit = parseFloat(acc.daily_loss_limit);
+    if(loss >= limit){
+      breached.push({ name: acc.name, loss, limit });
     }
   });
 
@@ -6470,8 +6476,9 @@ async function buildHomeAccounts(){
     } else {
       myGrid.innerHTML=myAccounts.map(a=>{
         const pnl=a.current_pnl||0;
-        const target=a.size*(a.profit_target/100)||1;
-        const pct=Math.min(Math.abs(pnl)/target*100,100);
+        const tgtPct = (a.profit_target && a.profit_target>0) ? a.profit_target : 8;
+        const target = (a.size||0) * (tgtPct/100);
+        const pct = (target>0 && pnl>0) ? Math.min(pnl/target*100, 100) : 0;
         const col=pnl>=0?'var(--green3)':'var(--red3)';
         const barCol=a.account_type==='passed'?'var(--green3)':a.account_type==='failed'?'var(--red3)':a.account_type==='challenge'?'var(--amber2)':'var(--neon)';
         const statusMap={challenge:'s-challenge',funded:'s-funded',passed:'s-passed',failed:'s-failed',live:'s-live',demo:'s-demo'};
@@ -6479,7 +6486,7 @@ async function buildHomeAccounts(){
           <div class="acct-mini-name">${a.name}</div>
           <div class="acct-mini-op">${a.account_type.toUpperCase()} · $${(a.size||0).toLocaleString()}</div>
           <div class="acct-mini-pnl" style="color:${col}">${pnl>=0?'+':''}$${Math.abs(pnl).toLocaleString()}</div>
-          <div class="acct-mini-sub">${Math.round(pct)}% of ${a.profit_target}% target</div>
+          <div class="acct-mini-sub">${pct>0?Math.round(pct)+'% of '+tgtPct+'% target':'No P&L yet'}</div>
           <div class="acct-mini-bar"><div class="acct-mini-fill" style="width:0%;background:${barCol}" data-w="${pct}"></div></div>
         </div>`;
       }).join('');
@@ -6508,8 +6515,9 @@ async function buildHomeAccounts(){
   const opIdx=(op)=>allOps.findIndex(o=>o.id===op?.id);
   sqGrid.innerHTML=squadAccts.map(a=>{
     const pnl=a.current_pnl||0;
-    const target=a.size*(a.profit_target/100)||1;
-    const pct=Math.min(Math.abs(pnl)/target*100,100);
+    const tgtPct2 = (a.profit_target && a.profit_target>0) ? a.profit_target : 8;
+    const target = (a.size||0) * (tgtPct2/100);
+    const pct = (target>0 && pnl>0) ? Math.min(pnl/target*100, 100) : 0;
     const col=pnl>=0?'var(--green3)':'var(--red3)';
     const barCol=a.account_type==='passed'?'var(--green3)':a.account_type==='failed'?'var(--red3)':a.account_type==='challenge'?'var(--amber2)':'var(--neon)';
     const statusMap={challenge:'s-challenge',funded:'s-funded',passed:'s-passed',failed:'s-failed',live:'s-live',demo:'s-demo'};
@@ -8980,18 +8988,39 @@ function buildAcctDash(){
     const statusLabel=ACC_LABEL_MAP[a.account_type]||a.account_type.toUpperCase();
     const col=ACC_COL_MAP[a.account_type]||'var(--neon)';
 
-    // Compute P&L live from trades for this account
-    const acctTrades=myTrades.filter(t=>t.account_id===a.id||(!t.account_id));
-    const livePnl=acctTrades.reduce((s,t)=>s+(t.pnl||0),0);
-    const pnl=livePnl;
+    // Only attribute trades explicitly linked to this account
+    // Don't auto-attribute unlinked trades — that causes false drawdown
+    const acctTrades = myTrades.filter(t => t.account_id === a.id);
+    const livePnl = acctTrades.reduce((s,t) => s+(t.pnl||0), 0);
+    const pnl = livePnl;
 
     const target=a.size*(a.profit_target/100);
-    const progress=target?Math.min(Math.abs(pnl)/target*100,100):0;
+    const progress=target>0?Math.min(Math.max(pnl/target*100,0),100):0;
     const isPassed=a.account_type==='passed';
     const isFailed=a.account_type==='failed';
-    const drawdownPct=a.max_drawdown||0;
-    const drawdownAllowed=a.account_type==='challenge'?10:5;
-    const ddUsedPct=Math.min(drawdownPct/drawdownAllowed*100,100);
+
+    // Drawdown — only track if user explicitly set a max_drawdown limit
+    const hasDD = a.max_drawdown !== null && a.max_drawdown !== undefined && parseFloat(a.max_drawdown) > 0;
+    const drawdownAllowed = hasDD ? parseFloat(a.max_drawdown) : null;
+    const drawdownAllowedVal = hasDD ? a.size * (drawdownAllowed/100) : 0;
+    const ddLostDollars = pnl < 0 ? Math.abs(pnl) : 0;
+    const ddUsedPct = hasDD && drawdownAllowedVal > 0 ? Math.min(ddLostDollars/drawdownAllowedVal*100, 100) : 0;
+    const ddUsedDisplay = a.size > 0 ? (ddLostDollars/a.size*100).toFixed(1) : '0.0';
+    const ddBar = hasDD ? `
+      <div class="acc-prog-wrap">
+        <div class="acc-prog-lbl">
+          <span>Drawdown Used</span>
+          <span style="color:${ddUsedPct>70?'var(--red3)':ddUsedPct>40?'var(--amber2)':'var(--muted2)'}">
+            ${ddUsedDisplay}% / ${drawdownAllowed}% max
+          </span>
+        </div>
+        <div class="acc-prog-bar">
+          <div class="acc-prog-fill" style="width:0%;background:${ddUsedPct>70?'var(--red3)':ddUsedPct>40?'var(--amber2)':'var(--neon2)'}" data-w="${ddUsedPct}"></div>
+        </div>
+      </div>` : `
+      <div style="font-family:'Space Mono',monospace;font-size:0.48rem;color:rgba(255,255,255,0.15);letter-spacing:1px;padding:6px 0">
+        No drawdown limit set — <span style="color:rgba(0,255,136,0.35);cursor:pointer" onclick="editAccountStatus('${a.id}')">edit account to add one</span>
+      </div>`;
 
     // Build mini equity data from trades for this account
     let cum=0;
@@ -9013,14 +9042,11 @@ function buildAcctDash(){
       </div>
       <!-- PROFIT PROGRESS -->
       <div class="acc-prog-wrap">
-        <div class="acc-prog-lbl"><span>Profit Progress</span><span style="color:${pnl>=0?'var(--green3)':'var(--red3)'}">${Math.round(progress)}% of target</span></div>
+        <div class="acc-prog-lbl"><span>Profit Progress</span><span style="color:${pnl>=0?'var(--green3)':'var(--red3)'}">${pnl>=0?Math.round(progress)+'% of target':'–$'+Math.abs(pnl).toLocaleString()}</span></div>
         <div class="acc-prog-bar"><div class="acc-prog-fill" style="width:0%;background:${pnl>=0?'var(--green3)':'var(--red3)'}" data-w="${progress}"></div></div>
       </div>
       <!-- DRAWDOWN -->
-      <div class="acc-prog-wrap">
-        <div class="acc-prog-lbl"><span>Drawdown Used</span><span style="color:${ddUsedPct>70?'var(--red3)':'var(--muted2)'}">${drawdownPct.toFixed(1)}% / ${drawdownAllowed}% max</span></div>
-        <div class="acc-prog-bar"><div class="acc-prog-fill" style="width:0%;background:${ddUsedPct>70?'var(--red3)':ddUsedPct>40?'var(--amber2)':'var(--neon2)'}" data-w="${ddUsedPct}"></div></div>
-      </div>
+      ${ddBar}
       <!-- MINI EQUITY CHART -->
       ${eqPoints.length>1?`
       <div style="margin-top:10px">
@@ -9064,51 +9090,66 @@ function showAddAccountModal(){
   title.textContent='ADD ACCOUNT';
   body.innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div><div class="form-label">Account Name</div><input class="form-input" id="ma-name" placeholder="e.g. FTMO $200K"></div>
-      <div><div class="form-label">Account Size ($)</div><input class="form-input" type="number" id="ma-size" placeholder="200000"></div>
-      <div><div class="form-label">Type / Status</div><select class="form-select" id="ma-type">
+      <div><div class="form-label">Account Name</div><input class="form-input" id="ma-name" placeholder="e.g. $10 Flip Challenge"></div>
+      <div><div class="form-label">Account Size ($)</div><input class="form-input" type="number" id="ma-size" placeholder="10000"></div>
+      <div><div class="form-label">Type</div><select class="form-select" id="ma-type">
         <option value="challenge">Challenge</option>
         <option value="funded">Funded</option>
-        <option value="passed">Passed ✓</option>
-        <option value="failed">Failed ✗</option>
         <option value="live">Live</option>
         <option value="demo">Demo</option>
+        <option value="passed">Passed ✓</option>
+        <option value="failed">Failed ✗</option>
       </select></div>
-      <div><div class="form-label">Profit Target (%)</div><input class="form-input" type="number" id="ma-target" placeholder="8" value="8"></div>
-      <div><div class="form-label">Max Drawdown (%)</div><input class="form-input" type="number" id="ma-dd" placeholder="0.0" step="0.1"></div>
       <div><div class="form-label">Date Started</div><input class="form-input" type="date" id="ma-date"></div>
-      <div style="grid-column:1/-1;border-top:1px solid rgba(255,51,51,0.2);padding-top:10px;margin-top:2px">
-        <div class="form-label" style="color:rgba(255,80,80,0.8)">⚠ Daily Loss Limit ($) — Kill Switch</div>
-        <input class="form-input" type="number" id="ma-daily-loss" placeholder="e.g. 1000 — leave blank to disable" step="1"
-          style="border-color:rgba(255,51,51,0.25);margin-top:4px">
-        <div style="font-family:'Space Mono',monospace;font-size:0.46rem;color:rgba(255,80,80,0.35);letter-spacing:1px;margin-top:4px">
-          Dashboard locks if today's losses on this account reach this amount
+
+      <div style="grid-column:1/-1;border-top:1px solid rgba(0,255,136,0.08);padding-top:12px;margin-top:2px">
+        <div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(0,255,136,0.4);text-transform:uppercase;margin-bottom:8px">Targets & Rules — set these to match your prop firm or personal rules</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <div class="form-label">Profit Target (%)</div>
+            <div style="font-family:'Space Mono',monospace;font-size:0.42rem;color:rgba(255,255,255,0.2);margin-bottom:4px">e.g. 8 for FTMO, or 100000 for your $10 flip</div>
+            <input class="form-input" type="number" id="ma-target" placeholder="8" step="0.1">
+          </div>
+          <div>
+            <div class="form-label">Max Drawdown Limit (%)</div>
+            <div style="font-family:'Space Mono',monospace;font-size:0.42rem;color:rgba(255,255,255,0.2);margin-bottom:4px">e.g. 10 for FTMO, or your own rule. Leave blank = no limit tracked</div>
+            <input class="form-input" type="number" id="ma-dd" placeholder="e.g. 10" step="0.1">
+          </div>
         </div>
+      </div>
+
+      <div style="grid-column:1/-1;border-top:1px solid rgba(255,51,51,0.15);padding-top:12px;margin-top:2px">
+        <div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(255,80,80,0.5);text-transform:uppercase;margin-bottom:8px">Kill Switch — optional daily protection</div>
+        <div class="form-label" style="color:rgba(255,80,80,0.7)">Daily Loss Limit ($)</div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.42rem;color:rgba(255,255,255,0.2);margin-bottom:4px">Platform locks if you lose this amount today. Leave blank to disable.</div>
+        <input class="form-input" type="number" id="ma-daily-loss" placeholder="Leave blank to disable" step="0.01"
+          style="border-color:rgba(255,51,51,0.2)">
       </div>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn-save" onclick="addAccountFull()">ADD ACCOUNT</button>
       <button class="btn-outline" onclick="closeModal()">Cancel</button>
     </div>`;
-  document.getElementById('modal')?.classList.add('open');
+  document.getElementById('modal').classList.add('open');
 }
 
 async function addAccountFull(){
   const n=document.getElementById('ma-name')?.value.trim();
   if(!n){ toast('ERROR','Account name required'); return; }
-  const dailyLoss = parseFloat(document.getElementById('ma-daily-loss')?.value)||null;
+  const ddVal = document.getElementById('ma-dd')?.value;
+  const dailyLoss = document.getElementById('ma-daily-loss')?.value;
   const a={
     operator_id:currentOp.id,
     name:n,
     size:parseFloat(document.getElementById('ma-size')?.value)||0,
     account_type:document.getElementById('ma-type')?.value,
-    profit_target:parseFloat(document.getElementById('ma-target')?.value)||8,
-    max_drawdown:parseFloat(document.getElementById('ma-dd')?.value)||0,
+    profit_target:parseFloat(document.getElementById('ma-target')?.value)||null,
+    max_drawdown:ddVal&&ddVal!==''?parseFloat(ddVal):null,
     started_date:document.getElementById('ma-date')?.value||null,
-    daily_loss_limit: dailyLoss,
+    daily_loss_limit:dailyLoss&&dailyLoss!==''?parseFloat(dailyLoss):null,
   };
   const{data,error}=await sb.from('accounts').insert(a).select().single();
-  if(data){ myAccounts.push(data); buildAcctDash(); closeModal(); checkAchievements(); toast('ACCOUNT','Account added — ready to track'); }
+  if(data){ myAccounts.push(data); buildAcctDash(); closeModal(); checkAchievements(); toast('ACCOUNT','Account added'); }
   else toast('ERROR',error?.message||'Failed to add account');
 }
 
