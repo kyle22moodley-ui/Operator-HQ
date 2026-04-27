@@ -2756,6 +2756,47 @@ body::after{
   font-family:'Space Mono',monospace;font-size:0.5rem;letter-spacing:1px;padding:6px 12px;
   cursor:pointer;transition:all 0.2s;margin-left:16px;}
 .sp-btn:hover{border-color:rgba(0,255,136,0.4);color:var(--neon);}
+/* ══════════════════════════════════════════════════
+   SETTINGS — functional CSS classes
+══════════════════════════════════════════════════ */
+
+/* Compact mode — tighter spacing everywhere */
+body.compact-mode .sec{ padding:10px 14px !important; }
+body.compact-mode .sh{ margin-bottom:10px !important; }
+body.compact-mode .kpi-card{ padding:10px 12px !important; }
+body.compact-mode .nav-i{ padding:5px 12px !important; }
+body.compact-mode .kpi-v{ font-size:clamp(0.8rem,2vw,1.2rem) !important; }
+body.compact-mode .hh-name{ font-size:1.4rem !important; }
+body.compact-mode .trade-row{ padding:6px 10px !important; }
+
+/* Performance mode — kill all expensive visuals */
+body.perf-mode #p-canvas,
+body.perf-mode #matrix-canvas{ display:none !important; }
+body.perf-mode .app-layout *,
+body.perf-mode .cmd-bar *{
+  animation-duration:0.01s !important;
+  transition-duration:0.05s !important;
+}
+body.perf-mode .rstat-scan,
+body.perf-mode .rstat-hex-bg{ display:none !important; }
+body.perf-mode .cmd-t::before,
+body.perf-mode .cmd-t::after,
+body.perf-mode .cmd-t-purple,
+body.perf-mode .cmd-t-white{ display:none !important; }
+
+/* Chat hidden — collapse grid column so no dead space */
+body.chat-hidden .app-layout{
+  grid-template-columns:220px 1fr !important;
+}
+body.chat-hidden .chat-col{
+  display:none !important;
+}
+@media(max-width:1200px){
+  body.chat-hidden .app-layout{
+    grid-template-columns:200px 1fr !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -5240,43 +5281,57 @@ function _saveSettings(patch){
   return s;
 }
 function applyScale(v){
-  document.getElementById('set-scale-val').textContent=v+'%';
-  document.documentElement.style.fontSize=(v/100)+'em';
-  _saveSettings({scale:parseInt(v)});
+  const val = parseInt(v);
+  const el = document.getElementById('set-scale-val');
+  if(el) el.textContent = val+'%';
+  document.documentElement.style.fontSize = (val/100)+'em';
+  _saveSettings({scale:val});
 }
 function applyCompact(on){
-  document.body.classList.toggle('compact-mode',on);
+  document.body.classList.toggle('compact-mode', on);
   _saveSettings({compact:on});
 }
 function applyChatVisibility(hide){
-  const col=document.querySelector('.chat-col');
-  if(col) col.style.display=hide?'none':'';
+  // Use body class so the grid column collapses — no dead space
+  document.body.classList.toggle('chat-hidden', hide);
   _saveSettings({hideChat:hide});
 }
 function applyPerfMode(on){
-  document.body.classList.toggle('perf-mode',on);
-  if(on){ const p=document.getElementById('p-canvas'); if(p) p.style.display='none';
-          const m=document.getElementById('matrix-canvas'); if(m) m.style.display='none'; }
-  else  { const p=document.getElementById('p-canvas'); if(p) p.style.display='';
-          const m=document.getElementById('matrix-canvas'); if(m) m.style.display=''; }
+  document.body.classList.toggle('perf-mode', on);
+  // Also directly hide/show canvases for immediate effect
+  ['p-canvas','matrix-canvas'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display = on ? 'none' : '';
+  });
   _saveSettings({perfMode:on});
 }
 function applyRadarAnim(on){
-  window._radarAnimEnabled=on;
+  window._radarAnimEnabled = on;
+  // If radar is currently rendered, stop/start it
+  if(!on){
+    // Find active radar canvas and stop its loop
+    const rc = document.getElementById('radar-canvas');
+    if(rc) rc.style.opacity = '0.3';
+  } else {
+    const rc = document.getElementById('radar-canvas');
+    if(rc){ rc.style.opacity = ''; buildRadar(); }
+  }
   _saveSettings({radarAnim:on});
 }
 function _loadAndApplySettings(){
-  const s=_getSettings();
-  if(s.scale&&s.scale!==100) document.documentElement.style.fontSize=(s.scale/100)+'em';
-  if(s.compact)   document.body.classList.add('compact-mode');
-  if(s.perfMode)  document.body.classList.add('perf-mode');
-  if(s.hideChat){ const col=document.querySelector('.chat-col'); if(col) col.style.display='none'; }
-  window._radarAnimEnabled = s.radarAnim!==false;
-  // Auto perf-mode on mobile if no saved pref
-  if(!localStorage.getItem('ophq_cfg')&&/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){
-    document.body.classList.add('perf-mode');
-    window._radarAnimEnabled=false;
-  }
+  const s = _getSettings();
+  if(s.scale && s.scale!==100) document.documentElement.style.fontSize = (s.scale/100)+'em';
+  if(s.compact)  document.body.classList.add('compact-mode');
+  if(s.perfMode) document.body.classList.add('perf-mode');
+  if(s.hideChat) document.body.classList.add('chat-hidden');
+  window._radarAnimEnabled = s.radarAnim !== false;
+  // Auto perf-mode on mobile if no saved preference yet
+  try{
+    if(!localStorage.getItem('ophq_cfg') && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){
+      document.body.classList.add('perf-mode');
+      window._radarAnimEnabled = false;
+    }
+  }catch(e){}
 }
 
 // ══════════════════════════════════════════════════
