@@ -2955,6 +2955,21 @@ body.chat-hidden .chat-col{
   </div>
 </div>
 
+<!-- MANAGE CONFLUENCES / SETUPS MODAL -->
+<div class="modal-overlay" id="manage-modal" onclick="if(event.target===this)closeManageModal()" style="display:none">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hdr"><div class="modal-title" id="manage-modal-title">Manage</div><button class="modal-close" onclick="closeManageModal()">✕</button></div>
+    <div style="padding:16px 20px">
+      <div id="manage-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;min-height:40px"></div>
+      <div style="display:flex;gap:8px">
+        <input class="form-input" id="manage-input" placeholder="Type name and press Enter..." style="flex:1" onkeydown="if(event.key==='Enter')addManagedItem()">
+        <button class="btn-save" onclick="addManagedItem()" style="white-space:nowrap">+ Add</button>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:0.42rem;color:rgba(255,255,255,0.2);margin-top:8px;letter-spacing:1px">Click × on any item to remove it. Changes save instantly.</div>
+    </div>
+  </div>
+</div>
+
 <!-- LEVEL UP -->
 <div class="lu-overlay" id="lu-ov" onclick="this.classList.remove('show')">
   <div class="lu-ring"><div class="lu-num" id="lu-n">5</div></div>
@@ -3293,32 +3308,13 @@ body.chat-hidden .chat-col{
             <div class="form-group"><div class="form-label">MFE (R in favour) <span class="mae-badge favorable">favorable</span></div><input type="number" class="form-input" id="t-mfe" placeholder="e.g. 3.2" step="0.1" title="Max Favorable Excursion — how far in your favour before closing"></div>
             <div class="form-group"><div class="form-label">Emotional State</div><select class="form-select" id="t-emo"><option value="focused">Focused</option><option value="calm">Calm</option><option value="patient">Patient</option><option value="anxious">Anxious</option><option value="confident">Confident</option><option value="fomo">⚠ FOMO</option><option value="revenge">⚠ Revenge mode</option></select></div>
             <div class="form-group"><div class="form-label">Market Condition</div><select class="form-select" id="t-mkt"><option value="trending">Trending</option><option value="ranging">Ranging</option><option value="news">News-driven</option><option value="choppy">Choppy</option></select></div>
-            <div class="form-group"><div class="form-label">Setup Type</div><select class="form-select" id="t-setup">
-              <optgroup label="Smart Money Concepts">
-                <option value="OB">Order Block (OB)</option>
-                <option value="OB-Bull">Bullish Order Block</option>
-                <option value="OB-Bear">Bearish Order Block</option>
-                <option value="Breaker Block">Breaker Block</option>
-                <option value="Mitigation Block">Mitigation Block</option>
-                <option value="FVG">Fair Value Gap (FVG)</option>
-                <option value="IFVG">Inverse FVG</option>
-                <option value="Liquidity Sweep">Liquidity Sweep</option>
-                <option value="Liquidity Void">Liquidity Void</option>
-              </optgroup>
-              <optgroup label="Structure">
-                <option value="BOS">Break of Structure (BOS)</option>
-                <option value="MSS">Market Structure Shift (MSS)</option>
-                <option value="CHOCH">Change of Character (CHOCH)</option>
-                <option value="OTE">OTE Retracement</option>
-                <option value="Rejection">Rejection Block</option>
-                <option value="Support/Resistance">Support / Resistance</option>
-              </optgroup>
-              <optgroup label="Other">
-                <option value="News Play">News Play</option>
-                <option value="Scalp">Scalp</option>
-                <option value="Custom">Custom / Other</option>
-              </optgroup>
-            </select></div>
+            <div class="form-group">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <div class="form-label" style="margin:0">Setup Type</div>
+                <button class="btn-outline" onclick="openManageModal('setups')" style="font-size:0.46rem;padding:2px 7px;letter-spacing:1px">+ Manage</button>
+              </div>
+              <select class="form-select" id="t-setup"></select>
+            </div>
             <div class="form-group"><div class="form-label">Followed Strategy?</div><select class="form-select" id="t-strat"><option value="yes">✓ Yes</option><option value="no">✗ No — deviation</option></select></div>
             <div class="form-group"><div class="form-label" style="color:var(--amber2)">⚠ Moved Stop Loss?</div><select class="form-select" id="t-moved-stop"><option value="false">No — SL held firm</option><option value="true">Yes — SL was moved</option></select></div>
             <div class="form-group"><div class="form-label" style="color:var(--amber2)">⚠ Daily Loss Limit Breached?</div><select class="form-select" id="t-daily-breach"><option value="false">No — within limits</option><option value="true">Yes — limit breached</option></select></div>
@@ -3368,23 +3364,18 @@ body.chat-hidden .chat-col{
             </div>
 
           </div>
-          <div class="form-group" style="margin-bottom:10px"><div class="form-label">Confluences (select all that apply)</div>
-            <div class="tag-wrap" id="confluence-tags">
-              <div class="tag selected" style="color:var(--neon);border-color:var(--neon2)" onclick="toggleTag(this)" data-tag="HTF Bias">HTF Bias</div>
-              <div class="tag selected" style="color:var(--blue3);border-color:var(--blue2)" onclick="toggleTag(this)" data-tag="BOS">BOS</div>
-              <div class="tag selected" style="color:var(--amber2);border-color:var(--amber2)" onclick="toggleTag(this)" data-tag="Liquidity Taken">Liquidity Taken</div>
-              <div class="tag" style="color:var(--purple3);border-color:var(--purple2)" onclick="toggleTag(this)" data-tag="FVG">FVG</div>
-              <div class="tag" style="color:var(--green3);border-color:var(--green2)" onclick="toggleTag(this)" data-tag="OB Confluence">OB Confluence</div>
-              <div class="tag" style="color:var(--slate3);border-color:var(--slate2)" onclick="toggleTag(this)" data-tag="PDH/PDL">PDH/PDL</div>
-              <div class="tag" style="color:var(--red3);border-color:var(--red2)" onclick="toggleTag(this)" data-tag="News Avoid">News Avoid</div>
-              <div class="tag" style="color:var(--amber2);border-color:var(--amber2)" onclick="toggleTag(this)" data-tag="London Sweep">London Sweep</div>
+          <div class="form-group" style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div class="form-label" style="margin:0">Confluences</div>
+              <button class="btn-outline" onclick="openManageModal('confluences')" style="font-size:0.46rem;padding:3px 8px;letter-spacing:1px">+ Manage</button>
             </div>
+            <div class="tag-wrap" id="confluence-tags"></div>
           </div>
           <div class="form-group" style="margin-bottom:10px">
-            <div class="form-label">Custom Tags</div>
+            <div class="form-label">Custom Trade Tags</div>
             <div class="tag-wrap" id="custom-tag-display"></div>
             <div style="display:flex;gap:6px;margin-top:6px">
-              <input class="form-input" id="new-tag-input" placeholder="Add custom tag..." style="flex:1;padding:5px 9px;font-size:0.78rem" onkeydown="if(event.key==='Enter')addCustomTagFromInput()">
+              <input class="form-input" id="new-tag-input" placeholder="Add one-off tag..." style="flex:1;padding:5px 9px;font-size:0.78rem" onkeydown="if(event.key==='Enter')addCustomTagFromInput()">
               <button class="btn-outline" onclick="addCustomTagFromInput()" style="padding:5px 12px">+ TAG</button>
             </div>
           </div>
@@ -5380,14 +5371,14 @@ function applyPerfMode(on){
 }
 function applyRadarAnim(on){
   window._radarAnimEnabled = on;
-  // If radar is currently rendered, stop/start it
+  const rc = document.getElementById('radar-canvas');
   if(!on){
-    // Find active radar canvas and stop its loop
-    const rc = document.getElementById('radar-canvas');
-    if(rc) rc.style.opacity = '0.3';
+    if(rc) rc.style.opacity = '0.25';
   } else {
-    const rc = document.getElementById('radar-canvas');
-    if(rc){ rc.style.opacity = ''; buildRadar(); }
+    if(rc){ rc.style.opacity = ''; }
+    // Restart radar loop by rebuilding if home is active
+    const home = document.getElementById('sec-home');
+    if(home && home.classList.contains('active')) buildRadar();
   }
   _saveSettings({radarAnim:on});
 }
@@ -6331,9 +6322,9 @@ function buildRadar(){
       ctx.fillRect(0,Math.random()*H,W,1+Math.random()*3);
     }
 
-    if(animRunning) requestAnimationFrame(drawFrame);
+    if(animRunning && window._radarAnimEnabled!==false) requestAnimationFrame(drawFrame);
   }
-  requestAnimationFrame(drawFrame);
+  if(window._radarAnimEnabled!==false) requestAnimationFrame(drawFrame);
 
   // Pause when off-screen
   const obs=new MutationObserver(()=>{
@@ -6777,17 +6768,22 @@ function toggleNewTradeForm(forceOpen=false){
   const open = forceOpen ? true : w.style.display==='none';
   w.style.display=open?'block':'none';
   if(open){
-    // Only reset date/tags if NOT in edit mode (edit mode pre-fills them)
     if(!editingTradeId){
       const today=new Date(); document.getElementById('t-date').value=fmtDate(today);
       newCustomTags=[]; renderCustomTagDisplay();
-      document.querySelectorAll('#confluence-tags .tag').forEach(t=>{ if(t.classList.contains('selected')) t.classList.remove('selected'); });
+      renderConfluenceTags([]);
+      renderSetupSelect('');
+      setQuality(3);
       resetSSFields();
+    } else {
+      // Edit mode — render with current values
+      renderConfluenceTags(Array.from(document.querySelectorAll('#confluence-tags .tag.selected')).map(t=>t.dataset.tag));
+      renderSetupSelect(document.getElementById('t-setup')?.value||'');
     }
     w.scrollIntoView({behavior:'smooth',block:'start'});
   } else {
     resetSSFields();
-    cancelEditMode(); // always clear edit mode when form closes
+    cancelEditMode();
   }
 }
 
@@ -7274,7 +7270,9 @@ function editTrade(tradeId){
     if(t.confluence_count) document.getElementById('t-conf-count').value=t.confluence_count;
     if(t.invalidation_level) document.getElementById('t-invalid').value=t.invalidation_level;
     setSelect('t-mkt',        t.market_condition||'');
-    setSelect('t-setup',      t.setup_type||'');
+    // Dynamic lists — render first, then set value
+    renderSetupSelect(t.setup_type||'');
+    renderConfluenceTags(t.confluences||[]);
     setSelect('t-strat',      t.followed_strategy?'yes':'no');
     setSelect('t-moved-stop', t.moved_stop?'true':'false');
     setSelect('t-daily-breach', t.daily_loss_breached?'true':'false');
@@ -8834,7 +8832,16 @@ async function sendMsg(){
   const input=document.getElementById('chat-input');
   const msg=input.value.trim(); if(!msg||!currentOp) return;
   input.value='';
-  await sb.from('squad_chat').insert({operator_id:currentOp.id,message:msg,squad_code:SQUAD_CODE});
+  const{data,error}=await sb.from('squad_chat')
+    .insert({operator_id:currentOp.id,message:msg,squad_code:SQUAD_CODE})
+    .select('*, operators(callsign)')
+    .single();
+  if(error){ console.error('Chat send failed:',error.message); input.value=msg; toast('ERROR','Message failed to send — check connection'); return; }
+  // Optimistic push — realtime may be slow
+  if(data){
+    const already = chatMessages.find(m=>m.id===data.id);
+    if(!already){ chatMessages.push({...data, reactions:[]}); renderChat(); }
+  }
 }
 
 async function toggleReaction(msgId, emoji){
@@ -9027,6 +9034,95 @@ async function processSSFile(file, side){
       if(imgEl) imgEl.src=pub.publicUrl;
     }
   } catch(err){ console.warn('Screenshot upload error:',err); }
+}
+
+// ══════════════════════════════════════════════════
+// CUSTOM CONFLUENCES + SETUP TYPES
+// ══════════════════════════════════════════════════
+const DEFAULT_CONFLUENCES=['HTF Bias','BOS','Liquidity Taken','FVG','OB Confluence','PDH/PDL','News Avoid','London Sweep','MSS','CHOCH','Premium/Discount','Inducement'];
+const DEFAULT_SETUPS=['Order Block (OB)','Bullish OB','Bearish OB','Breaker Block','Fair Value Gap (FVG)','Inverse FVG','Liquidity Sweep','BOS Entry','MSS Entry','CHOCH','OTE Retracement','Support/Resistance','News Play','Scalp','Custom'];
+
+function getUserConf(){try{return JSON.parse(localStorage.getItem('ophq_confluences')||'null')||[...DEFAULT_CONFLUENCES];}catch(e){return[...DEFAULT_CONFLUENCES];}}
+function getUserSetups(){try{return JSON.parse(localStorage.getItem('ophq_setups')||'null')||[...DEFAULT_SETUPS];}catch(e){return[...DEFAULT_SETUPS];}}
+function saveUserConf(list){try{localStorage.setItem('ophq_confluences',JSON.stringify(list));}catch(e){}}
+function saveUserSetups(list){try{localStorage.setItem('ophq_setups',JSON.stringify(list));}catch(e){}}
+
+function renderConfluenceTags(selected=[]){
+  const wrap=document.getElementById('confluence-tags'); if(!wrap) return;
+  const list=getUserConf();
+  const COLS=['var(--neon)','var(--blue3)','var(--amber2)','var(--purple3)','var(--green3)','var(--slate3)','var(--red3)','var(--cyan3)'];
+  const BORD=['var(--neon2)','var(--blue2)','var(--amber2)','var(--purple2)','var(--green2)','var(--slate2)','var(--red2)','var(--cyan2)'];
+  wrap.innerHTML=list.map((tag,i)=>{
+    const sel=selected.includes(tag);
+    return `<div class="tag${sel?' selected':''}" style="color:${COLS[i%COLS.length]};border-color:${BORD[i%BORD.length]}" onclick="toggleTag(this)" data-tag="${tag}">${tag}</div>`;
+  }).join('');
+}
+
+function renderSetupSelect(val=''){
+  const sel=document.getElementById('t-setup'); if(!sel) return;
+  sel.innerHTML=getUserSetups().map(s=>`<option value="${s}"${s===val?' selected':''}>${s}</option>`).join('');
+}
+
+let _manageType='';
+function openManageModal(type){
+  _manageType=type;
+  const modal=document.getElementById('manage-modal');
+  const title=document.getElementById('manage-modal-title');
+  if(title) title.textContent=type==='confluences'?'Manage Confluences':'Manage Setup Types';
+  const inp=document.getElementById('manage-input'); if(inp) inp.value='';
+  renderManageList();
+  if(modal) modal.style.display='flex';
+}
+function closeManageModal(){
+  document.getElementById('manage-modal').style.display='none';
+  const sel=Array.from(document.querySelectorAll('#confluence-tags .tag.selected')).map(t=>t.dataset.tag);
+  renderConfluenceTags(sel);
+  renderSetupSelect(document.getElementById('t-setup')?.value||'');
+}
+function renderManageList(){
+  const list=_manageType==='confluences'?getUserConf():getUserSetups();
+  const wrap=document.getElementById('manage-list'); if(!wrap) return;
+  wrap.innerHTML=list.map((item,i)=>`
+    <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);padding:4px 10px;font-family:'Space Mono',monospace;font-size:0.56rem;color:var(--neon)">
+      ${item}
+      <span onclick="removeManagedItem(${i})" style="cursor:pointer;color:var(--red3);margin-left:2px;font-size:0.8rem;line-height:1">×</span>
+    </div>`).join('');
+}
+function addManagedItem(){
+  const inp=document.getElementById('manage-input');
+  const val=inp?.value.trim(); if(!val) return;
+  const list=_manageType==='confluences'?getUserConf():getUserSetups();
+  if(list.includes(val)){toast('INFO','Already in list');return;}
+  list.push(val);
+  _manageType==='confluences'?saveUserConf(list):saveUserSetups(list);
+  inp.value=''; renderManageList();
+}
+function removeManagedItem(idx){
+  const list=_manageType==='confluences'?getUserConf():getUserSetups();
+  list.splice(idx,1);
+  _manageType==='confluences'?saveUserConf(list):saveUserSetups(list);
+  renderManageList();
+}
+
+// Paste screenshot — Ctrl+V anywhere while trade form is open
+function initSSPaste(){
+  document.addEventListener('paste', e=>{
+    const wrap = document.getElementById('new-trade-form-wrap');
+    if(!wrap || wrap.style.display==='none') return;
+    const items = e.clipboardData?.items;
+    if(!items) return;
+    for(const item of items){
+      if(item.type.startsWith('image/')){
+        const file = item.getAsFile();
+        if(!file) return;
+        const side = !ssData.before ? 'before' : 'after';
+        processSSFile(file, side);
+        toast('SCREENSHOT', `Pasted to ${side.toUpperCase()} slot`);
+        e.preventDefault();
+        return;
+      }
+    }
+  });
 }
 
 function handleSSfile(input,side){
