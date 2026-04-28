@@ -2795,12 +2795,11 @@ body.compact-mode .kpi-v{ font-size:clamp(0.8rem,2vw,1.2rem) !important; }
 body.compact-mode .hh-name{ font-size:1.4rem !important; }
 body.compact-mode .trade-row{ padding:6px 10px !important; }
 
-/* Performance mode — kill all expensive visuals */
+/* Performance mode — only affects home base screen */
 body.perf-mode #p-canvas,
 body.perf-mode #matrix-canvas{ display:none !important; }
-/* Kill CSS animations everywhere EXCEPT the radar card which uses canvas rAF */
-body.perf-mode .app-layout *:not(canvas):not(.radar-card):not(.radar-card *):not(.radar-canvas-wrap):not(.radar-canvas-wrap *),
-body.perf-mode .cmd-bar *{
+/* Animation kill scoped to sec-home only, not other tabs */
+body.perf-mode #sec-home *:not(canvas):not(.radar-card):not(.radar-card *):not(.radar-canvas-wrap):not(.radar-canvas-wrap *){
   animation-duration:0.01s !important;
   transition-duration:0.05s !important;
 }
