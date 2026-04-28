@@ -103,6 +103,8 @@ body{
   transform:translate(-50%,-50%);
   transition:all 0.15s ease;
 }
+/* On auth/loader screens use a visible fallback cursor colour */
+#auth-screen ~ .cursor, #loader ~ .cursor{ background:var(--neon); }
 body:has(a:hover) .cursor,
 body:has(button:hover) .cursor,
 body:has([onclick]:hover) .cursor{width:14px;height:14px;}
@@ -2796,7 +2798,8 @@ body.compact-mode .trade-row{ padding:6px 10px !important; }
 /* Performance mode — kill all expensive visuals */
 body.perf-mode #p-canvas,
 body.perf-mode #matrix-canvas{ display:none !important; }
-body.perf-mode .app-layout *,
+/* Scope animation kill to non-canvas elements only — canvas uses rAF not CSS animations */
+body.perf-mode .app-layout *:not(canvas):not(.radar-card):not(.radar-canvas-wrap),
 body.perf-mode .cmd-bar *{
   animation-duration:0.01s !important;
   transition-duration:0.05s !important;
@@ -6053,14 +6056,20 @@ function buildRadar(){
     ctx.closePath();
   }
 
+  let lastTs = 0;
+
   function drawFrame(ts){
     if(!buildT) buildT=ts;
+    if(!lastTs) lastTs=ts;
+    const delta = Math.min(ts - lastTs, 50); // cap at 50ms to avoid jumps after tab switch
+    lastTs = ts;
+
     const elapsed=ts-buildT;
     const raw=Math.min(elapsed/BUILD,1);
     const ease=1-Math.pow(1-raw,4); // expo ease-out
 
-    rot+=0.005;
-    scanR=(scanR+0.8)%(R*1.4);
+    rot += 0.003 * (delta / 16.67); // 0.003 rad at 60fps — consistent across all frame rates
+    scanR=(scanR+0.8*(delta/16.67))%(R*1.4);
 
     ctx.clearRect(0,0,W,H);
 
@@ -6326,10 +6335,16 @@ function buildRadar(){
   }
   if(window._radarAnimEnabled!==false) requestAnimationFrame(drawFrame);
 
-  // Pause when off-screen
+  // Pause/resume when section visibility changes
   const obs=new MutationObserver(()=>{
     const sec=document.getElementById('sec-home');
-    animRunning=sec&&sec.classList.contains('active');
+    const nowActive=sec&&sec.classList.contains('active');
+    if(nowActive&&!animRunning){
+      animRunning=true;
+      if(window._radarAnimEnabled!==false) requestAnimationFrame(drawFrame);
+    } else if(!nowActive){
+      animRunning=false;
+    }
   });
   const sec=document.getElementById('sec-home');
   if(sec) obs.observe(sec,{attributes:true,attributeFilter:['class']});
@@ -8652,10 +8667,27 @@ function previewMission(val){
 }
 
 async function saveProfile(){
-  const u={callsign:document.getElementById('pf-c')?.value?.toUpperCase()||currentOp.callsign,markets:document.getElementById('pf-m')?.value||'',trading_style:document.getElementById('pf-s')?.value||'',income_goal:parseFloat(document.getElementById('pf-g')?.value)||0,mission_statement:document.getElementById('pf-ms')?.value||''};
-  await sb.from('operators').update(u).eq('id',currentOp.id);
-  Object.assign(currentOp,u); syncUI(); updateProfileCard();
-  toast('PROFILE SAVED','Operator file updated — stats synced.');
+  const u={
+    callsign:document.getElementById('pf-c')?.value?.toUpperCase()||currentOp.callsign,
+    markets:document.getElementById('pf-m')?.value||'',
+    trading_style:document.getElementById('pf-s')?.value||'',
+    income_goal:parseFloat(document.getElementById('pf-g')?.value)||0,
+    mission_statement:document.getElementById('pf-ms')?.value||''
+  };
+  const{error}=await sb.from('operators').update(u).eq('id',currentOp.id);
+  if(error){ toast('ERROR',error.message||'Save failed'); return; }
+  // Update local state everywhere
+  Object.assign(currentOp,u);
+  syncUI();
+  updateProfileCard();
+  // Refresh all views that show operator name/callsign
+  buildLeaderboard();
+  buildSquadProfiles();
+  buildRankings();
+  // Refresh home if active
+  const home=document.getElementById('sec-home');
+  if(home?.classList.contains('active')) buildHome();
+  toast('PROFILE SAVED','Operator file updated — squad views refreshed.');
 }
 
 async function addAccount(){
@@ -8870,7 +8902,7 @@ function showSec(name,navEl){
   document.querySelectorAll('.nav-i').forEach(n=>n.classList.remove('active'));
   document.getElementById(`sec-${name}`)?.classList.add('active');
   if(navEl) navEl.classList.add('active');
-  if(name==='home') buildHome();
+  if(name==='home'){ buildHome(); if(window._radarAnimEnabled!==false) setTimeout(buildRadar,50); }
   if(name==='journal') filterTrades();
   if(name==='reviews') buildReviews();
   if(name==='calendar') renderCal();
@@ -9541,7 +9573,7 @@ function toast(code,msg){
 // ══════════════════════════════════════════════════
 function buildUI(){
   initParticles();
-  initCursor();
+  // initCursor already called at page load — skip duplicate
   initMatrix();
   syncUI();
   buildDiscRating();
@@ -10139,6 +10171,8 @@ async function init(){
   sb.auth.onAuthStateChange(async(e,s)=>{ if(e==='SIGNED_IN'&&s?.user&&!currentUser) await bootApp(s.user); });
 }
 try{ _loadAndApplySettings(); }catch(e){}
+// Cursor works on all screens including login — init immediately
+if(!/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) initCursor();
 init();
 </script>
 </body>
