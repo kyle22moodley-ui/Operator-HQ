@@ -2700,6 +2700,30 @@ body::after{
   border-color:rgba(255,80,80,0.25);
 }
 
+/* ── STAR RATING ── */
+.star-rating{ display:flex;gap:4px;margin-top:4px; }
+.star-rating span{
+  font-size:1.2rem;cursor:pointer;color:rgba(255,255,255,0.15);
+  transition:color 0.1s;line-height:1;
+}
+.star-rating span.active{ color:var(--amber2);text-shadow:0 0 8px var(--amber-glow); }
+.star-rating:hover span{ color:rgba(255,180,0,0.3); }
+.star-rating span:hover,
+.star-rating span:hover ~ span{ color:rgba(255,180,0,0.3) !important; }
+.star-rating span:hover,
+.star-rating span.active{ color:var(--amber2) !important; }
+
+/* ── PROCESS SCORE BADGE ── */
+.process-score{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:'Space Mono',monospace;font-size:0.55rem;
+  letter-spacing:1px;padding:3px 8px;
+  border:1px solid rgba(255,180,0,0.3);
+  color:var(--amber2);background:rgba(255,180,0,0.06);
+}
+.process-score.high{ border-color:rgba(0,255,136,0.4);color:var(--neon);background:rgba(0,255,136,0.06); }
+.process-score.low { border-color:rgba(255,51,51,0.4);color:var(--red3);background:rgba(255,51,51,0.06); }
+
 /* ══════════════════════════════════════════════════
    SETTINGS PANEL
 ══════════════════════════════════════════════════ */
@@ -3298,6 +3322,51 @@ body.chat-hidden .chat-col{
             <div class="form-group"><div class="form-label">Followed Strategy?</div><select class="form-select" id="t-strat"><option value="yes">✓ Yes</option><option value="no">✗ No — deviation</option></select></div>
             <div class="form-group"><div class="form-label" style="color:var(--amber2)">⚠ Moved Stop Loss?</div><select class="form-select" id="t-moved-stop"><option value="false">No — SL held firm</option><option value="true">Yes — SL was moved</option></select></div>
             <div class="form-group"><div class="form-label" style="color:var(--amber2)">⚠ Daily Loss Limit Breached?</div><select class="form-select" id="t-daily-breach"><option value="false">No — within limits</option><option value="true">Yes — limit breached</option></select></div>
+
+            <div class="form-group" style="grid-column:1/-1;border-top:1px solid rgba(0,255,136,0.08);padding-top:10px;margin-top:4px">
+              <div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(0,255,136,0.45);text-transform:uppercase;margin-bottom:8px">Pre-Trade Thesis</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+                <div><div class="form-label">Thesis Completed?</div><select class="form-select" id="t-thesis"><option value="yes">✓ Yes — full plan</option><option value="partial">◑ Partial</option><option value="no">✗ No thesis</option></select></div>
+                <div><div class="form-label">Rule Compliant?</div><select class="form-select" id="t-rule"><option value="yes">✓ Yes</option><option value="no">✗ No — violated rule</option></select></div>
+                <div><div class="form-label">Expected R</div><input type="number" class="form-input" id="t-exp-r" placeholder="e.g. 3.0" step="0.1"></div>
+                <div><div class="form-label">Confluence Count</div><input type="number" class="form-input" id="t-conf-count" placeholder="e.g. 4" min="0" max="10"></div>
+              </div>
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1;border-top:1px solid rgba(0,255,136,0.08);padding-top:10px;margin-top:4px">
+              <div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(160,60,255,0.6);text-transform:uppercase;margin-bottom:8px">Exit Analysis</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+                <div><div class="form-label">Exit Reason</div><select class="form-select" id="t-exit-reason">
+                  <option value="target_hit">🎯 Target Hit</option>
+                  <option value="stopped_out">🛑 Stopped Out</option>
+                  <option value="early_exit_valid">✅ Early Exit (plan valid)</option>
+                  <option value="held_past_target">⚠ Held Past Target</option>
+                  <option value="trail_stop">↗ Trail Stop</option>
+                  <option value="manual">Manual Close</option>
+                </select></div>
+                <div><div class="form-label">Emotion at Exit</div><select class="form-select" id="t-emo-exit">
+                  <option value="neutral">Neutral</option>
+                  <option value="relieved">Relieved</option>
+                  <option value="confident">Confident</option>
+                  <option value="regretful">Regretful</option>
+                  <option value="frustrated">Frustrated</option>
+                  <option value="euphoric">Euphoric</option>
+                  <option value="fearful">Fearful</option>
+                </select></div>
+                <div><div class="form-label">Process Quality (1–5)</div>
+                  <div class="star-rating" id="t-quality-stars">
+                    <span onclick="setQuality(1)" data-v="1">★</span>
+                    <span onclick="setQuality(2)" data-v="2">★</span>
+                    <span onclick="setQuality(3)" data-v="3">★</span>
+                    <span onclick="setQuality(4)" data-v="4">★</span>
+                    <span onclick="setQuality(5)" data-v="5">★</span>
+                  </div>
+                  <input type="hidden" id="t-quality" value="3">
+                </div>
+                <div><div class="form-label">Invalidation Level</div><input class="form-input" id="t-invalid" placeholder="e.g. 1.0850 / 18400"></div>
+              </div>
+            </div>
+
           </div>
           <div class="form-group" style="margin-bottom:10px"><div class="form-label">Confluences (select all that apply)</div>
             <div class="tag-wrap" id="confluence-tags">
@@ -6729,6 +6798,17 @@ async function saveTrade(){
 
   const confluences=Array.from(document.querySelectorAll('#confluence-tags .tag.selected')).map(t=>t.dataset.tag);
 
+  // Process Score calculation — 0 to 100, independent of P&L
+  const thesisVal   = document.getElementById('t-thesis').value;
+  const ruleVal     = document.getElementById('t-rule').value;
+  const emoEntry    = document.getElementById('t-emo').value;
+  const exitReason  = document.getElementById('t-exit-reason').value;
+  const goodEmoPts  = ['focused','calm','patient','confident'].includes(emoEntry) ? 25 : emoEntry==='neutral'?15:0;
+  const thesisPts   = thesisVal==='yes'?25:thesisVal==='partial'?12:0;
+  const rulePts     = ruleVal==='yes'?25:0;
+  const exitPts     = ['target_hit','trail_stop','early_exit_valid'].includes(exitReason)?25:exitReason==='stopped_out'?20:exitReason==='manual'?10:0;
+  const processScore = thesisPts + rulePts + goodEmoPts + exitPts;
+
   const tradeData={
     trade_date:date, pair,
     direction:document.getElementById('t-dir').value,
@@ -6741,12 +6821,21 @@ async function saveTrade(){
     hold_time_minutes:parseInt(document.getElementById('t-hold').value)||0,
     mae:parseFloat(document.getElementById('t-mae')?.value)||0,
     mfe:parseFloat(document.getElementById('t-mfe')?.value)||0,
-    emotional_state:document.getElementById('t-emo').value,
+    emotional_state:emoEntry,
+    emotional_state_exit:document.getElementById('t-emo-exit').value,
     market_condition:document.getElementById('t-mkt').value,
     setup_type:document.getElementById('t-setup').value,
     followed_strategy:document.getElementById('t-strat').value==='yes',
     moved_stop:document.getElementById('t-moved-stop').value==='true',
     daily_loss_breached:document.getElementById('t-daily-breach').value==='true',
+    exit_reason:exitReason,
+    pre_trade_thesis_completed:thesisVal==='yes',
+    rule_compliance:ruleVal==='yes',
+    process_quality_rating:parseInt(document.getElementById('t-quality').value)||3,
+    expected_r:parseFloat(document.getElementById('t-exp-r').value)||0,
+    confluence_count:parseInt(document.getElementById('t-conf-count').value)||confluences.length,
+    invalidation_level:document.getElementById('t-invalid').value||'',
+    process_score:processScore,
     confluences, custom_tags:newCustomTags,
     notes:document.getElementById('t-notes').value,
     screenshot_url:ssData.before||'',
@@ -6804,8 +6893,33 @@ async function saveTrade(){
   btn.disabled=false; btn.textContent='⬡ SAVE TRADE';
 }
 
+function setQuality(v){
+  document.getElementById('t-quality').value=v;
+  document.querySelectorAll('#t-quality-stars span').forEach(s=>{
+    s.classList.toggle('active', parseInt(s.dataset.v)<=v);
+  });
+}
+
+function calcProcessScore(t){
+  const thesisPts = t.pre_trade_thesis_completed===true?25:0;
+  const rulePts   = t.rule_compliance===true?25:0;
+  const goodEmo   = ['focused','calm','patient','confident'];
+  const emoPts    = goodEmo.includes(t.emotional_state)?25:t.emotional_state==='neutral'?15:0;
+  const goodExit  = ['target_hit','trail_stop','early_exit_valid'];
+  const exitPts   = goodExit.includes(t.exit_reason)?25:t.exit_reason==='stopped_out'?20:t.exit_reason==='manual'?10:0;
+  // If no process data logged yet, return null to avoid showing 0
+  if(!t.exit_reason && t.pre_trade_thesis_completed===undefined) return null;
+  return thesisPts+rulePts+emoPts+exitPts;
+}
+
+function fmtProcessScore(t){
+  const s = t.process_score!==undefined&&t.process_score!==null ? t.process_score : calcProcessScore(t);
+  if(s===null) return '';
+  const cls = s>=75?'high':s<40?'low':'';
+  return `<div class="process-score ${cls}" title="Process Score — independent of P&L">⬡ ${s}/100</div>`;
+}
+
 function filterTrades(){
-  const search = document.getElementById('j-search')?.value.toLowerCase()||'';
   const result = document.getElementById('j-result')?.value||'';
   const dir    = document.getElementById('j-dir')?.value||'';
   const session= document.getElementById('j-session')?.value||'';
@@ -6882,8 +6996,10 @@ function renderTradeGrid(trades){
         <div class="tc-row"><span class="tc-label">Session</span><span class="tc-val">${t.session||'—'}</span></div>
         <div class="tc-row"><span class="tc-label">Setup</span><span class="tc-val">${t.setup_type||'—'}</span></div>
         <div class="tc-row"><span class="tc-label">R:R</span><span class="tc-val">${t.rr_planned?t.rr_planned+'R planned →':''} ${t.rr_actual?t.rr_actual+'R actual':'—'}</span></div>
+        ${t.exit_reason?`<div class="tc-row"><span class="tc-label">Exit</span><span class="tc-val">${{target_hit:'🎯 Target Hit',stopped_out:'🛑 Stopped Out',early_exit_valid:'✅ Early Exit',held_past_target:'⚠ Held Past Target',trail_stop:'↗ Trail Stop',manual:'Manual'}[t.exit_reason]||t.exit_reason}</span></div>`:''}
         ${t.hold_time_minutes?`<div class="tc-row"><span class="tc-label">Hold Time</span><span class="tc-val">${t.hold_time_minutes}min</span></div>`:''}
       </div>
+      ${fmtProcessScore(t)?`<div style="padding:6px 12px 10px;display:flex;gap:6px;align-items:center">${fmtProcessScore(t)}</div>`:''}
       ${allTags.length?`<div class="tc-tags">${tagHtml}${allTags.length>4?`<span style="font-size:0.56rem;color:var(--muted2)">+${allTags.length-4}</span>`:''}</div>`:''}
     </div>`;
   }).join('');
@@ -7147,6 +7263,16 @@ function editTrade(tradeId){
     setSelect('t-res',        t.result);
     setSelect('t-out',        t.outcome_detail||'');
     setSelect('t-emo',        t.emotional_state||'focused');
+    setSelect('t-emo-exit',   t.emotional_state_exit||'neutral');
+    setSelect('t-exit-reason',t.exit_reason||'target_hit');
+    setSelect('t-thesis',     t.pre_trade_thesis_completed===true?'yes':t.pre_trade_thesis_completed===false?'no':'yes');
+    setSelect('t-rule',       t.rule_compliance===true?'yes':'no');
+    const qual = t.process_quality_rating||3;
+    document.getElementById('t-quality').value=qual;
+    setQuality(qual);
+    if(t.expected_r) document.getElementById('t-exp-r').value=t.expected_r;
+    if(t.confluence_count) document.getElementById('t-conf-count').value=t.confluence_count;
+    if(t.invalidation_level) document.getElementById('t-invalid').value=t.invalidation_level;
     setSelect('t-mkt',        t.market_condition||'');
     setSelect('t-setup',      t.setup_type||'');
     setSelect('t-strat',      t.followed_strategy?'yes':'no');
