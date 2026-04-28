@@ -8864,8 +8864,10 @@ function renderChat(){
 function subscribeChat(){
   chatSub=sb.channel('squad-chat')
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'squad_chat'},async payload=>{
+      // Dedup — ignore if we already have this message id
+      if(chatMessages.find(m=>m.id===payload.new.id)) return;
       const{data}=await sb.from('squad_chat').select('*, operators(callsign), reactions:chat_reactions(*)').eq('id',payload.new.id).single();
-      if(data){ chatMessages.push(data); renderChat(); }
+      if(data && !chatMessages.find(m=>m.id===data.id)){ chatMessages.push(data); renderChat(); }
     })
     .subscribe();
 }
@@ -8876,13 +8878,23 @@ async function sendMsg(){
   input.value='';
   const{data,error}=await sb.from('squad_chat')
     .insert({operator_id:currentOp.id,message:msg})
-    .select('*, operators(callsign)')
+    .select('id')
     .single();
-  if(error){ console.error('Chat send failed:',error.message); input.value=msg; toast('ERROR','Message failed to send — check connection'); return; }
-  // Optimistic push — realtime may be slow
-  if(data){
-    const already = chatMessages.find(m=>m.id===data.id);
-    if(!already){ chatMessages.push({...data, reactions:[]}); renderChat(); }
+  if(error){
+    console.error('Chat send failed:',error.message);
+    input.value=msg;
+    toast('ERROR','Message failed to send — check connection');
+    return;
+  }
+  // Let realtime handle the render — but if it hasn't fired after 2s, fetch manually
+  if(data?.id){
+    setTimeout(async()=>{
+      const already=chatMessages.find(m=>m.id===data.id);
+      if(!already){
+        const{data:row}=await sb.from('squad_chat').select('*, operators(callsign), reactions:chat_reactions(*)').eq('id',data.id).single();
+        if(row){ chatMessages.push(row); renderChat(); }
+      }
+    }, 2000);
   }
 }
 
