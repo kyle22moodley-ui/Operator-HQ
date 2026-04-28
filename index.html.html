@@ -4396,7 +4396,7 @@ async function saveDebrief(){
     Object.assign(existing, updates);
   } else {
     const{data} = await sb.from('mission_logs').insert({
-      operator_id: currentOp.id, squad_code: SQUAD_CODE,
+      operator_id: currentOp.id,
       log_date: today, ...updates
     }).select().single();
     if(data) myLogs.unshift(data);
@@ -8392,7 +8392,6 @@ async function confirmImport(){
   // Build clean insert payload
   const payload = importedTrades.map(t=>({
     operator_id:          currentOp.id,
-    squad_code:           SQUAD_CODE,
     trade_date:           t.trade_date||new Date().toISOString().slice(0,10),
     pair:                 (t.pair||'UNKNOWN').substring(0,20),
     direction:            t.direction==='SHORT'?'SHORT':'LONG',
@@ -8833,7 +8832,7 @@ async function sendMsg(){
   const msg=input.value.trim(); if(!msg||!currentOp) return;
   input.value='';
   const{data,error}=await sb.from('squad_chat')
-    .insert({operator_id:currentOp.id,message:msg,squad_code:SQUAD_CODE})
+    .insert({operator_id:currentOp.id,message:msg})
     .select('*, operators(callsign)')
     .single();
   if(error){ console.error('Chat send failed:',error.message); input.value=msg; toast('ERROR','Message failed to send — check connection'); return; }
