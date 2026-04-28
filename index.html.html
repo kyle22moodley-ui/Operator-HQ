@@ -2798,8 +2798,8 @@ body.compact-mode .trade-row{ padding:6px 10px !important; }
 /* Performance mode — kill all expensive visuals */
 body.perf-mode #p-canvas,
 body.perf-mode #matrix-canvas{ display:none !important; }
-/* Scope animation kill to non-canvas elements only — canvas uses rAF not CSS animations */
-body.perf-mode .app-layout *:not(canvas):not(.radar-card):not(.radar-canvas-wrap),
+/* Kill CSS animations everywhere EXCEPT the radar card which uses canvas rAF */
+body.perf-mode .app-layout *:not(canvas):not(.radar-card):not(.radar-card *):not(.radar-canvas-wrap):not(.radar-canvas-wrap *),
 body.perf-mode .cmd-bar *{
   animation-duration:0.01s !important;
   transition-duration:0.05s !important;
@@ -8667,27 +8667,38 @@ function previewMission(val){
 }
 
 async function saveProfile(){
-  const u={
-    callsign:document.getElementById('pf-c')?.value?.toUpperCase()||currentOp.callsign,
-    markets:document.getElementById('pf-m')?.value||'',
-    trading_style:document.getElementById('pf-s')?.value||'',
-    income_goal:parseFloat(document.getElementById('pf-g')?.value)||0,
-    mission_statement:document.getElementById('pf-ms')?.value||''
-  };
-  const{error}=await sb.from('operators').update(u).eq('id',currentOp.id);
-  if(error){ toast('ERROR',error.message||'Save failed'); return; }
-  // Update local state everywhere
-  Object.assign(currentOp,u);
+  const callsign = document.getElementById('pf-c')?.value?.trim().toUpperCase()||currentOp.callsign;
+  const markets = document.getElementById('pf-m')?.value||'';
+  const trading_style = document.getElementById('pf-s')?.value||'';
+  const income_goal = parseFloat(document.getElementById('pf-g')?.value)||0;
+  const mission_statement = document.getElementById('pf-ms')?.value||'';
+
+  // Save all fields — if columns don't exist in DB, run the migration in Supabase SQL editor:
+  // ALTER TABLE operators ADD COLUMN IF NOT EXISTS markets TEXT;
+  // ALTER TABLE operators ADD COLUMN IF NOT EXISTS trading_style TEXT;
+  // ALTER TABLE operators ADD COLUMN IF NOT EXISTS income_goal NUMERIC DEFAULT 0;
+  // ALTER TABLE operators ADD COLUMN IF NOT EXISTS mission_statement TEXT;
+  const u = {callsign, markets, trading_style, income_goal, mission_statement};
+  const{error} = await sb.from('operators').update(u).eq('id',currentOp.id);
+
+  if(error){
+    // Try saving just callsign if extended columns missing
+    const{error:e2} = await sb.from('operators').update({callsign}).eq('id',currentOp.id);
+    if(e2){ toast('ERROR', e2.message||'Save failed'); return; }
+    toast('PARTIAL SAVE','Callsign updated. Run the operators migration in Supabase to save all profile fields.');
+  } else {
+    toast('PROFILE SAVED','Operator file updated — squad views refreshed.');
+  }
+
+  // Update local state regardless
+  Object.assign(currentOp, u);
   syncUI();
   updateProfileCard();
-  // Refresh all views that show operator name/callsign
   buildLeaderboard();
   buildSquadProfiles();
   buildRankings();
-  // Refresh home if active
   const home=document.getElementById('sec-home');
   if(home?.classList.contains('active')) buildHome();
-  toast('PROFILE SAVED','Operator file updated — squad views refreshed.');
 }
 
 async function addAccount(){
