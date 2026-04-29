@@ -3900,6 +3900,12 @@ body.chat-hidden .chat-col{
             <button class="btn-save" onclick="saveProfile()">⬡ SAVE PROFILE</button>
           </div>
 
+          <!-- Squad -->
+          <div class="ps-card reveal-3">
+            <div class="ps-t">⬡ Squad Assignment</div>
+            <div id="squad-mgmt-panel"></div>
+          </div>
+
           <!-- Accounts -->
           <div class="ps-card reveal-3">
             <div class="ps-t">◈ Trading Accounts</div>
@@ -5429,7 +5435,7 @@ async function bootApp(user){
     sb.from('accounts').select('*').eq('operator_id',currentOp.id),
     sb.from('goals').select('*').eq('operator_id',currentOp.id),
     sb.from('user_tags').select('*').eq('operator_id',currentOp.id),
-    sb.from('squad_chat').select('*, operators(callsign), reactions:chat_reactions(*)').order('created_at',{ascending:true}).limit(100)
+    currentOp.squad_id ? sb.from('squad_chat').select('*, operators(callsign), reactions:chat_reactions(*)').eq('squad_id',currentOp.squad_id).order('created_at',{ascending:true}).limit(100) : Promise.resolve({data:[]})
   ]);
   myLogs=lr.data||[]; myTrades=tr.data||[]; myAccounts=ar.data||[]; myGoals=gr.data||[]; myTags=tgr.data||[];
   chatMessages=cr.data||[];
@@ -8665,6 +8671,143 @@ function previewMission(val){
   }
 }
 
+async // ══════════════════════════════════════════════════
+// SQUAD MANAGEMENT
+// ══════════════════════════════════════════════════
+function genSquadCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+async function buildSquadMgmt(){
+  const panel=document.getElementById('squad-mgmt-panel'); if(!panel) return;
+
+  if(currentOp.squad_id){
+    // Already in a squad — show details
+    const{data:sq}=await sb.from('squads').select('*').eq('id',currentOp.squad_id).single();
+    const{data:members}=await sb.from('operators').select('id,callsign,created_at').eq('squad_id',currentOp.squad_id).order('created_at',{ascending:true});
+    if(!sq){ panel.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:0.56rem;color:var(--muted2)">Squad data unavailable.</div>`; return; }
+
+    panel.innerHTML=`
+      <div style="margin-bottom:14px">
+        <div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(0,255,136,0.45);text-transform:uppercase;margin-bottom:6px">Active Squad</div>
+        <div style="font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;color:var(--white);letter-spacing:3px;text-transform:uppercase">${sq.name}</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(0,255,136,0.45);text-transform:uppercase;margin-bottom:6px">Join Code — share with teammates</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.2);padding:10px 20px;font-family:'Space Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--neon);letter-spacing:0.5em">
+            ${sq.join_code}
+          </div>
+          <button class="btn-outline" onclick="copySquadCode('${sq.join_code}')" id="squad-copy-btn" style="font-size:0.5rem;padding:8px 14px;letter-spacing:2px">⎘ COPY</button>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(0,255,136,0.45);text-transform:uppercase;margin-bottom:8px">Operators — ${(members||[]).length}</div>
+        <div style="display:flex;flex-direction:column;gap:3px;max-height:160px;overflow-y:auto">
+          ${(members||[]).map((m,i)=>`
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid rgba(0,255,136,0.06)">
+              <span style="font-family:'Space Mono',monospace;font-size:0.44rem;color:rgba(0,255,136,0.3);min-width:20px">${String(i+1).padStart(2,'0')}</span>
+              <span style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--white);letter-spacing:2px;text-transform:uppercase">${m.callsign||'—'}</span>
+              ${m.id===currentOp.id?'<span style="font-family:\'Space Mono\',monospace;font-size:0.38rem;color:rgba(0,255,136,0.4);letter-spacing:2px">[YOU]</span>':''}
+            </div>`).join('')}
+        </div>
+      </div>
+      <button class="btn-outline" onclick="leaveSquad()" style="font-size:0.5rem;letter-spacing:2px;color:var(--red3);border-color:rgba(255,51,102,0.2)">↩ LEAVE SQUAD</button>
+    `;
+  } else {
+    // Not in a squad
+    panel.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(0,255,136,0.45);text-transform:uppercase;margin-bottom:6px">Join Existing Squad</div>
+          <div style="display:flex;gap:6px">
+            <input class="form-input" id="sq-join-code" maxlength="6" placeholder="XXXXXX"
+              style="font-family:'Space Mono',monospace;font-size:1rem;letter-spacing:0.4em;text-transform:uppercase;text-align:center;flex:1"
+              oninput="this.value=this.value.toUpperCase()"
+              onkeydown="if(event.key==='Enter')joinSquad()">
+            <button class="btn-save" onclick="joinSquad()" style="white-space:nowrap;font-size:0.5rem">→ JOIN</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.38rem;letter-spacing:3px;color:rgba(0,255,136,0.45);text-transform:uppercase;margin-bottom:6px">Create New Squad</div>
+          <div style="display:flex;gap:6px">
+            <input class="form-input" id="sq-create-name" placeholder="Squad name..." style="flex:1;font-size:0.78rem"
+              onkeydown="if(event.key==='Enter')createSquad()">
+            <button class="btn-save" onclick="createSquad()" style="white-space:nowrap;font-size:0.5rem">⬡ CREATE</button>
+          </div>
+        </div>
+      </div>
+      <div id="sq-error" style="font-family:'Space Mono',monospace;font-size:0.52rem;color:var(--red3);display:none;margin-top:4px"></div>
+    `;
+  }
+}
+
+function copySquadCode(code){
+  navigator.clipboard.writeText(code);
+  const btn=document.getElementById('squad-copy-btn');
+  if(btn){ btn.textContent='✓ COPIED'; setTimeout(()=>btn.textContent='⎘ COPY',2000); }
+}
+
+async function joinSquad(){
+  const code=document.getElementById('sq-join-code')?.value.trim().toUpperCase();
+  const errEl=document.getElementById('sq-error');
+  if(!code||code.length!==6){ if(errEl){errEl.textContent='Enter a valid 6-character code.';errEl.style.display='block';} return; }
+
+  const{data:sq}=await sb.from('squads').select('*').eq('join_code',code).single();
+  if(!sq){ if(errEl){errEl.textContent='Squad not found — check the code.';errEl.style.display='block';} return; }
+
+  const{error}=await sb.from('operators').update({squad_id:sq.id}).eq('id',currentOp.id);
+  if(error){ if(errEl){errEl.textContent=error.message;errEl.style.display='block';} return; }
+
+  currentOp.squad_id=sq.id;
+  toast('SQUAD JOINED','Welcome to '+sq.name+' — chat room is now active.');
+  buildSquadMgmt();
+  // Restart chat subscription for new squad
+  if(chatSub) chatSub.unsubscribe();
+  subscribeChat();
+  // Reload chat messages for this squad
+  const{data:msgs}=await sb.from('squad_chat').select('*, operators(callsign), reactions:chat_reactions(*)').eq('squad_id',sq.id).order('created_at',{ascending:true}).limit(100);
+  chatMessages=msgs||[]; renderChat();
+}
+
+async function createSquad(){
+  const name=document.getElementById('sq-create-name')?.value.trim();
+  const errEl=document.getElementById('sq-error');
+  if(!name){ if(errEl){errEl.textContent='Squad name required.';errEl.style.display='block';} return; }
+
+  // Generate unique code
+  let code=genSquadCode(), attempts=0;
+  while(attempts<5){
+    const{data:ex}=await sb.from('squads').select('id').eq('join_code',code).single();
+    if(!ex) break;
+    code=genSquadCode(); attempts++;
+  }
+
+  const{data:sq,error}=await sb.from('squads').insert({name,join_code:code,creator_id:currentOp.user_id||currentOp.id}).select().single();
+  if(error||!sq){ if(errEl){errEl.textContent=error?.message||'Failed to create squad.';errEl.style.display='block';} return; }
+
+  const{error:upErr}=await sb.from('operators').update({squad_id:sq.id}).eq('id',currentOp.id);
+  if(upErr){ if(errEl){errEl.textContent=upErr.message;errEl.style.display='block';} return; }
+
+  currentOp.squad_id=sq.id;
+  toast('SQUAD CREATED','Squad '+name+' deployed — code: '+code);
+  buildSquadMgmt();
+  if(chatSub) chatSub.unsubscribe();
+  subscribeChat();
+  chatMessages=[]; renderChat();
+}
+
+async function leaveSquad(){
+  if(!confirm('Leave this squad? You can rejoin with the code.')) return;
+  await sb.from('operators').update({squad_id:null}).eq('id',currentOp.id);
+  currentOp.squad_id=null;
+  if(chatSub){ chatSub.unsubscribe(); chatSub=null; }
+  chatMessages=[]; renderChat();
+  buildSquadMgmt();
+  toast('SQUAD LEFT','You have left the squad.');
+}
+
 async function saveProfile(){
   const callsign = document.getElementById('pf-c')?.value?.trim().toUpperCase()||currentOp.callsign;
   const markets = document.getElementById('pf-m')?.value||'';
@@ -8861,9 +9004,9 @@ function renderChat(){
 }
 
 function subscribeChat(){
-  chatSub=sb.channel('squad-chat')
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'squad_chat'},async payload=>{
-      // Dedup — ignore if we already have this message id
+  if(!currentOp?.squad_id) return;
+  chatSub=sb.channel('squad-chat-'+currentOp.squad_id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'squad_chat',filter:`squad_id=eq.${currentOp.squad_id}`},async payload=>{
       if(chatMessages.find(m=>m.id===payload.new.id)) return;
       const{data}=await sb.from('squad_chat').select('*, operators(callsign), reactions:chat_reactions(*)').eq('id',payload.new.id).single();
       if(data && !chatMessages.find(m=>m.id===data.id)){ chatMessages.push(data); renderChat(); }
@@ -8875,8 +9018,9 @@ async function sendMsg(){
   const input=document.getElementById('chat-input');
   const msg=input.value.trim(); if(!msg||!currentOp) return;
   input.value='';
+  if(!currentOp.squad_id){ toast('INFO','Join a squad first to use squad chat.'); input.value=msg; return; }
   const{data,error}=await sb.from('squad_chat')
-    .insert({operator_id:currentOp.id,message:msg})
+    .insert({operator_id:currentOp.id,message:msg,squad_id:currentOp.squad_id})
     .select('id')
     .single();
   if(error){
@@ -8945,7 +9089,7 @@ function showSec(name,navEl){
   if(name==='achievements') buildAchievements();
   if(name==='assets') updateAssetBars();
   if(name==='financials') updateFinancials();
-  if(name==='profile'){ loadProfile(); setTimeout(updateProfileCard,100); }
+  if(name==='profile'){ loadProfile(); setTimeout(updateProfileCard,100); setTimeout(buildSquadMgmt,150); }
 }
 
 // ══════════════════════════════════════════════════
