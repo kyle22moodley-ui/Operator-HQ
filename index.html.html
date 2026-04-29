@@ -2951,18 +2951,17 @@ body.no-squad #nav-rankings .n-l::after{
       </div>
       <div id="auth-err" class="auth-err"></div>
       <div id="form-in">
-        <div class="fg"><div class="fl">Email</div><input class="fi" type="email" id="li-e" placeholder="your@email.com"></div>
+        <div class="fg"><div class="fl">Email</div><input class="fi" type="email" id="li-e" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
         <div class="fg"><div class="fl">Password</div><input class="fi" type="password" id="li-p" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
         <button class="btn-auth" id="btn-login" onclick="doLogin()">⬡ DEPLOY TO HQ</button>
         <div class="auth-note">First time? Switch to Register.</div>
       </div>
       <div id="form-up" style="display:none">
-        <div class="fg"><div class="fl">Callsign</div><input class="fi" type="text" id="su-c" placeholder="e.g. KYLE" style="text-transform:uppercase"></div>
-        <div class="fg"><div class="fl">Email</div><input class="fi" type="email" id="su-e" placeholder="your@email.com"></div>
-        <div class="fg"><div class="fl">Password</div><input class="fi" type="password" id="su-p" placeholder="min 6 characters"></div>
-        <div class="fg"><div class="fl">Squad Access Code</div><input class="fi" type="text" id="su-code" placeholder="Ask your squad leader"></div>
+        <div class="fg"><div class="fl">Callsign</div><input class="fi" type="text" id="su-c" placeholder="e.g. KYLE" style="text-transform:uppercase" onkeydown="if(event.key==='Enter')doSignup()"></div>
+        <div class="fg"><div class="fl">Email</div><input class="fi" type="email" id="su-e" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doSignup()"></div>
+        <div class="fg"><div class="fl">Password</div><input class="fi" type="password" id="su-p" placeholder="min 6 characters" onkeydown="if(event.key==='Enter')doSignup()"></div>
         <button class="btn-auth" id="btn-su" onclick="doSignup()">⬡ CREATE OPERATOR</button>
-        <div class="auth-note">Sign in immediately after registering.</div>
+        <div class="auth-note">After registering, check your email then sign in.</div>
       </div>
     </div>
   </div>
@@ -5321,16 +5320,17 @@ async function doLogin(){
 }
 async function doSignup(){
   const call=document.getElementById('su-c').value.trim().toUpperCase();
-  const e=document.getElementById('su-e').value.trim(), p=document.getElementById('su-p').value;
-  const code=document.getElementById('su-code').value.trim().toUpperCase();
+  const e=document.getElementById('su-e').value.trim();
+  const p=document.getElementById('su-p').value;
   if(!call||!e||!p){showErr('Fill in all fields.');return;}
+  if(call.length<2){showErr('Callsign must be at least 2 characters.');return;}
   if(p.length<6){showErr('Password min 6 characters.');return;}
-  if(code!==SQUAD_CODE){showErr('Invalid squad code.');return;}
-  const btn=document.getElementById('btn-su'); btn.disabled=true; btn.textContent='...';
+  const btn=document.getElementById('btn-su'); btn.disabled=true; btn.textContent='Deploying...';
   const{error}=await sb.auth.signUp({email:e,password:p,options:{data:{callsign:call}}});
   if(error){showErr(error.message);btn.disabled=false;btn.textContent='⬡ CREATE OPERATOR';return;}
-  showErr('✓ Account created! Sign in now.',true); btn.disabled=false; btn.textContent='⬡ CREATE OPERATOR';
-  setTimeout(()=>swTab('in'),1500);
+  showErr('✓ Operator created! Check your email to confirm, then sign in.',true);
+  btn.disabled=false; btn.textContent='⬡ CREATE OPERATOR';
+  setTimeout(()=>swTab('in'),2000);
 }
 async function doSignOut(){ await sb.auth.signOut(); location.reload(); }
 
