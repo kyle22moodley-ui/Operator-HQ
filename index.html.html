@@ -5434,7 +5434,7 @@ async function bootApp(user){
     sb.from('trades').select('*').eq('operator_id',currentOp.id).order('trade_date',{ascending:false}),
     sb.from('accounts').select('*').eq('operator_id',currentOp.id),
     sb.from('goals').select('*').eq('operator_id',currentOp.id),
-    sb.from('user_tags').select('*').eq('operator_id',currentOp.id),
+    sb.from('user_tags').select('*').eq('operator_id',currentOp.id).then(r=>r).catch(()=>({data:[]})),
     currentOp.squad_id ? sb.from('squad_chat').select('*, operators(callsign), reactions:chat_reactions(*)').eq('squad_id',currentOp.squad_id).order('created_at',{ascending:true}).limit(100) : Promise.resolve({data:[]})
   ]);
   myLogs=lr.data||[]; myTrades=tr.data||[]; myAccounts=ar.data||[]; myGoals=gr.data||[]; myTags=tgr.data||[];
