@@ -2822,7 +2822,18 @@ body.chat-hidden .chat-col{
     grid-template-columns:200px 1fr !important;
   }
 }
-
+/* Squad nav items dimmed when not in a squad */
+body.no-squad #nav-leaderboard,
+body.no-squad #nav-squad-profiles,
+body.no-squad #nav-rankings{
+  opacity:0.35;
+  pointer-events:auto; /* still clickable — shows the gate message */
+}
+body.no-squad #nav-leaderboard .n-l::after,
+body.no-squad #nav-squad-profiles .n-l::after,
+body.no-squad #nav-rankings .n-l::after{
+  content:' 🔒';font-size:0.5rem;
+}
 </style>
 </head>
 <body>
@@ -3186,9 +3197,9 @@ body.chat-hidden .chat-col{
 
       <!-- GROUP: SQUAD -->
       <span class="nav-group-label">Squad</span>
-      <div class="nav-i" onclick="showSec('leaderboard',this)"><div class="n-i">◉</div><div class="n-l">Leaderboard</div><div class="n-t s">SQUAD</div></div>
-      <div class="nav-i" onclick="showSec('squad',this)"><div class="n-i">◻</div><div class="n-l">Squad Profiles</div><div class="n-t s">SQUAD</div></div>
-      <div class="nav-i" onclick="showSec('compare',this)"><div class="n-i">◈</div><div class="n-l">Rankings</div><div class="n-t s">SQUAD</div></div>
+      <div class="nav-i" id="nav-leaderboard" onclick="showSec('leaderboard',this)"><div class="n-i">◉</div><div class="n-l">Leaderboard</div><div class="n-t s">SQUAD</div></div>
+      <div class="nav-i" id="nav-squad-profiles" onclick="showSec('squad',this)"><div class="n-i">◻</div><div class="n-l">Squad Profiles</div><div class="n-t s">SQUAD</div></div>
+      <div class="nav-i" id="nav-rankings" onclick="showSec('compare',this)"><div class="n-i">◈</div><div class="n-l">Rankings</div><div class="n-t s">SQUAD</div></div>
 
       <div class="nav-sep"></div>
 
@@ -5796,6 +5807,7 @@ function animCounter(el,target,dur=1000,pre='',suf=''){
 }
 
 function syncUI(){
+  document.body.classList.toggle('no-squad', !currentOp?.squad_id);
   if(!currentOp) return;
   const op=currentOp, xp=op.xp||0, l=lvl(xp), col=opCol(op);
   const cur=xp%XPL;
@@ -7779,7 +7791,19 @@ async function buildOpsGrid(){
 // ══════════════════════════════════════════════════
 // LEADERBOARD
 // ══════════════════════════════════════════════════
+function noSquadHTML(id){
+  return `<div style="text-align:center;padding:60px 20px">
+    <div style="font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;letter-spacing:4px;color:rgba(0,255,136,0.2);text-transform:uppercase;margin-bottom:10px">No Squad Assigned</div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.54rem;color:rgba(255,255,255,0.2);letter-spacing:1px;margin-bottom:16px">Join or create a squad to unlock squad features.</div>
+    <button class="btn-save" onclick="showSec('profile',null)" style="font-size:0.52rem;letter-spacing:2px">→ Go to My Profile</button>
+  </div>`;
+}
+
 function buildLeaderboard(){
+  if(!currentOp?.squad_id){
+    const el=document.getElementById('lb-full');
+    if(el) el.innerHTML=noSquadHTML('lb-full'); return;
+  }
   const sorted=[...allOps].sort((a,b)=>(b.xp||0)-(a.xp||0));
   let html=`<table class="lb-table"><thead><tr><th>#</th><th>Operator</th><th>XP</th><th>Win Rate</th><th>P&L</th><th>Avg R:R</th><th>Edge IQ</th><th>Discipline</th><th>Streak</th></tr></thead><tbody>`;
   sorted.forEach((op,i)=>{
@@ -7808,6 +7832,10 @@ function buildLeaderboard(){
 // SQUAD PROFILES
 // ══════════════════════════════════════════════════
 function buildSquadProfiles(){
+  if(!currentOp?.squad_id){
+    const el=document.getElementById('squad-profiles-grid');
+    if(el) el.innerHTML=noSquadHTML('squad-profiles-grid'); return;
+  }
   // Sync live current user stats into allOps
   if(currentOp){
     const myIdx=allOps.findIndex(o=>o.id===currentOp.id);
@@ -7903,6 +7931,10 @@ const RANK_SORTS = [
 ];
 
 function buildRankings(){
+  if(!currentOp?.squad_id){
+    const el=document.getElementById('compare-wrap');
+    if(el) el.innerHTML=noSquadHTML('compare-wrap'); return;
+  }
   if(!allOps.length) return;
   // Sync all live current user stats into allOps before ranking
   if(currentOp){
@@ -8761,6 +8793,7 @@ async function joinSquad(){
   if(error){ if(errEl){errEl.textContent=error.message;errEl.style.display='block';} return; }
 
   currentOp.squad_id=sq.id;
+  document.body.classList.remove('no-squad');
   toast('SQUAD JOINED','Welcome to '+sq.name+' — chat room is now active.');
   buildSquadMgmt();
   // Restart chat subscription for new squad
@@ -8791,6 +8824,7 @@ async function createSquad(){
   if(upErr){ if(errEl){errEl.textContent=upErr.message;errEl.style.display='block';} return; }
 
   currentOp.squad_id=sq.id;
+  document.body.classList.remove('no-squad');
   toast('SQUAD CREATED','Squad '+name+' deployed — code: '+code);
   buildSquadMgmt();
   if(chatSub) chatSub.unsubscribe();
@@ -8802,6 +8836,7 @@ async function leaveSquad(){
   if(!confirm('Leave this squad? You can rejoin with the code.')) return;
   await sb.from('operators').update({squad_id:null}).eq('id',currentOp.id);
   currentOp.squad_id=null;
+  document.body.classList.add('no-squad');
   if(chatSub){ chatSub.unsubscribe(); chatSub=null; }
   chatMessages=[]; renderChat();
   buildSquadMgmt();
