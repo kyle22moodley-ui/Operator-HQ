@@ -7745,7 +7745,7 @@ const OPS_DEF=[
   {id:'wk',icon:'⊕',title:'Weekly Review',items:[{id:'w1',label:'Full week trade audit',pts:60},{id:'w2',label:'Win rate calculated',pts:40},{id:'w3',label:'P&L tracker updated',pts:35},{id:'w4',label:'Next week focus defined',pts:35}]},
 ];
 
-function buildOpsGrid(){
+async function buildOpsGrid(){
   const grid=document.getElementById('ops-grid'); if(!grid) return;
   const os=currentOp?.ops_state||{};
   const today=new Date().toDateString();
@@ -8671,7 +8671,7 @@ function previewMission(val){
   }
 }
 
-async // ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // SQUAD MANAGEMENT
 // ══════════════════════════════════════════════════
 function genSquadCode(){
@@ -9003,7 +9003,7 @@ function renderChat(){
   el.scrollTop=el.scrollHeight;
 }
 
-function subscribeChat(){
+async function subscribeChat(){
   if(!currentOp?.squad_id) return;
   chatSub=sb.channel('squad-chat-'+currentOp.squad_id)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'squad_chat',filter:`squad_id=eq.${currentOp.squad_id}`},async payload=>{
